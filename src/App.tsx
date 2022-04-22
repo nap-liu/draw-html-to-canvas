@@ -1,26 +1,44 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, {useEffect, useLayoutEffect, useRef} from 'react';
+import html from './html';
+import Render from './lib';
 
-function App() {
+export default function App() {
+  const div = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  useLayoutEffect(() => {
+    if (div.current && canvas.current) {
+      console.time('Render.fromHTML(html)');
+      const render = Render.fromHTML(html);
+      console.timeEnd('Render.fromHTML(html)');
+      const context = canvas.current.getContext('2d');
+      const rect = canvas.current.getBoundingClientRect();
+      if (context) {
+        const scale = 1.5;
+        context.clearRect(0, 0, rect.width * scale, rect.height * scale)
+        context.scale(scale, scale);
+        console.time('render.layout(context)');
+        render.rootNode.style.set('width', '500px');
+        render.layout(context);
+        console.timeEnd('render.layout(context)');
+
+        console.time('render.draw(context)');
+        render.draw(context);
+        console.timeEnd('render.draw(context)');
+      }
+      console.log(render);
+      // @ts-ignore
+      window.render = render;
+    }
+  });
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <div ref={div} dangerouslySetInnerHTML={{__html: html}} />
+      <canvas
+        ref={canvas}
+        width={1200}
+        height={2000}
+        style={{width: '100%', height: '100%', boxSizing: 'border-box', border: '1px solid #f00'}}
+      />
+    </>
   );
 }
-
-export default App;
