@@ -49,12 +49,7 @@ export default class Style {
     return {element: null, value: ''};
   }
 
-  /**
-   * 获取 简写 和 四个方向的样式属性值
-   * 处理书写优先级
-   * @param style
-   */
-  private getRoundStyle(style: string) {
+  public getOriginRoundStyle(style: string): IRound<string> {
     const all = this.style[style];
     const allIndex = this.styleIndex[style];
     let list: any = [];
@@ -85,7 +80,7 @@ export default class Style {
         allResult.bottom = list[3];
       }
     }
-    const result: IRound<string | number> = dir.reduce<any>((map, key) => {
+    return dir.reduce<any>((map, key) => {
       const fullKey = style + '-' + key
       const idx = this.styleIndex[fullKey];
       // @ts-ignore
@@ -100,11 +95,23 @@ export default class Style {
       }
       return map;
     }, {});
+  };
 
+  /**
+   * 获取 简写 和 四个方向的样式属性值
+   * 处理书写优先级
+   * @param style
+   */
+  private getRoundStyle(style: string) {
+    const dir = ['top', 'right', 'bottom', 'left'];
+    const result: IRound<string | number> = this.getOriginRoundStyle(style);
     dir.forEach((key) => {
-      result[key] = this.transformUnitToPx(result[key] as string);
+      if (result[key] === 'auto') {
+        result[key] = 0;
+      } else {
+        result[key] = this.transformUnitToPx(result[key] as string);
+      }
     })
-
     return result as IRound<number>;
   }
 
@@ -144,7 +151,7 @@ export default class Style {
    * @param unit 100px|100%|1rem|1em
    * @param base 单位换算基数
    */
-  public transformUnitToPx(unit: string, base?: number) {
+  public transformUnitToPx(unit: string, base?: number): number {
     if (!unit || unit === '0') {
       return 0;
     }

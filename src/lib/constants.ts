@@ -1,3 +1,6 @@
+import ElementImage from './element-image';
+import Element from './element';
+
 export const DEFAULT_FONT_FAMILY = 'sans-serif';
 export const DEFAULT_FONT_SIZE = '16px';
 export const DEFAULT_COLOR = '#000';
@@ -41,3 +44,5 @@ export enum SupportElement {
   span = 'span',
 }
 
+
+export type SupportElementType = Element | ElementImage;

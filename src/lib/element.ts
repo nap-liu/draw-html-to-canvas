@@ -215,8 +215,12 @@ export default class Element {
       if (/px$/.test(width)) {
         // 固定尺寸
         this.contentWidth = this.style.transformUnitToPx(width);
-      }
 
+        // image 自适应尺寸
+        if (this.nodeName === SupportElement.img) {
+
+        }
+      }
       if (/px$/.test(height)) {
         this.contentHeight = this.style.transformUnitToPx(height);
       }
@@ -241,15 +245,6 @@ export default class Element {
         const offset = padding.left + padding.right + border.left.width + border.right.width + margin.left + margin.right;
         if (parent) {
           this.contentWidth = parent.contentWidth - offset;
-        }
-
-        if (blockType === BlockType.inlineBlock) {
-          // inline-block 使用内容宽度
-          // 如果内容超出父元素 则使用父元素宽度
-          // this.contentWidth = Math.min(
-          //   this.getMaxChildWidth(),
-          //   this.contentWidth,
-          // );
         }
       }
     }
@@ -631,6 +626,14 @@ export default class Element {
     let contentOffsetLeft = 0;
     let contentOffsetRight = 0;
     if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
+      const originMargin = this.style.getOriginRoundStyle('margin');
+      // @ts-ignore
+      if (originMargin.left === 'auto' && originMargin.right === 'auto') {
+        const parent = this.parentNode;
+        if (parent) {
+          margin.left = (parent.contentWidth - this.offsetWidth) / 2;
+        }
+      }
       contentOffsetLeft = margin.left + border.left.width + padding.left;
       contentOffsetRight = margin.right + border.right.width + padding.right;
       contentOffsetTop = margin.top + border.top.width + padding.top;
@@ -689,6 +692,7 @@ export default class Element {
 
     // console.log(absolutes);
     absolutes.forEach(absolute => {
+      // TODO inline 定位 right bottom 计算错误
       const absoluteTop = absolute.style.get('top');
       const absoluteRight = absolute.style.get('right');
       const absoluteBottom = absolute.style.get('bottom');
@@ -698,7 +702,10 @@ export default class Element {
       const shadows: Element[] = [target];
       target.lineElement?.lines.forEach(line => {
         line.forEach(i => {
-          if (i.parentNode === target) {
+          if (
+            (i.parentNode === target) ||
+            (i.parentNode === target.shadow)
+          ) {
             shadows.push(i);
           }
         })
@@ -744,7 +751,7 @@ export default class Element {
       } else if (absoluteBottom) {
         if (isInline) {
           target = shadows[shadows.length - 1];
-          absolute.top = target.top + target.offsetHeight - absolute.style.transformUnitToPx(absoluteBottom);
+          absolute.top = target.top - absolute.style.transformUnitToPx(absoluteBottom);
         } else {
           absolute.top = target.contentHeight - absolute.offsetHeight - absolute.style.transformUnitToPx(absoluteBottom);
         }
@@ -760,7 +767,7 @@ export default class Element {
     const offset = 0;
     if (background.color) {
       context.fillStyle = background.color;
-      console.log(offset, fontSize, lineHeight);
+      // console.log(offset, fontSize, lineHeight);
       context.fillRect(
         this.offsetLeft + margin.left + border.left.width,
         this.offsetTop + margin.top + border.top.width,
@@ -784,12 +791,12 @@ export default class Element {
         context.textBaseline = textBaseline as any;
         context.fillStyle = color;
         context.fillText(this.displayText, this.offsetLeft, this.offsetTop);
-        // context.strokeStyle = 'rgba(255,0,0,.5)';
-        // context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
+        context.strokeStyle = 'rgba(255,0,0,.5)';
+        context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
       }
     } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
-      // context.strokeStyle = '#00f';
-      // context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
+      context.strokeStyle = '#00f';
+      context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
     }
 
     this.lines.forEach(line => {
@@ -823,7 +830,6 @@ export default class Element {
      * -----
      * 计算起始坐标
      */
-
     /**
      * 1、裸文字宽度
      * 2、固定宽高

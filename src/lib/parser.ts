@@ -1,5 +1,6 @@
 import Element from './element';
-import {NodeType} from './constants';
+import {NodeType, SupportElement, SupportElementType} from './constants';
+import ElementImage from './element-image';
 
 export default function parse(html: string) {
   let currentIndex = 0;
@@ -42,14 +43,14 @@ export default function parse(html: string) {
   }
 
   let rootNode = new Element();
-  let elements = [];
+  let elements: SupportElementType[] = [];
   rootNode.nodeType = NodeType.DOCUMENT_NODE;
   rootNode.nodeName = '#root';
 
-  let parentNode: Element = rootNode;
+  let parentNode = rootNode;
 
   for (let contentText of nodes) {
-    const currentNode = new Element();
+    let currentNode: Element | ElementImage = new Element();
     currentNode.root = rootNode;
     elements.push(currentNode);
     currentNode.nodeValue = contentText;
@@ -81,6 +82,16 @@ export default function parse(html: string) {
       } else if (/^<!doctype/i.test(contentText)) {
         nodeName = 'html'
         currentNode.nodeType = NodeType.DOCUMENT_TYPE_NODE;
+      }
+
+      if (nodeName === SupportElement.img) {
+        const img = new ElementImage();
+        Object.assign(img, currentNode);
+        elements.pop();
+        elements.push(img);
+        parentNode.children.pop();
+        parentNode.children.push(img);
+        currentNode = img;
       }
       currentNode.nodeName = nodeName;
       const attrs = currentNode.attrs;

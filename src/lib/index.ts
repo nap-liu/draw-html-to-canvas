@@ -1,5 +1,5 @@
 import parse from './parser';
-import Element from './element';
+import {SupportElement, SupportElementType} from './constants';
 
 export default class Render {
   static fromHTML(html: string) {
@@ -7,14 +7,18 @@ export default class Render {
   }
 
   rawHTML: string;
-  rootNode: Element;
-  elements: Element[];
+  rootNode: SupportElementType;
+  elements: SupportElementType[];
 
   constructor(html: string) {
     this.rawHTML = html;
     const {elements, rootNode} = parse(html);
     this.rootNode = rootNode;
     this.elements = elements;
+  }
+
+  async loadSource() {
+    return Promise.all(this.elements.filter(i => i.nodeName === SupportElement.img).map((img: any) => img.load()));
   }
 
   layout(context: CanvasRenderingContext2D) {
