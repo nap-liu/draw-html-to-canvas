@@ -152,11 +152,33 @@ export default class Element {
     return Math.max(maxBlockWidth, inlineWidth);
   }
 
+  public getTextMetrics2(context: CanvasRenderingContext2D, text: string) {
+    // TODO letter-spacing 支持
+    context.font = this.style.canvasFont;
+    const textMetrics = context.measureText(text || '1');
+    let fontHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+    if (isNaN(fontHeight)) {
+      // 兼容不支持测量文字基线的canvas
+      fontHeight = this.style.fontSize;
+    }
+    let lineHeight: string | number = this.style.getInheritStyle('line-height') || DEFAULT_LINE_HEIGHT;
+    if (/px$/.test(lineHeight)) {
+      lineHeight = parseFloat(lineHeight);
+    } else if (/^\d+(.\d+)?$/.test(lineHeight)) {
+      lineHeight = parseFloat(lineHeight) * fontHeight;
+    }
+    return {
+      width: text ? textMetrics.width : 0,
+      lineHeight: lineHeight as number,
+    };
+  }
+
   public getTextMetrics(context: CanvasRenderingContext2D, text: string) {
     // TODO letter-spacing 支持
     context.font = this.style.canvasFont;
     const textMetrics = context.measureText(text);
-    let fontHeight = textMetrics.fontBoundingBoxAscent + textMetrics.fontBoundingBoxDescent;
+    // let fontHeight = textMetrics.fontBoundingBoxAscent + textMetrics.fontBoundingBoxDescent;
+    let fontHeight = NaN;
     if (isNaN(fontHeight)) {
       // 兼容不支持测量文字基线的canvas
       fontHeight = this.style.fontSize;
@@ -347,7 +369,7 @@ export default class Element {
                   lineText = lineText.slice(0, -1);
                 }
               }
-              element.contentHeight = element.shadows.length * textMetrics.lineHeight;
+              // element.contentHeight = element.shadows.length * textMetrics.lineHeight;
             } else {
               element.contentHeight = textMetrics.lineHeight;
             }
@@ -368,17 +390,34 @@ export default class Element {
           } else {
             if (isNoWrap) {
               line.push(element);
+              // 递归计算子节点
+              element.children.forEach(recursion);
             } else {
-              // TODO 拆分inline元素样式到子元素
-              if (!line.append(element)) {
-                // inline元素
-                line = this.newLine(line.width);
-                line.push(element);
+              const splitPush = () => {
+                let lastLine = this.lastLine();
+                const half = element.clone();
+                half.shadow = element;
+                element.shadows.push(half);
+                half.contentWidth -= half.offsetWidth / 2;
+                if (!lastLine.append(half)) {
+                  // inline元素
+                  lastLine = this.newLine(line.width);
+                  lastLine.push(half);
+                }
+                half.line = lastLine;
+                return half;
               }
-              element.line = line;
+              // 左侧进入布局
+              const left = splitPush();
+              // 递归计算子节点
+              element.children.forEach(recursion);
+              // 右侧进入布局
+              const right = splitPush();
+              const textChild = this.children.find(i => i.nodeType === NodeType.TEXT_NODE && i.contentHeight);
+              if (textChild) {
+                left.contentHeight = right.contentHeight = textChild.offsetHeight;
+              }
             }
-            // 递归计算子节点
-            element.children.forEach(recursion);
           }
         } else {
           // inline-block\block嵌套 递归布局
@@ -468,6 +507,7 @@ export default class Element {
       if (!this.style.height) {
         this.contentHeight = this.linesHeight;
       }
+
     } else {
       this.children.forEach(e => e.layoutInlineBlockWidth(context));
     }
@@ -655,7 +695,6 @@ export default class Element {
       const absoluteLeft = absolute.style.get('left');
 
       let target: Element = this;
-      // TODO 基于行元素定位
       const shadows: Element[] = [target];
       target.lineElement?.lines.forEach(line => {
         line.forEach(i => {
@@ -666,10 +705,6 @@ export default class Element {
       });
 
       const isInline = target.blockType === BlockType.inline;
-
-      if (shadows.length) {
-        console.log('relative', target, shadows, absolute);
-      }
       /**
        * 上下左右 全都写的情况下
        * 有宽高 忽略左右
@@ -719,6 +754,27 @@ export default class Element {
   }
 
   public draw(context: CanvasRenderingContext2D) {
+    const {background, margin, border, padding, fontSize, lineHeight} = this.style;
+    // console.log(background, this.displayText, this);
+    // const offset = fontSize - lineHeight;
+    const offset = 0;
+    if (background.color) {
+      context.fillStyle = background.color;
+      console.log(offset, fontSize, lineHeight);
+      context.fillRect(
+        this.offsetLeft + margin.left + border.left.width,
+        this.offsetTop + margin.top + border.top.width,
+        this.offsetWidth - (margin.left + margin.right),
+        this.offsetHeight - (margin.top + margin.bottom) - offset,
+      );
+    }
+
+    // if (border.left.width) {
+    //
+    // } else if () {
+    //
+    // }
+
     if (this.nodeType === NodeType.TEXT_NODE) {
       const {displayText} = this;
       if (displayText) {
@@ -727,20 +783,29 @@ export default class Element {
         context.font = this.style.canvasFont;
         context.textBaseline = textBaseline as any;
         context.fillStyle = color;
-        const offset = 0;
         context.fillText(this.displayText, this.offsetLeft, this.offsetTop);
-        context.strokeStyle = 'rgba(255,0,0,.5)';
-        context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
+        // context.strokeStyle = 'rgba(255,0,0,.5)';
+        // context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
       }
     } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
-      context.strokeStyle = '#00f';
-      context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
+      // context.strokeStyle = '#00f';
+      // context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
     }
+
     this.lines.forEach(line => {
-      line.forEach(el => {
-        el.draw(context);
-      })
-      // console.log('--------')
+      line.textFlows.forEach(el => el.draw(context));
+      // line.floats.all.forEach(el => el.draw(context));
+      // line.absolutes.forEach(el => el.draw(context));
+    })
+    this.lines.forEach(line => {
+      // line.textFlows.forEach(el => el.draw(context));
+      line.floats.all.forEach(el => el.draw(context));
+      // line.absolutes.forEach(el => el.draw(context));
+    })
+    this.lines.forEach(line => {
+      // line.textFlows.forEach(el => el.draw(context));
+      // line.floats.all.forEach(el => el.draw(context));
+      line.absolutes.forEach(el => el.draw(context));
     })
   }
 
@@ -840,9 +905,7 @@ export default class Element {
     if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
       return this.contentWidth + margin.left + margin.right + border.left.width + border.right.width + padding.left + padding.right;
     } else if (blockType === BlockType.inline) {
-      // inline 元素宽度跟随父级宽度
-      return this.contentWidth + border.left.width + border.right.width + padding.left + padding.right
-      // return 0;
+      return this.contentWidth + border.left.width + border.right.width + padding.left + padding.right;
     }
     return 0;
   };
@@ -861,9 +924,7 @@ export default class Element {
     if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
       return this.contentHeight + margin.top + margin.bottom + border.top.width + border.bottom.width + padding.top + padding.bottom;
     } else if (blockType === BlockType.inline) {
-      // inline 元素宽度跟随父级宽度
-      return this.contentHeight + border.top.width + border.bottom.width + padding.top + padding.bottom
-      // return 0;
+      return this.contentHeight;
     }
     return 0;
   };
@@ -875,7 +936,6 @@ export default class Element {
     if (this.lineElement) {
       return this.lineElement.offsetLeft + this.left;
     }
-    // console.log('offsetLeft no line', this);
     return this.left;
   }
 
@@ -886,7 +946,6 @@ export default class Element {
     if (this.lineElement) {
       return this.lineElement.offsetTop + this.top;
     }
-    // console.log('offsetTop no line', this);
     return this.top;
   }
 

@@ -1,27 +1,24 @@
 export default `<div
   style="
     border: 1px solid #000;
-    display: block;
-    /*height: 100%;*/
-    ;;
-    width: 600px;
-    text-align: center;
-    font-family: 'PingFang SC';
+    /*display: block;*/
+    /* height: 100%;*/
+    /* text-align: center;*/
+    /*font-family: 'PingFang SC';*/
    "
   id="renderTemplate"
 >
-  <!--    <div style="height: 100px; width: 10%; background: #f00"></div>-->
   <div style="display: inline; background: #ff0">
     1
     <div style="display: inline;">
-      inline
+      in<br>line
       <div style="display: inline-block;">
         <div style="">
           <div style="display: inline">
             <span style="background: #BC8F8F;  padding: 0 10px">
               setsocketopt函数 设置socket工作参数
             </span>
-            <span style="background: #4169E1; padding: 0 10px">
+            <span style="background: #4169E1; padding: 0 100px;">
               该函数可以设置任意socket的所有可配置参数详细可查看手册
             </span>
             <span style="background: #A52A2A">
@@ -45,7 +42,6 @@ export default `<div
             <span style="background: #D2691E;">错误代码1 EADDRINUSE</span>
             <span style="background: #5F9EA0">提示信息1 Address already in use</span>
             <div style="background: #ccc">block
-              设置socket address重用，如果不设置的话重启的时候会报错
               设置socket address重用，如果不设置的话重启的时候会报错
               设置socket address重用，如果不设置的话重启的时候会报错
               设置socket address重用，如果不设置的话重启的时候会报错
@@ -91,9 +87,9 @@ export default `<div
             rel
             <div
               style="
+              left: 10px;
+              top: 10px;
               position: absolute;
-              right: 10px;
-              bottom: 10px;
               display: inline-block;
               "
             >absolute</div>

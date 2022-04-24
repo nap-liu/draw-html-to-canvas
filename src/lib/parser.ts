@@ -97,7 +97,10 @@ export default function parse(html: string) {
             const style = currentNode.style;
             (attrs[key] as string).replace(/\s*([^:]+)\s*:\s*([^;]+)\s*;?/g, (...args) => {
               const [, g1, g2] = args;
-              style.set(g1, g2);
+              if (/\/\*\s*/.test(g1)) {
+                return '';
+              }
+              style.set(g1.replace(/\*\/\s*/g, ''), g2);
               return '';
             })
           }

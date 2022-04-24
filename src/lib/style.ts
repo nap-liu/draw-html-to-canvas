@@ -1,9 +1,5 @@
 import Element from './element';
-import {
-  DEFAULT_FONT_FAMILY,
-  DEFAULT_FONT_SIZE,
-  DEFAULT_LINE_HEIGHT,
-} from './constants';
+import {DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType} from './constants';
 
 interface IRound<T = any> {
   top: T;
@@ -183,7 +179,7 @@ export default class Style {
       fontVariant,
       fontWeight,
       fontStretch,
-      lineHeight ? `${fontSize}/${lineHeight}` : fontSize,
+      lineHeight ? `${fontSize}px/${lineHeight}` : `${fontSize}px`,
       fontFamily,
     ].filter(i => i).join(' ');
   }
@@ -193,50 +189,64 @@ export default class Style {
     return parseInt(fontSize);
   }
 
-  // public get lineHeight() {
-  //   const lineHeight = this.style['line-height'] || DEFAULT_LINE_HEIGHT;
-  //   if (/px$/.test(lineHeight)) {
-  //     return parseFloat(lineHeight);
-  //   } else if (/^\d+(.\d+)?$/.test(lineHeight)) {
-  //     return parseFloat(lineHeight)
-  //   }
-  //   return +DEFAULT_LINE_HEIGHT;
-  // }
+  public get lineHeight() {
+    const lineHeight = this.style['line-height'] || DEFAULT_LINE_HEIGHT;
+    if (/px$/.test(lineHeight)) {
+      return parseFloat(lineHeight);
+    } else if (/^\d+(.\d+)?$/.test(lineHeight)) {
+      return parseFloat(lineHeight)
+    }
+    return +DEFAULT_LINE_HEIGHT;
+  }
 
   /**
    * 背景继承只局限于inline元素
    */
-  public get background() {
-    // const all = this.getInheritNode('background');
-    // let allIdx = -1;
-    // if (all.element) {
-    //   allIdx = all.element.style.styleIndex['background'];
+  public get background(): {
+    color: string;
+    image: string;
+    position: {
+      left: number;
+      top: number;
+    };
+    repeat: 'no-repeat' | 'repeat-x' | 'repeat-y';
+    size: {
+      width: number;
+      height: number;
+    }
+  } {
+    // if (this.element.nodeType === NodeType.TEXT_NODE) {
+    //   const parent = this.element.parentNode;
+    //   while (parent) {
+    //     if (parent.nodeType === NodeType.TEXT_NODE && parent.blockType === BlockType.inline) {
+    //       return parent.style.background;
+    //     } else {
+    //       return {};
+    //     }
+    //   }
+    //   return {};
     // }
-    // let image = this.getInheritNode('background-image');
-    // let imageIdx = -1;
-    // if (all.element) {
-    //   imageIdx = all.element.style.styleIndex['background-image'] || -1;
-    // }
-    // let color = this.getInheritNode('background-color');
-    // let colorIdx = -1;
-    // if (all.element) {
-    //   colorIdx = all.element.style.styleIndex['background-color'] || -1;
-    // }
-    // let position = this.getInheritNode('background-position');
-    // let positionIdx = -1;
-    // if (all.element) {
-    //   positionIdx = all.element.style.styleIndex['background-position'] || -1;
-    // }
-    // let size = this.getInheritNode('background-size');
-    // let sizeIdx = -1;
-    // if (all.element) {
-    //   sizeIdx = all.element.style.styleIndex['background-size'] || -1;
-    // }
-    // let repeat = this.getInheritNode('background-repeat');
-    // let repeatIdx = -1;
-    // if (all.element) {
-    //   repeatIdx = all.element.style.styleIndex['background-repeat'] || -1;
-    // }
+    if (this.element.nodeType === NodeType.TEXT_NODE && this.element.parentNode) {
+      return this.element.parentNode.style.background;
+    }
+
+    const all = this.style['background'];
+    let allIdx = this.styleIndex['background'] || -1;
+
+    let image = this.style['background-image'];
+    let imageIdx = this.styleIndex['background-image'] || -1;
+
+    let color = this.style['background-color'];
+    let colorIdx = this.styleIndex['background-color'] || -1;
+
+    let position = this.style['background-position'];
+    let positionIdx = this.styleIndex['background-position'] || -1;
+
+    let size = this.style['background-size'];
+    let sizeIdx = this.styleIndex['background-size'] || -1;
+
+    let repeat = this.style['background-repeat'];
+    let repeatIdx = this.styleIndex['background-repeat'] || -1;
 
     // console.log(all);
     /**
@@ -256,23 +266,22 @@ export default class Style {
      * <bg-size>
      * 参见 background-size
      */
-    // const full = `${all}`.split(/\s+/);
-    // background: url() #f00 left top no-repeat 100% auto
-    // if (allIdx > colorIdx) {
-    //   const matched = all.value.match(/(#([0-6a-f]{3,6})|rgba\(\s*[\d]{1,3}\s*,\s*[\d]{1,3}\s*,\s*[\d]{1,3}\s*,\s*\d*\.\d+\s*\)|rgb\(\s*[\d]{1,3}\s*,\s*[\d]{1,3}\s*,\s*[\d]{1,3}\s*\))/i);
-    //   // console.log(all, matched);
-    //   if (matched) {
-    //     color.value = matched[0];
-    //   }
-    // }
-    // return {
-    //   image: image.value,
-    //   color: color.value,
-    //   position: position.value,
-    //   size: size.value,
-    //   repeat: repeat.value,
-    // };
-    return {};
+    const full = `${all || ''}`.split(/\s+/);
+    // console.log(full);
+    for (let i = 0; i < full.length; i++) {
+      const item = full[i];
+      if (/#([a-z0-9]{3,6})/i.test(item) && colorIdx && allIdx > colorIdx) {
+        color = item;
+      }
+    }
+
+    return {
+      image,
+      color,
+      position,
+      size,
+      repeat,
+    } as any;
   }
 
   public get width() {
