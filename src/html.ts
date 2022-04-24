@@ -6,7 +6,7 @@ export default `<div
     /*white-space: nowrap;*/
     ;;
     width: 600px;
-    text-align: left;
+    text-align: center;
     font-family: 'PingFang SC';
    "
   id="renderTemplate"
@@ -56,22 +56,17 @@ export default `<div
               为什么会这样呢？ 是因为TCP的连接断开后 TCP的资源并没有立即释放，而是进入了TIME_WAIT状态，该状态是为了保证TCP的可靠关闭，该状态会持续2分钟
             </span>
             <div style="
-              /*width: 240px; */
-              ;;
-              ;;
-              /*float: left; */
               background: #0f0;
-              width: 800px;
+              float: left;
+              width: 240px;
               padding: 10px;
               margin: 10px;
              "
             >
               float 100
-              设置socket address重用，如果不设置的话重启的时候会报错
-              <div style="float: right">float: right</div>
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
+              <br>
+              设置socket address重用,123456
+              <div style="float: right; padding: 10px">float: right</div>
               设置socket address重用，如果不设置的话重启的时候会报错
             </div>
             <div style="height: 90px; float: left; background: #0f0; position: relative">

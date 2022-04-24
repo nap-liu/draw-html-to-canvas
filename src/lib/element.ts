@@ -317,6 +317,10 @@ export default class Element {
               element.shadows = [];
 
               while (text.length) {
+                if (line.restWidth <= 0) {
+                  line = this.newLine(line.width);
+                  continue;
+                }
                 textMetrics = element.getTextMetrics(context, lineText);
                 const textWidth = textMetrics.width;
                 if (textWidth <= line.restWidth) {
@@ -367,9 +371,10 @@ export default class Element {
               line.push(element);
             } else {
               // TODO 拆分inline元素样式到子元素
-              while (!line.append(element)) {
+              if (!line.append(element)) {
                 // inline元素
                 line = this.newLine(line.width);
+                line.push(element);
               }
               element.line = line;
             }
@@ -585,8 +590,10 @@ export default class Element {
     const blockType = this.blockType;
     let contentOffsetTop = 0;
     let contentOffsetLeft = 0;
+    let contentOffsetRight = 0;
     if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
       contentOffsetLeft = margin.left + border.left.width + padding.left;
+      contentOffsetRight = margin.right + border.right.width + padding.right;
       contentOffsetTop = margin.top + border.top.width + padding.top;
     } else if (blockType === BlockType.inline) {
       contentOffsetLeft = border.left.width + padding.left;
@@ -611,7 +618,7 @@ export default class Element {
       floats.right.forEach(float => {
         float.top = top;
         floatRight += float.offsetWidth;
-        float.left = line.width - floatRight;
+        float.left = this.contentWidth - floatRight + contentOffsetRight;
       })
       textFlows.forEach(el => {
         let offset = 0;
