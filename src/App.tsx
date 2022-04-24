@@ -2,6 +2,7 @@ import React, {useEffect, useLayoutEffect, useRef} from 'react';
 import html from './html';
 import Render from './lib';
 
+const scale = 1.5;
 export default function App() {
   const div = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -13,7 +14,6 @@ export default function App() {
       const context = canvas.current.getContext('2d');
       const rect = canvas.current.getBoundingClientRect();
       if (context) {
-        const scale = 1.5;
         context.clearRect(0, 0, rect.width * scale, rect.height * scale)
         context.scale(scale, scale);
         console.time('render.layout(context)');
@@ -30,13 +30,14 @@ export default function App() {
       window.render = render;
     }
   });
+  const size = 1200
   return (
     <>
       <div ref={div} dangerouslySetInnerHTML={{__html: html}} />
       <canvas
         ref={canvas}
-        width={1200}
-        height={2000}
+        width={size}
+        height={size * 2}
         style={{width: '100%', height: '100%', boxSizing: 'border-box', border: '1px solid #f00'}}
       />
     </>

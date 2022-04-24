@@ -139,15 +139,4 @@ export default class Line extends Array<Element> {
   get height() {
     return this.normalHeight;
   }
-
-  /**
-   * 当前行超出高度
-   */
-  get overflowHeight() {
-    const {floatHeight} = this;
-    if (floatHeight) {
-      return floatHeight - this.normalHeight;
-    }
-    return 0;
-  }
 }

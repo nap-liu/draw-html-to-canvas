@@ -1,6 +1,7 @@
-import {BlockType, DEFAULT_COLOR, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType, SupportElement} from './constants';
+import {BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, SupportElement} from './constants';
 import Style from './style';
 import Line from './line';
+import {randomColor} from './util';
 
 export default class Element {
   public nodeValue = '';
@@ -28,8 +29,12 @@ export default class Element {
   // @ts-ignore
   public root: Element;
 
+  // @ts-ignore
+  public blankTextMetric: { lineHeight: number; width: number };
+
   public lines: Line[] = [];
-  public line: Element | null = null;
+  public line: Line | null = null;
+  public lineElement: Element | null = null;
 
   public clone() {
     const e = new Element();
@@ -152,7 +157,11 @@ export default class Element {
     // TODO letter-spacing 支持
     context.font = this.style.canvasFont;
     const textMetrics = context.measureText(text);
-    const fontHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+    let fontHeight = textMetrics.fontBoundingBoxAscent + textMetrics.fontBoundingBoxDescent;
+    if (isNaN(fontHeight)) {
+      // 兼容不支持测量文字基线的canvas
+      fontHeight = this.style.fontSize;
+    }
     let lineHeight: string | number = this.style.getInheritStyle('line-height') || DEFAULT_LINE_HEIGHT;
     if (/px$/.test(lineHeight)) {
       lineHeight = parseFloat(lineHeight);
@@ -204,12 +213,13 @@ export default class Element {
    */
   public layoutInheritWidth(context: CanvasRenderingContext2D) {
     const blockType = this.blockType;
-    const {width} = this.style;
+    const {width, padding, border, margin} = this.style;
     if (!width) {
       if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
         const parent = this.getNearBlock();
+        const offset = padding.left + padding.right + border.left.width + border.right.width + margin.left + margin.right;
         if (parent) {
-          this.contentWidth = parent.contentWidth;
+          this.contentWidth = parent.contentWidth - offset;
         }
 
         if (blockType === BlockType.inlineBlock) {
@@ -285,9 +295,11 @@ export default class Element {
       this.lines = [];
       let line = this.newLine(this.contentWidth);
       const recursion = (element: Element) => {
-        element.line = this;
+        element.lineElement = this;
+        element.line = line;
         const childBlockType = element.blockType;
         if (element.nodeType === NodeType.TEXT_NODE) {
+          // TODO 浮动元素换行后 后续的文字可以使用剩余宽度
           let textMetrics = element.getTextMetrics(context, element.displayText)
           // 文字元素 计算文字宽度 无嵌套情况 无需递归
           if (isNoWrap) {
@@ -298,9 +310,12 @@ export default class Element {
             if (!line.append(element)) {
               // 拆分元素换行
               let text = element.displayText;
-              let lineText = text;
+              const step = text.length / Math.ceil(element.contentWidth / line.width);
+              let lineText = text.slice(0, step);
+              // let lineText = text;
               // 清空换行分割的临时元素
               element.shadows = [];
+
               while (text.length) {
                 textMetrics = element.getTextMetrics(context, lineText);
                 const textWidth = textMetrics.width;
@@ -316,9 +331,15 @@ export default class Element {
                   el.contentHeight = textMetrics.lineHeight;
                   line.push(el);
                   element.shadows.push(el);
+                  el.line = line;
+                  element.line = line;
                   el.shadow = element;
                   text = text.slice(lineText.length);
-                  lineText = text;
+                  if (text.length > step) {
+                    lineText = text.slice(0, step);
+                  } else {
+                    lineText = text;
+                  }
                 } else {
                   lineText = lineText.slice(0, -1);
                 }
@@ -331,44 +352,47 @@ export default class Element {
         } else if (element.nodeType === NodeType.ELEMENT_NODE && childBlockType === BlockType.inline) {
           if (element.nodeName === SupportElement.br || element.nodeName === SupportElement.hr) {
             // br\hr 元素 强制换行
-            const textMetrics = element.getTextMetrics(context, '');
-            element.contentHeight = textMetrics.lineHeight;
-            if (line.restWidth === 0) {
-              line = this.newLine(line.width);
-              line.push(element);
-              element.contentWidth = line.restWidth;
-            } else {
-              line.push(element);
-              element.contentWidth = line.restWidth;
-            }
-            // if (line.length) {
-            //   line = this.newLine(line.width);
-            // }
-            // line.push(element);
-            // element.contentWidth = line.width;
-            // element.contentHeight = lineHeight;
-            // line = this.newLine(line.width);
-          } else if (!line.append(element)) {
-            // inline元素
+            element.contentHeight = this.root.blankTextMetric.lineHeight;
+            // if (line.restWidth <= 0) {
             line = this.newLine(line.width);
             line.push(element);
+            element.line = line;
+            // element.contentWidth = line.restWidth;
+            // } else {
+            // line.push(element);
+            // element.contentWidth = line.restWidth;
+            // }
+          } else {
+            if (isNoWrap) {
+              line.push(element);
+            } else {
+              // TODO 拆分inline元素样式到子元素
+              while (!line.append(element)) {
+                // inline元素
+                line = this.newLine(line.width);
+              }
+              element.line = line;
+            }
+            // 递归计算子节点
+            element.children.forEach(recursion);
           }
-
-          // const idx = this.lines.length;
-          // 递归计算子节点
-          element.children.forEach(recursion);
-          // 递归的子节点 放到inline元素下
-          // element.lines = this.lines.slice(idx);
-          // 剩余的节点删除
-          // this.lines = this.lines.slice(0, idx);
         } else {
           // inline-block\block嵌套 递归布局
+          if (childBlockType === BlockType.inlineBlock) {
+            // inline block 是行内元素 自动换行排列 所以不需要继承上一行的float
+            element.line = null;
+          } else {
+            // block 是块元素 需要换行 但是文字需要排除溢出的float宽度 所以需要继承上一行的float
+            element.line = line;
+          }
+
           element.layoutInlineBlockWidth(context);
 
           if (childBlockType === BlockType.inlineBlock) {
             // 计算真正的inline-block占用宽度
 
             // TODO 宽度可能不准确 因为如果是手写是百分比宽度的话 则会出现异常
+            // TODO 块元素宽度应该不包含换行宽度
             if (!element.style.width) {
               element.contentWidth = Math.max(...element.lines.map(i => i.usedWidth));
             }
@@ -379,25 +403,58 @@ export default class Element {
             }
 
             if (element.style.isAbsolute) {
-              const relativeBlock = element.getNearRelativeBlock() || this.root;
+              let relativeBlock = element.getNearRelativeBlock() || this.root;
               const relLine = relativeBlock.lastLineOrNewLine(relativeBlock.contentWidth);
+              element.lineElement = relativeBlock;
+              element.line = relLine;
               relLine.push(element);
             } else {
-              if (!line.append(element)) {
-                line = this.newLine(line.width);
+              if (isNoWrap) {
                 line.push(element);
+              } else {
+                while (!line.append(element)) {
+                  line = this.newLine(line.width);
+                }
+                element.line = line;
               }
+
             }
           } else if (childBlockType === BlockType.block) {
             if (line.length) {
               line = this.newLine(line.width);
             }
             line.push(element);
+            element.line = line;
             line = this.newLine(line.width);
             // TODO 高度可能不准确 因为如果是手写是百分比高度的话 则会出现异常
             if (!element.style.height) {
               element.contentHeight = element.linesHeight;
             }
+          }
+
+          const childNewLine = element.newLine(line.width);
+          element.lines.pop();
+          const lastLine = element.lastLine();
+
+          // 子元素浮动超出文字布局 当前元素需要继承超出的float元素
+          if (lastLine && (lastLine.overLeftHeight || lastLine.overRightHeight)) {
+            const newLine = this.newLine(line.width);
+            if (childBlockType === BlockType.block) {
+
+              Object.assign(newLine, childNewLine);
+              line = newLine;
+
+            } else if (childBlockType === BlockType.inlineBlock) {
+              // 空行插入占位元素 填充剩余高度
+              const height = Math.max(lastLine.overLeftHeight, lastLine.overRightHeight);
+              const e = new Element()
+              e.nodeName = '#placholder';
+              e.nodeValue = '';
+              e.contentHeight = height;
+              newLine.push(e);
+            }
+
+            // console.log('last overflow', element.nodeValue, lastLine, newLine);
           }
         }
       }
@@ -423,9 +480,22 @@ export default class Element {
       line.width = width;
     }
 
-    const prev = this.lastLine();
+    let prev: Line | null = this.lastLine();
+
+    if (!prev) {
+      // 继承上一个父元素的float布局
+      prev = this.line;
+    }
 
     if (prev) {
+      if (prev.length === 0) {
+        // 上一行没有内容的话 则 向当前行插入一个换行元素
+        const br = new Element();
+        br.nodeName = SupportElement.br;
+        br.nodeType = NodeType.ELEMENT_NODE;
+        br.contentHeight = this.root ? this.root.blankTextMetric.lineHeight : this.blankTextMetric.lineHeight;
+        line.append(br);
+      }
       const {floats, normalHeight} = prev;
       // 上一行的overflow
       let idx = floats.left.slice().reverse().findIndex(i => i.offsetHeight > normalHeight);
@@ -452,7 +522,7 @@ export default class Element {
       }
 
       // 上一行有overflow元素
-      if (prev.overLeftHeight || prev.overRightHeight) {
+      if (prev.overLeftHeight > 0 || prev.overRightHeight > 0) {
         let lastOverflowIndex = -1;
         prev.holdLefts.forEach((el, index) => {
           const {offsetHeight} = el;
@@ -511,24 +581,28 @@ export default class Element {
 
   public layoutLinePosition() {
     const {margin, border, padding} = this.style;
+    const textAlign = this.style.getInheritStyle('text-align') || 'left';
     const blockType = this.blockType;
-    let offsetTop = 0;
-
-    // if (this.prevNode) {
-    //   offsetTop = this.prevNode.offsetHeight;
-    // }
+    let contentOffsetTop = 0;
+    let contentOffsetLeft = 0;
+    if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
+      contentOffsetLeft = margin.left + border.left.width + padding.left;
+      contentOffsetTop = margin.top + border.top.width + padding.top;
+    } else if (blockType === BlockType.inline) {
+      contentOffsetLeft = border.left.width + padding.left;
+    }
 
     /**
      * 每一行元素的left、top值
      */
-    let top = this.top + offsetTop;
+    let top = contentOffsetTop;
 
     const absolutes: Element[] = [];
     this.lines.forEach(line => {
-      let left = this.left + line.holdLeftWidth;
+      let left = line.holdLeftWidth + contentOffsetLeft;
       const {textFlows, floats, absolutes: lineAbsolutes} = line;
       let floatLeft = 0;
-      let floatRight = 0;
+      let floatRight = line.holdRightWidth;
       floats.left.forEach(float => {
         float.top = top;
         float.left = left + floatLeft;
@@ -540,17 +614,34 @@ export default class Element {
         float.left = line.width - floatRight;
       })
       textFlows.forEach(el => {
-        el.left = floatLeft + left;
+        let offset = 0;
+        // text-align
+        // 实际元素剩余宽度
+        const restWidth = this.contentWidth - line.usedWidth - line.holdLeftWidth - line.holdRightWidth;
+        if (el.blockType !== BlockType.block) {
+          // block元素独占一行 只有非block元素才需要重新计算坐标
+          if (textAlign === 'center') {
+            offset = restWidth / 2;
+          } else if (textAlign === 'right') {
+            offset = restWidth;
+          }
+        }
+        el.left = floatLeft + left + offset;
         el.top = top;
         left += el.offsetWidth;
       })
       line.forEach(el => {
         el.layoutLinePosition();
+        if (el.blockType === BlockType.block) {
+          // block前面有float元素偏移问题
+          el.left -= line.holdLeftWidth;
+        }
       });
       top += line.height;
       absolutes.push(...lineAbsolutes);
     });
 
+    // console.log(absolutes);
     absolutes.forEach(absolute => {
       const absoluteTop = absolute.style.get('top');
       const absoluteRight = absolute.style.get('right');
@@ -560,23 +651,22 @@ export default class Element {
       if (absoluteLeft && absoluteRight) {
         // 同时有左右
         const l = absolute.style.transformUnitToPx(absoluteLeft);
-        absolute.left = this.left + l;
+        absolute.left = l;
         absolute.contentWidth = this.contentWidth - l - absolute.style.transformUnitToPx(absoluteRight);
       } else if (absoluteLeft) {
-        absolute.left = this.left + absolute.style.transformUnitToPx(absoluteLeft)
+        absolute.left = absolute.style.transformUnitToPx(absoluteLeft)
       } else if (absoluteRight) {
-        absolute.left = (this.left + this.contentWidth) - absolute.offsetWidth - absolute.style.transformUnitToPx(absoluteRight)
+        absolute.left = (this.contentWidth) - absolute.offsetWidth - absolute.style.transformUnitToPx(absoluteRight)
       }
 
       if (absoluteTop && absoluteBottom) {
         const t = absolute.style.transformUnitToPx(absoluteTop);
-        absolute.top = this.top + t
+        absolute.top = t
         absolute.contentHeight = this.contentHeight - t - absolute.style.transformUnitToPx(absoluteBottom);
       } else if (absoluteTop) {
-        absolute.top = this.top + absolute.style.transformUnitToPx(absoluteTop);
+        absolute.top = absolute.style.transformUnitToPx(absoluteTop);
       } else if (absoluteBottom) {
-        absolute.top = (this.top + this.contentHeight) - absolute.offsetHeight - absolute.style.transformUnitToPx(absoluteBottom);
-        // absolute.contentHeight = (this.top + this.contentHeight) - absolute.offsetHeight - absolute.style.transformUnitToPx(absoluteBottom);
+        absolute.top = (this.contentHeight) - absolute.offsetHeight - absolute.style.transformUnitToPx(absoluteBottom);
       }
 
       absolute.layoutLinePosition();
@@ -592,18 +682,14 @@ export default class Element {
         context.font = this.style.canvasFont;
         context.textBaseline = textBaseline as any;
         context.fillStyle = color;
-        // const offset = (lineHeight - fontSize) / 2;
         const offset = 0;
-        context.fillText(this.displayText, this.left, this.top + offset);
-        context.strokeStyle = '#f00';
-        context.strokeRect(this.left, this.top, this.offsetWidth, this.offsetHeight);
-
-        // const background = this.style.background
-
+        context.fillText(this.displayText, this.offsetLeft, this.offsetTop);
+        context.strokeStyle = 'rgba(255,0,0,.5)';
+        context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
       }
     } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
       context.strokeStyle = '#00f';
-      context.strokeRect(this.left, this.top, this.offsetWidth, this.offsetHeight);
+      context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
     }
     this.lines.forEach(line => {
       line.forEach(el => {
@@ -614,6 +700,7 @@ export default class Element {
   }
 
   public layout(context: CanvasRenderingContext2D) {
+    this.blankTextMetric = this.getTextMetrics(context, '');
     /**
      * 裸文字宽度
      * 固定宽度
@@ -735,6 +822,28 @@ export default class Element {
     }
     return 0;
   };
+
+  /**
+   * 相对于页面的left
+   */
+  public get offsetLeft(): number {
+    if (this.lineElement) {
+      return this.lineElement.offsetLeft + this.left;
+    }
+    // console.log('offsetLeft no line', this);
+    return this.left;
+  }
+
+  /**
+   * 相对于页面的top
+   */
+  public get offsetTop(): number {
+    if (this.lineElement) {
+      return this.lineElement.offsetTop + this.top;
+    }
+    // console.log('offsetTop no line', this);
+    return this.top;
+  }
 
   public get innerHTML() {
     return '';
