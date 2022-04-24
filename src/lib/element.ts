@@ -1,7 +1,6 @@
 import {BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, SupportElement} from './constants';
 import Style from './style';
 import Line from './line';
-import {randomColor} from './util';
 
 export default class Element {
   public nodeValue = '';
@@ -655,27 +654,66 @@ export default class Element {
       const absoluteBottom = absolute.style.get('bottom');
       const absoluteLeft = absolute.style.get('left');
 
+      let target: Element = this;
+      // TODO 基于行元素定位
+      const shadows: Element[] = [target];
+      target.lineElement?.lines.forEach(line => {
+        line.forEach(i => {
+          if (i.parentNode === target) {
+            shadows.push(i);
+          }
+        })
+      });
+
+      const isInline = target.blockType === BlockType.inline;
+
+      if (shadows.length) {
+        console.log('relative', target, shadows, absolute);
+      }
+      /**
+       * 上下左右 全都写的情况下
+       * 有宽高 忽略左右
+       * 没宽高 适应宽高
+       */
       if (absoluteLeft && absoluteRight) {
         // 同时有左右
         const l = absolute.style.transformUnitToPx(absoluteLeft);
         absolute.left = l;
-        absolute.contentWidth = this.contentWidth - l - absolute.style.transformUnitToPx(absoluteRight);
+        if (!absolute.style.width) {
+          if (isInline) {
+            target = shadows[shadows.length - 1];
+          }
+          absolute.contentWidth = target.contentWidth - l - absolute.style.transformUnitToPx(absoluteRight);
+        }
       } else if (absoluteLeft) {
         absolute.left = absolute.style.transformUnitToPx(absoluteLeft)
       } else if (absoluteRight) {
-        absolute.left = (this.contentWidth) - absolute.offsetWidth - absolute.style.transformUnitToPx(absoluteRight)
+        if (isInline) {
+          target = shadows[shadows.length - 1];
+        }
+        absolute.left = target.contentWidth - absolute.offsetWidth - absolute.style.transformUnitToPx(absoluteRight)
       }
 
       if (absoluteTop && absoluteBottom) {
         const t = absolute.style.transformUnitToPx(absoluteTop);
         absolute.top = t
-        absolute.contentHeight = this.contentHeight - t - absolute.style.transformUnitToPx(absoluteBottom);
+        if (!absolute.style.height) {
+          if (isInline) {
+            target = shadows[shadows.length - 1];
+          } else {
+            absolute.contentHeight = target.contentHeight - t - absolute.style.transformUnitToPx(absoluteBottom);
+          }
+        }
       } else if (absoluteTop) {
         absolute.top = absolute.style.transformUnitToPx(absoluteTop);
       } else if (absoluteBottom) {
-        absolute.top = (this.contentHeight) - absolute.offsetHeight - absolute.style.transformUnitToPx(absoluteBottom);
+        if (isInline) {
+          target = shadows[shadows.length - 1];
+          absolute.top = target.top + target.offsetHeight - absolute.style.transformUnitToPx(absoluteBottom);
+        } else {
+          absolute.top = target.contentHeight - absolute.offsetHeight - absolute.style.transformUnitToPx(absoluteBottom);
+        }
       }
-
       absolute.layoutLinePosition();
     })
   }

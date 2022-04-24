@@ -14,7 +14,7 @@ export default function App() {
       const context = canvas.current.getContext('2d');
       const rect = canvas.current.getBoundingClientRect();
       if (context) {
-        context.clearRect(0, 0, rect.width * scale, rect.height * scale)
+        context.clearRect(0, 0, rect.width * scale * 10, rect.height * scale * 10)
         context.scale(scale, scale);
         console.time('render.layout(context)');
         render.rootNode.style.set('width', '500px');

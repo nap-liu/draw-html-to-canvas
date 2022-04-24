@@ -3,7 +3,6 @@ export default `<div
     border: 1px solid #000;
     display: block;
     /*height: 100%;*/
-    /*white-space: nowrap;*/
     ;;
     width: 600px;
     text-align: center;
@@ -14,7 +13,7 @@ export default `<div
   <!--    <div style="height: 100px; width: 10%; background: #f00"></div>-->
   <div style="display: inline; background: #ff0">
     1
-    <div style="display: inline">
+    <div style="display: inline;">
       inline
       <div style="display: inline-block;">
         <div style="">
@@ -43,7 +42,7 @@ export default `<div
                 setsocketopt函数 设置socket工作参数
               </span>
             </div>
-            <span style="background: #D2691E">错误代码1 EADDRINUSE</span>
+            <span style="background: #D2691E;">错误代码1 EADDRINUSE</span>
             <span style="background: #5F9EA0">提示信息1 Address already in use</span>
             <div style="background: #ccc">block
               设置socket address重用，如果不设置的话重启的时候会报错
@@ -86,13 +85,15 @@ export default `<div
           </div>
         </div>
         <div style="width: 240px; text-align: left; display: inline-block">
-          <span style="position: relative; ">
-            position: relative
+          <span style="position: relative;">
+            position: 
+            <br>
+            rel
             <div
               style="
               position: absolute;
-              left: 10px;
-              top: 10px;
+              right: 10px;
+              bottom: 10px;
               display: inline-block;
               "
             >absolute</div>
