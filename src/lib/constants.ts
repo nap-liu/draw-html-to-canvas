@@ -44,5 +44,49 @@ export enum SupportElement {
   span = 'span',
 }
 
+export const REG_COLOR = /rgba\(\s*(\d{1,3}\s*,\s*){3}\s*(\d|\.\d+|\d\.\d+)\s*\)|rgb\(\s*(\d{1,3}\s*,\s*){3}\s*\)|((#[a-z0-9]{3})|(#[a-z0-9]{6}))/i;
+export const REG_PX = /px$/i;
+export const REG_PCT = /%$/;
+export const REG_REM = /rem$/i;
+export const REG_EM = /em$/i;
+export const REG_NUM = /^\d+(.\d+)?$/;
+export const REG_URL = /url\(('([^']*)'|("[^"]*"))\)/i;
+export const REG_REPEAT = /repeat|repeat-y|repeat-x|no-repeat/i;
+export const REG_BG_ATTACHMENT = /scroll|fixed|local/i;
+export const REG_BG_CLIP = /border-box|padding-box|content-box/i;
+export const REG_BG_POSITION_SIZE = /\s*((left|center|right|top|bottom)|((\d+)(%|px)))\s*((left|center|right|top|bottom)|((\d+)(%|px)))?(\s*\/\s*((auto|cover|contain)|((\d+)(%|px)))\s*((auto|cover|contain)|((\d+)(%|px))))?/i;
 
 export type SupportElementType = Element | ElementImage;
+
+export enum BackgroundPosition {
+  left = 'left',
+  center = 'center',
+  right = 'right',
+  top = 'top',
+  bottom = 'bottom',
+}
+
+export enum BackgroundSize {
+  auto = 'auto',
+  cover = 'cover',
+  contain = 'contain',
+}
+
+export enum BackgroundRepeat {
+  repeat = 'repeat',
+  noRepeat = 'no-repeat',
+  repeatX = 'repeat-x',
+  repeatY = 'repeat-y',
+}
+
+export enum BackgroundClip {
+  borderBox = 'border-box',
+  paddingBox = 'padding-box',
+  contentBox = 'content-box',
+}
+
+export enum BackgroundAttachment {
+  scroll = 'scroll',
+  fixed = 'fixed',
+  local = 'local',
+}

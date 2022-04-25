@@ -1,6 +1,13 @@
-import {BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, SupportElement} from './constants';
+import {
+  BlockType,
+  DEFAULT_COLOR, DEFAULT_LINE_HEIGHT,
+  NodeType,
+  REG_NUM, REG_PCT, REG_PX,
+  SupportElement,
+} from './constants';
 import Style from './style';
 import Line from './line';
+import LineManger from './line-manger';
 
 export default class Element {
   public nodeValue = '';
@@ -31,7 +38,7 @@ export default class Element {
   // @ts-ignore
   public textMetric: { lineHeight: number; width: number };
 
-  public lines: Line[] = [];
+  public lines = new LineManger(this);
   public line: Line | null = null;
   public lineElement: Element | null = null;
 
@@ -152,25 +159,170 @@ export default class Element {
     return Math.max(maxBlockWidth, inlineWidth);
   }
 
-  public getTextMetrics2(context: CanvasRenderingContext2D, text: string) {
-    // TODO letter-spacing 支持
-    context.font = this.style.canvasFont;
-    const textMetrics = context.measureText(text || '1');
-    let fontHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
-    if (isNaN(fontHeight)) {
-      // 兼容不支持测量文字基线的canvas
-      fontHeight = this.style.fontSize;
+  public draw(context: CanvasRenderingContext2D) {
+    const {background: backgroundList, margin, border, padding, fontSize, lineHeight} = this.style;
+    // console.log(background, this.displayText, this);
+    // const offset = fontSize - lineHeight;
+    const offset = 0;
+
+    backgroundList.forEach(background => {
+      if (background.color) {
+        context.fillStyle = background.color;
+        // console.log(offset, fontSize, lineHeight);
+        context.fillRect(
+          this.offsetLeft + margin.left + border.left.width,
+          this.offsetTop + margin.top + border.top.width,
+          this.offsetWidth - (margin.left + margin.right),
+          this.offsetHeight - (margin.top + margin.bottom) - offset,
+        );
+      }
+    })
+
+    // if (border.left.width) {
+    //
+    // } else if () {
+    //
+    // }
+
+    if (this.nodeType === NodeType.TEXT_NODE) {
+      const {displayText} = this;
+      if (displayText) {
+        const textBaseline = this.style.get('vertical-align') || 'top';
+        const color = this.style.getInheritStyle('color') || DEFAULT_COLOR;
+        context.font = this.style.canvasFont;
+        context.textBaseline = textBaseline as any;
+        context.fillStyle = color;
+        context.fillText(this.displayText, this.offsetLeft, this.offsetTop);
+        context.strokeStyle = 'rgba(255,0,0,.5)';
+        context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
+      }
+    } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
+      context.strokeStyle = '#00f';
+      context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
     }
-    let lineHeight: string | number = this.style.getInheritStyle('line-height') || DEFAULT_LINE_HEIGHT;
-    if (/px$/.test(lineHeight)) {
-      lineHeight = parseFloat(lineHeight);
-    } else if (/^\d+(.\d+)?$/.test(lineHeight)) {
-      lineHeight = parseFloat(lineHeight) * fontHeight;
+
+    this.lines.forEach(line => {
+      line.textFlows.forEach(el => el.draw(context));
+      // line.floats.all.forEach(el => el.draw(context));
+      // line.absolutes.forEach(el => el.draw(context));
+    })
+    this.lines.forEach(line => {
+      // line.textFlows.forEach(el => el.draw(context));
+      line.floats.all.forEach(el => el.draw(context));
+      // line.absolutes.forEach(el => el.draw(context));
+    })
+    this.lines.forEach(line => {
+      // line.textFlows.forEach(el => el.draw(context));
+      // line.floats.all.forEach(el => el.draw(context));
+      line.absolutes.forEach(el => el.draw(context));
+    })
+  }
+
+  /**
+   * 显示文字 处理换行问题
+   */
+  public get displayText() {
+    const text = this.nodeValue.replace(/\s+/g, ' ');
+    return text === ' ' ? '' : text;
+  }
+
+  /**
+   * 元素类型
+   * float|absolute元素算作inline-block
+   * flex|block|inline|inline-block
+   */
+  public get blockType(): BlockType {
+    const display = this.style.get('display');
+    if (this.style.isAbsolute || this.style.isFloat) {
+      return BlockType.inlineBlock;
+    } else if (display) {
+      // TODO 其他类型支持
+      return display as BlockType;
+    } else if (this.nodeType === NodeType.ELEMENT_NODE || this.nodeType === NodeType.DOCUMENT_NODE) {
+      if (/^(span|i|br|strong|a)$/.test(this.nodeName)) {
+        return BlockType.inline;
+      } else if (/^(img|input|select)$/.test(this.nodeName)) {
+        return BlockType.inlineBlock;
+      }
+      return BlockType.block;
+    } else if (this.nodeType === NodeType.TEXT_NODE) {
+      return BlockType.inline;
     }
-    return {
-      width: text ? textMetrics.width : 0,
-      lineHeight: lineHeight as number,
-    };
+    return BlockType.inline;
+  }
+
+  /**
+   * block/inline-block = margin + border + padding + content
+   * inline = border + padding + content
+   * textNode = textWidth
+   */
+  public get offsetWidth(): number {
+    const blockType = this.blockType;
+    if (this.nodeType === NodeType.TEXT_NODE) {
+      return this.contentWidth;
+    }
+    const {margin, padding, border} = this.style;
+    if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
+      return this.contentWidth + margin.left + margin.right + border.left.width + border.right.width + padding.left + padding.right;
+    } else if (blockType === BlockType.inline) {
+      return this.contentWidth + border.left.width + border.right.width + padding.left + padding.right;
+    }
+    return 0;
+  };
+
+  /**
+   * block/inline-block = margin + border + padding + content
+   * inline = border + padding + content
+   * textNode = textWidth
+   */
+  public get offsetHeight(): number {
+    const blockType = this.blockType;
+    if (this.nodeType === NodeType.TEXT_NODE) {
+      return this.contentHeight;
+    }
+    const {margin, padding, border} = this.style;
+    if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
+      return this.contentHeight + margin.top + margin.bottom + border.top.width + border.bottom.width + padding.top + padding.bottom;
+    } else if (blockType === BlockType.inline) {
+      return this.contentHeight;
+    }
+    return 0;
+  };
+
+  /**
+   * 相对于页面的left
+   */
+  public get offsetLeft(): number {
+    if (this.lineElement) {
+      return this.lineElement.offsetLeft + this.left;
+    }
+    return this.left;
+  }
+
+  /**
+   * 相对于页面的top
+   */
+  public get offsetTop(): number {
+    if (this.lineElement) {
+      return this.lineElement.offsetTop + this.top;
+    }
+    return this.top;
+  }
+
+  public get innerHTML() {
+    return '';
+  }
+
+  public set innerHTML(value) {
+
+  }
+
+  public get firstChild() {
+    return this.children[0];
+  }
+
+  public get lastChild() {
+    return this.children[this.children.length - 1];
   }
 
   public getTextMetrics(context: CanvasRenderingContext2D, text: string) {
@@ -184,9 +336,9 @@ export default class Element {
       fontHeight = this.style.fontSize;
     }
     let lineHeight: string | number = this.style.getInheritStyle('line-height') || DEFAULT_LINE_HEIGHT;
-    if (/px$/.test(lineHeight)) {
+    if (REG_PX.test(lineHeight)) {
       lineHeight = parseFloat(lineHeight);
-    } else if (/^\d+(.\d+)?$/.test(lineHeight)) {
+    } else if (REG_NUM.test(lineHeight)) {
       lineHeight = parseFloat(lineHeight) * fontHeight;
     }
     return {
@@ -213,7 +365,7 @@ export default class Element {
       this.textMetric = textMetrics;
     } else if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
       const {width, height} = this.style;
-      if (/px$/.test(width)) {
+      if (REG_PX.test(width)) {
         // 固定尺寸
         this.contentWidth = this.style.transformUnitToPx(width);
 
@@ -222,7 +374,7 @@ export default class Element {
 
         }
       }
-      if (/px$/.test(height)) {
+      if (REG_PX.test(height)) {
         this.contentHeight = this.style.transformUnitToPx(height);
       }
     }
@@ -262,7 +414,7 @@ export default class Element {
     const blockType = this.blockType;
     if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
       const {width} = this.style;
-      if (/%$/.test(width)) {
+      if (REG_PCT.test(width)) {
         // 百分比计算
         const parent = this.getNearBlock();
         if (parent) {
@@ -270,7 +422,7 @@ export default class Element {
           this.contentWidth = this.style.transformUnitToPx(width, parent.contentWidth);
         }
       }
-      if (/%$/.test(width)) {
+      if (REG_PCT.test(width)) {
         // 百分比计算
         const parent = this.getNearBlock();
         if (parent && parent.contentHeight) {
@@ -309,8 +461,8 @@ export default class Element {
 
     if (blockType === BlockType.inlineBlock || blockType === BlockType.block) {
       // 重置行
-      this.lines = [];
-      let line = this.newLine(this.contentWidth);
+      this.lines = new LineManger(this);
+      let line = this.lines.newLine(this.contentWidth);
       const recursion = (element: Element) => {
         element.lineElement = this;
         element.line = line;
@@ -334,10 +486,10 @@ export default class Element {
 
               while (text.length) {
                 if (line.restWidth <= 0) {
-                  line = this.newLine(line.width);
+                  line = this.lines.newLine(line.width);
                   continue;
                 } else if (lineText === '') {
-                  line = this.newLine(line.width);
+                  line = this.lines.newLine(line.width);
                   lineText = text;
                   continue;
                 }
@@ -376,7 +528,7 @@ export default class Element {
             // br\hr 元素 强制换行
             element.contentHeight = this.root.textMetric.lineHeight;
             // if (line.restWidth <= 0) {
-            line = this.newLine(line.width);
+            line = this.lines.newLine(line.width);
             line.push(element);
             element.line = line;
             // element.contentWidth = line.restWidth;
@@ -391,14 +543,14 @@ export default class Element {
               element.children.forEach(recursion);
             } else {
               const splitPush = () => {
-                let lastLine = this.lastLine();
+                let lastLine = this.lines.lastLine();
                 const half = element.clone();
                 half.shadow = element;
                 element.shadows.push(half);
                 half.contentWidth -= half.offsetWidth / 2;
                 if (!lastLine.append(half)) {
                   // inline元素
-                  lastLine = this.newLine(line.width);
+                  lastLine = this.lines.newLine(line.width);
                   lastLine.push(half);
                 }
                 half.line = lastLine;
@@ -439,12 +591,12 @@ export default class Element {
 
             // TODO 高度可能不准确 因为如果是手写是百分比高度的话 则会出现异常
             if (!element.style.height) {
-              element.contentHeight = element.linesHeight;
+              element.contentHeight = element.lines.linesHeight;
             }
 
             if (element.style.isAbsolute) {
               let relativeBlock = element.getNearRelativeBlock() || this.root;
-              const relLine = relativeBlock.lastLineOrNewLine(relativeBlock.contentWidth);
+              const relLine = relativeBlock.lines.lastLineOrNewLine(relativeBlock.contentWidth);
               element.lineElement = relativeBlock;
               element.line = relLine;
               relLine.push(element);
@@ -453,7 +605,7 @@ export default class Element {
                 line.push(element);
               } else {
                 while (!line.append(element)) {
-                  line = this.newLine(line.width);
+                  line = this.lines.newLine(line.width);
                 }
                 element.line = line;
               }
@@ -461,24 +613,24 @@ export default class Element {
             }
           } else if (childBlockType === BlockType.block) {
             if (line.length) {
-              line = this.newLine(line.width);
+              line = this.lines.newLine(line.width);
             }
             line.push(element);
             element.line = line;
-            line = this.newLine(line.width);
+            line = this.lines.newLine(line.width);
             // TODO 高度可能不准确 因为如果是手写是百分比高度的话 则会出现异常
             if (!element.style.height) {
-              element.contentHeight = element.linesHeight;
+              element.contentHeight = element.lines.linesHeight;
             }
           }
 
-          const childNewLine = element.newLine(line.width);
+          const childNewLine = element.lines.newLine(line.width);
           element.lines.pop();
-          const lastLine = element.lastLine();
+          const lastLine = element.lines.lastLine();
 
           // 子元素浮动超出文字布局 当前元素需要继承超出的float元素
           if (lastLine && (lastLine.overLeftHeight || lastLine.overRightHeight)) {
-            const newLine = this.newLine(line.width);
+            const newLine = this.lines.newLine(line.width);
             if (childBlockType === BlockType.block) {
 
               Object.assign(newLine, childNewLine);
@@ -502,122 +654,13 @@ export default class Element {
 
       // TODO 百分比高度会有问题
       if (!this.style.height) {
-        this.contentHeight = this.linesHeight;
+        this.contentHeight = this.lines.linesHeight;
       }
 
     } else {
       this.children.forEach(e => e.layoutInlineBlockWidth(context));
     }
     return;
-  }
-
-  public lastLine() {
-    return this.lines[this.lines.length - 1];
-  }
-
-  public newLine(width: number) {
-    const line = new Line();
-    if (width) {
-      line.width = width;
-    }
-
-    let prev: Line | null = this.lastLine();
-
-    if (!prev) {
-      // 继承上一个父元素的float布局
-      prev = this.line;
-    }
-
-    if (prev) {
-      if (prev.length === 0) {
-        // 上一行没有内容的话 则 向当前行插入一个换行元素
-        const br = new Element();
-        br.nodeName = SupportElement.br;
-        br.nodeType = NodeType.ELEMENT_NODE;
-        br.contentHeight = this.root ? this.root.textMetric.lineHeight : this.textMetric.lineHeight;
-        line.append(br);
-      }
-      const {floats, normalHeight} = prev;
-      // 上一行的overflow
-      let idx = floats.left.slice().reverse().findIndex(i => i.offsetHeight > normalHeight);
-      if (idx > -1) {
-        const left = floats.left.slice(0, floats.left.length - idx);
-        prev.holdLefts.push(...left);
-      }
-
-      idx = floats.right.slice().reverse().findIndex(i => i.offsetHeight > normalHeight);
-      if (idx > -1) {
-        const right = floats.right.slice(0, floats.right.length - idx);
-        prev.holdRights.push(...right);
-      }
-
-      let maxOverflow = Math.max(...prev.holdLefts.map(i => i.offsetHeight));
-      if (maxOverflow > 0) {
-        prev.overLeftHeight = maxOverflow - normalHeight;
-      }
-
-      maxOverflow = 0;
-      maxOverflow = Math.max(...prev.holdRights.map(i => i.offsetHeight));
-      if (maxOverflow > 0) {
-        prev.overRightHeight = maxOverflow - normalHeight;
-      }
-
-      // 上一行有overflow元素
-      if (prev.overLeftHeight > 0 || prev.overRightHeight > 0) {
-        let lastOverflowIndex = -1;
-        prev.holdLefts.forEach((el, index) => {
-          const {offsetHeight} = el;
-          if (offsetHeight - normalHeight > 0) {
-            lastOverflowIndex = index;
-          }
-        }, 0);
-
-        // 继承上一行的overflow元素 和 元素宽度
-        if (lastOverflowIndex !== -1) {
-          // 继承左浮动元素
-          line.holdLefts = prev.holdLefts.slice(0, lastOverflowIndex + 1).map(i => {
-            const clone = i.clone();
-            line.holdLeftWidth += i.offsetWidth;
-            clone.contentHeight -= normalHeight;
-            return clone;
-          });
-        }
-
-        lastOverflowIndex = -1;
-        // 继承上一行的float overflow元素宽度
-        prev.holdRights.forEach((el, index) => {
-          const {offsetHeight} = el;
-          if (offsetHeight - normalHeight > 0) {
-            lastOverflowIndex = index;
-          }
-        });
-
-        // 继承上一行的overflow元素
-        if (lastOverflowIndex !== -1) {
-          // 继承右浮动元素
-          line.holdRights = prev.holdRights.slice(0, lastOverflowIndex + 1).map(i => {
-            const clone = i.clone();
-            line.holdRightWidth += i.offsetWidth;
-            clone.contentHeight -= normalHeight;
-            return clone;
-          });
-        }
-      }
-    }
-    this.lines.push(line);
-    return line;
-  }
-
-  public lastLineOrNewLine(width: number) {
-    const line = this.lastLine();
-    return line || this.newLine(width);
-  }
-
-  public get linesHeight() {
-    return this.lines.reduce((total, line) => {
-      total += line.height;
-      return total;
-    }, 0)
   }
 
   public layoutLinePosition() {
@@ -781,62 +824,6 @@ export default class Element {
     })
   }
 
-  public draw(context: CanvasRenderingContext2D) {
-    const {background, margin, border, padding, fontSize, lineHeight} = this.style;
-    // console.log(background, this.displayText, this);
-    // const offset = fontSize - lineHeight;
-    const offset = 0;
-    if (background.color) {
-      context.fillStyle = background.color;
-      // console.log(offset, fontSize, lineHeight);
-      context.fillRect(
-        this.offsetLeft + margin.left + border.left.width,
-        this.offsetTop + margin.top + border.top.width,
-        this.offsetWidth - (margin.left + margin.right),
-        this.offsetHeight - (margin.top + margin.bottom) - offset,
-      );
-    }
-
-    // if (border.left.width) {
-    //
-    // } else if () {
-    //
-    // }
-
-    if (this.nodeType === NodeType.TEXT_NODE) {
-      const {displayText} = this;
-      if (displayText) {
-        const textBaseline = this.style.get('vertical-align') || 'top';
-        const color = this.style.getInheritStyle('color') || DEFAULT_COLOR;
-        context.font = this.style.canvasFont;
-        context.textBaseline = textBaseline as any;
-        context.fillStyle = color;
-        context.fillText(this.displayText, this.offsetLeft, this.offsetTop);
-        context.strokeStyle = 'rgba(255,0,0,.5)';
-        context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
-      }
-    } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
-      context.strokeStyle = '#00f';
-      context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
-    }
-
-    this.lines.forEach(line => {
-      line.textFlows.forEach(el => el.draw(context));
-      // line.floats.all.forEach(el => el.draw(context));
-      // line.absolutes.forEach(el => el.draw(context));
-    })
-    this.lines.forEach(line => {
-      // line.textFlows.forEach(el => el.draw(context));
-      line.floats.all.forEach(el => el.draw(context));
-      // line.absolutes.forEach(el => el.draw(context));
-    })
-    this.lines.forEach(line => {
-      // line.textFlows.forEach(el => el.draw(context));
-      // line.floats.all.forEach(el => el.draw(context));
-      line.absolutes.forEach(el => el.draw(context));
-    })
-  }
-
   public layout(context: CanvasRenderingContext2D) {
     this.textMetric = this.getTextMetrics(context, '');
     /**
@@ -883,112 +870,5 @@ export default class Element {
      * 计算行内元素 坐标起点
      */
     this.layoutLinePosition();
-  }
-
-  /**
-   * 显示文字 处理换行问题
-   */
-  public get displayText() {
-    const text = this.nodeValue.replace(/\s+/g, ' ');
-    return text === ' ' ? '' : text;
-  }
-
-  /**
-   * 元素类型
-   * float|absolute元素算作inline-block
-   * flex|block|inline|inline-block
-   */
-  public get blockType(): BlockType {
-    const display = this.style.get('display');
-    if (this.style.isAbsolute || this.style.isFloat) {
-      return BlockType.inlineBlock;
-    } else if (display) {
-      // TODO 其他类型支持
-      return display as BlockType;
-    } else if (this.nodeType === NodeType.ELEMENT_NODE || this.nodeType === NodeType.DOCUMENT_NODE) {
-      if (/^(span|i|br|strong|a)$/.test(this.nodeName)) {
-        return BlockType.inline;
-      } else if (/^(img|input|select)$/.test(this.nodeName)) {
-        return BlockType.inlineBlock;
-      }
-      return BlockType.block;
-    } else if (this.nodeType === NodeType.TEXT_NODE) {
-      return BlockType.inline;
-    }
-    return BlockType.inline;
-  }
-
-  /**
-   * block/inline-block = margin + border + padding + content
-   * inline = border + padding + content
-   * textNode = textWidth
-   */
-  public get offsetWidth(): number {
-    const blockType = this.blockType;
-    if (this.nodeType === NodeType.TEXT_NODE) {
-      return this.contentWidth;
-    }
-    const {margin, padding, border} = this.style;
-    if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
-      return this.contentWidth + margin.left + margin.right + border.left.width + border.right.width + padding.left + padding.right;
-    } else if (blockType === BlockType.inline) {
-      return this.contentWidth + border.left.width + border.right.width + padding.left + padding.right;
-    }
-    return 0;
-  };
-
-  /**
-   * block/inline-block = margin + border + padding + content
-   * inline = border + padding + content
-   * textNode = textWidth
-   */
-  public get offsetHeight(): number {
-    const blockType = this.blockType;
-    if (this.nodeType === NodeType.TEXT_NODE) {
-      return this.contentHeight;
-    }
-    const {margin, padding, border} = this.style;
-    if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
-      return this.contentHeight + margin.top + margin.bottom + border.top.width + border.bottom.width + padding.top + padding.bottom;
-    } else if (blockType === BlockType.inline) {
-      return this.contentHeight;
-    }
-    return 0;
-  };
-
-  /**
-   * 相对于页面的left
-   */
-  public get offsetLeft(): number {
-    if (this.lineElement) {
-      return this.lineElement.offsetLeft + this.left;
-    }
-    return this.left;
-  }
-
-  /**
-   * 相对于页面的top
-   */
-  public get offsetTop(): number {
-    if (this.lineElement) {
-      return this.lineElement.offsetTop + this.top;
-    }
-    return this.top;
-  }
-
-  public get innerHTML() {
-    return '';
-  }
-
-  public set innerHTML(value) {
-
-  }
-
-  public get firstChild() {
-    return this.children[0];
-  }
-
-  public get lastChild() {
-    return this.children[this.children.length - 1];
   }
 }

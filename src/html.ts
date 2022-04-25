@@ -5,15 +5,16 @@ export default `<div
     /* height: 100%;*/
      text-align: left;
     /*font-family: 'PingFang SC';*/
+    background: #f00 url('12456') left  / 100% auto no-repeat fixed border-box;
    "
   id="renderTemplate"
 >
-  <div style="display: inline; background: #ff0">
+  <div style="display: none; background: #ff0">
     1
     <div style="display: inline;">
       in<br>line
       <div style="display: inline-block;">
-        <div style="display: none">
+        <div style="">
           <div style="display: inline">
             <span style="background: #BC8F8F;  padding: 0 10px">
               setsocketopt函数 设置socket工作参数
@@ -92,7 +93,7 @@ export default `<div
           </div>
         </div>
         <div style="width: 200px; text-align: center; float: left; ">
-          <span style="position: relative; display: inline; background: #f00">
+          <span style="position: relative; display: inline; ">
             position: 1
             <br>
             position: 2222
@@ -100,7 +101,7 @@ export default `<div
             position: 3333333
             <div
               style="
-              background: rgba(0,0,0,.5);
+              /*background: rgba(0,0,0,.5);*/
               /*left: 10px;*/
               right: 10px;
               /*top: 10px;*/
@@ -118,7 +119,7 @@ export default `<div
     </div>
     7
   </div>
-  <div style="text-align: left">8</div>
+  <div style="text-align: left; display: none">8</div>
 </div>`
 
 export const html3 = `<div style="width: 500px; background-color: #f00"><div style="margin: 0 auto; width: 10px">123456</div></div>

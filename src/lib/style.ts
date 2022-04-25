@@ -1,5 +1,5 @@
-import Element from './element';
-import {BlockType, DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType} from './constants';
+import BaseElement from './element';
+import {BackgroundAttachment, BackgroundClip, BackgroundPosition, BackgroundRepeat, BackgroundSize, BlockType, DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType, REG_BG_ATTACHMENT, REG_BG_CLIP, REG_BG_POSITION_SIZE, REG_COLOR, REG_EM, REG_PCT, REG_PX, REG_REM, REG_REPEAT, REG_URL} from './constants';
 
 interface IRound<T = any> {
   top: T;
@@ -16,6 +16,23 @@ interface IBorder {
   color: string;
 }
 
+interface IBackground<T = string | number> {
+  color: string;
+  image: string;
+  position: {
+    left: T;
+    top: T;
+  };
+  size: {
+    width: T;
+    height: T;
+  }
+  repeat: BackgroundRepeat;
+  attachment: BackgroundAttachment;
+  origin: BackgroundClip;
+  clip: BackgroundClip;
+}
+
 /**
  * 样式处理
  */
@@ -23,9 +40,9 @@ export default class Style {
   private style: { [x: string]: string } = {};
   private styleIndex: { [x: string]: number } = {};
   private index = 0;
-  private element: Element;
+  private element: BaseElement;
 
-  public constructor(element: Element) {
+  public constructor(element: BaseElement) {
     this.element = element;
   }
 
@@ -38,7 +55,7 @@ export default class Style {
   }
 
   public getInheritNode(style: string) {
-    let element: Element | null = this.element;
+    let element: BaseElement | null = this.element;
     while (element) {
       const value = element.style.get(style);
       if (value && value !== 'inherit') {
@@ -155,17 +172,17 @@ export default class Style {
     if (!unit || unit === '0') {
       return 0;
     }
-    if (/px$/.test(unit)) {
+    if (REG_PX.test(unit)) {
       return parseInt(unit);
     }
     if (!base) {
       throw new Error(`missing unit [${unit}]`);
     }
-    if (/%$/.test(unit)) {
+    if (REG_PCT.test(unit)) {
       return base * parseInt(unit) / 100;
-    } else if (/rem$/.test(unit)) {
+    } else if (REG_REM.test(unit)) {
       return base * parseInt(unit);
-    } else if (/em$/.test(unit)) {
+    } else if (REG_EM.test(unit)) {
       return base * parseInt(unit);
     } else {
       return parseInt(unit);
@@ -198,7 +215,7 @@ export default class Style {
 
   public get lineHeight() {
     const lineHeight = this.style['line-height'] || DEFAULT_LINE_HEIGHT;
-    if (/px$/.test(lineHeight)) {
+    if (REG_PX.test(lineHeight)) {
       return parseFloat(lineHeight);
     } else if (/^\d+(.\d+)?$/.test(lineHeight)) {
       return parseFloat(lineHeight)
@@ -209,19 +226,7 @@ export default class Style {
   /**
    * 背景继承只局限于inline元素
    */
-  public get background(): {
-    color: string;
-    image: string;
-    position: {
-      left: number;
-      top: number;
-    };
-    repeat: 'no-repeat' | 'repeat-x' | 'repeat-y';
-    size: {
-      width: number;
-      height: number;
-    }
-  } {
+  public get background(): IBackground[] {
     if (this.element.nodeType === NodeType.TEXT_NODE &&
       this.element.parentNode && this.element.parentNode.blockType === BlockType.inline) {
       return this.element.parentNode.style.background;
@@ -230,55 +235,102 @@ export default class Style {
     const all = this.style['background'];
     let allIdx = this.styleIndex['background'] || -1;
 
-    let image = this.style['background-image'];
-    let imageIdx = this.styleIndex['background-image'] || -1;
-
-    let color = this.style['background-color'];
-    let colorIdx = this.styleIndex['background-color'] || -1;
-
-    let position = this.style['background-position'];
-    let positionIdx = this.styleIndex['background-position'] || -1;
-
-    let size = this.style['background-size'];
-    let sizeIdx = this.styleIndex['background-size'] || -1;
-
-    let repeat = this.style['background-repeat'];
-    let repeatIdx = this.styleIndex['background-repeat'] || -1;
+    // let image = this.style['background-image'];
+    // let imageIdx = this.styleIndex['background-image'] || -1;
+    //
+    // let color = this.style['background-color'];
+    // let colorIdx = this.styleIndex['background-color'] || -1;
+    //
+    // let position = this.style['background-position'];
+    // let positionIdx = this.styleIndex['background-position'] || -1;
+    //
+    // let size = this.style['background-size'];
+    // let sizeIdx = this.styleIndex['background-size'] || -1;
+    //
+    // let repeat = this.style['background-repeat'];
+    // let repeatIdx = this.styleIndex['background-repeat'] || -1;
 
     // console.log(all);
-    /**
-     * 下面的一个或多个值，可以按任意顺序放置：
-     * <attachment>
-     * 参见 background-attachment
-     * <box>
-     * 参见 background-clip 和 background-origin
-     * <background-color>
-     * 参见 background-color
-     * <bg-image>
-     * 参见 background-image
-     * <position>
-     * 参见 background-position
-     * <repeat-style>
-     * 参见 background-repeat
-     * <bg-size>
-     * 参见 background-size
-     */
-    const full = `${all || ''}`.split(/\s+/);
-    // console.log(full);
-    for (let i = 0; i < full.length; i++) {
-      const item = full[i];
-      if (/rgba\(\s*(\d{1,3}\s*,\s*){3}\s*(\d|\.\d+|\d\.\d+)\s*\)|rgb\(\s*(\d{1,3}\s*,\s*){3}\s*\)|#([a-z0-9]{3,6})/i.test(item) && colorIdx && allIdx > colorIdx) {
-        color = item;
-      }
-    }
+    const list = `${all}`.split(',');
+    const backgrounds = list.map<IBackground<string>>(full => {
+      let color = '';
+      let image = '';
+      const position = {
+        left: BackgroundPosition.left,
+        top: BackgroundPosition.top,
+      };
+      const size = {
+        width: BackgroundSize.auto,
+        height: BackgroundSize.auto,
+      };
+      let repeat = BackgroundRepeat.repeat
+      let clip = BackgroundClip.borderBox
+      let origin = BackgroundClip.borderBox
+      let attachment = BackgroundAttachment.scroll
 
-    return {
-      image,
-      color,
-      position,
-      size,
-      repeat,
-    } as any;
+      full.replace(REG_URL, (matched, g1, g2, g3) => {
+        image = g2 || g3;
+        return '';
+      }).replace(REG_COLOR, (matched) => {
+        color = matched;
+        return '';
+      }).replace(REG_REPEAT, (matched) => {
+        repeat = matched as BackgroundRepeat;
+        return '';
+      }).replace(REG_BG_CLIP, (matched) => {
+        if (origin) {
+          clip = matched as BackgroundClip;
+        } else {
+          origin = matched as BackgroundClip;
+        }
+        return '';
+      }).replace(REG_BG_ATTACHMENT, (matched) => {
+        attachment = matched as BackgroundAttachment;
+        return '';
+      }).replace(REG_BG_POSITION_SIZE, (...args) => {
+        const [
+          , leftAll, leftEnum, leftAllUnit, leftNum, leftUnit,
+          topAll, topEnum, topAllUnit, topNum, topUnit,
+          hasSize,
+          widthAll, widthEnum, widthAllUnit, widthNum, widthUnit,
+          heightAll, heightEnum, heightAllUnit, heightNum, heightUnit,
+        ] = args;
+
+        if (leftAll) {
+          position.left = leftEnum || leftAllUnit;
+        }
+
+        if (topAll) {
+          position.top = topEnum || topAllUnit;
+        } else if (leftAllUnit) {
+          position.top = leftAllUnit;
+        }
+
+        if (hasSize) {
+          if (widthAll) {
+            size.width = widthEnum || widthAllUnit;
+          }
+          if (heightAll) {
+            size.height = heightEnum || heightAllUnit;
+          } else if (widthAllUnit) {
+            size.height = widthAllUnit;
+          }
+        }
+        return '';
+      });
+
+      return {
+        color,
+        image,
+        position,
+        size,
+        repeat,
+        attachment,
+        origin,
+        clip,
+      }
+    });
+    return backgrounds;
   }
 
   public get width() {
@@ -326,7 +378,7 @@ export default class Style {
    * 属性继承自任意父级
    */
   public get isNoWrap() {
-    let element: Element | null = this.element;
+    let element: BaseElement | null = this.element;
     while (element) {
       const whiteSpace = element.style.get('white-space');
       if (whiteSpace) {
