@@ -3,7 +3,7 @@ export default `<div
     border: 1px solid #000;
     /*display: block;*/
     /* height: 100%;*/
-    /* text-align: center;*/
+     text-align: left;
     /*font-family: 'PingFang SC';*/
    "
   id="renderTemplate"
@@ -13,7 +13,7 @@ export default `<div
     <div style="display: inline;">
       in<br>line
       <div style="display: inline-block;">
-        <div style="">
+        <div style="display: none">
           <div style="display: inline">
             <span style="background: #BC8F8F;  padding: 0 10px">
               setsocketopt函数 设置socket工作参数
@@ -91,18 +91,19 @@ export default `<div
             如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息
           </div>
         </div>
-        <div style="width: 200px; text-align: left;float: left; ">
-          <span style="position: relative; ">
-            position: 
+        <div style="width: 200px; text-align: center; float: left; ">
+          <span style="position: relative; display: inline; background: #f00">
+            position: 1
             <br>
-            position: 
+            position: 2222
             <br>
-            position: 
-            <br>
-            rel
+            position: 3333333
             <div
               style="
+              background: rgba(0,0,0,.5);
+              /*left: 10px;*/
               right: 10px;
+              /*top: 10px;*/
               bottom: 10px;
               position: absolute;
               display: inline-block;

@@ -17,9 +17,9 @@ export default function App() {
         const render = Render.fromHTML(html);
         console.timeEnd('Render.fromHTML(html)');
 
-        console.time('Render.loadSource()');
-        await render.loadSource();
-        console.time('Render.loadSource()');
+        // console.time('Render.loadSource()');
+        // await render.loadSource();
+        // console.time('Render.loadSource()');
 
         const context = canvas.current.getContext('2d');
         const rect = canvas.current.getBoundingClientRect();

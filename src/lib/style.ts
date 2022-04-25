@@ -1,5 +1,5 @@
 import Element from './element';
-import {DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType} from './constants';
+import {BlockType, DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType} from './constants';
 
 interface IRound<T = any> {
   top: T;
@@ -222,18 +222,8 @@ export default class Style {
       height: number;
     }
   } {
-    // if (this.element.nodeType === NodeType.TEXT_NODE) {
-    //   const parent = this.element.parentNode;
-    //   while (parent) {
-    //     if (parent.nodeType === NodeType.TEXT_NODE && parent.blockType === BlockType.inline) {
-    //       return parent.style.background;
-    //     } else {
-    //       return {};
-    //     }
-    //   }
-    //   return {};
-    // }
-    if (this.element.nodeType === NodeType.TEXT_NODE && this.element.parentNode) {
+    if (this.element.nodeType === NodeType.TEXT_NODE &&
+      this.element.parentNode && this.element.parentNode.blockType === BlockType.inline) {
       return this.element.parentNode.style.background;
     }
 
@@ -277,7 +267,7 @@ export default class Style {
     // console.log(full);
     for (let i = 0; i < full.length; i++) {
       const item = full[i];
-      if (/#([a-z0-9]{3,6})/i.test(item) && colorIdx && allIdx > colorIdx) {
+      if (/rgba\(\s*(\d{1,3}\s*,\s*){3}\s*(\d|\.\d+|\d\.\d+)\s*\)|rgb\(\s*(\d{1,3}\s*,\s*){3}\s*\)|#([a-z0-9]{3,6})/i.test(item) && colorIdx && allIdx > colorIdx) {
         color = item;
       }
     }

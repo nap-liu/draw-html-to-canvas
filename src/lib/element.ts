@@ -29,7 +29,7 @@ export default class Element {
   public root: Element;
 
   // @ts-ignore
-  public blankTextMetric: { lineHeight: number; width: number };
+  public textMetric: { lineHeight: number; width: number };
 
   public lines: Line[] = [];
   public line: Line | null = null;
@@ -210,6 +210,7 @@ export default class Element {
       const textMetrics = this.getTextMetrics(context, this.displayText);
       this.contentWidth = textMetrics.width;
       this.contentHeight = textMetrics.lineHeight;
+      this.textMetric = textMetrics;
     } else if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
       const {width, height} = this.style;
       if (/px$/.test(width)) {
@@ -316,7 +317,7 @@ export default class Element {
         const childBlockType = element.blockType;
         if (element.nodeType === NodeType.TEXT_NODE) {
           // TODO 浮动元素换行后 后续的文字可以使用剩余宽度
-          let textMetrics = element.getTextMetrics(context, element.displayText)
+          let textMetrics = element.textMetric;
           // 文字元素 计算文字宽度 无嵌套情况 无需递归
           if (isNoWrap) {
             // 强制不换行
@@ -326,29 +327,28 @@ export default class Element {
             if (!line.append(element)) {
               // 拆分元素换行
               let text = element.displayText;
-              const step = text.length / Math.ceil(element.contentWidth / line.width);
-              let lineText = text.slice(0, step);
-              // let lineText = text;
-              // 清空换行分割的临时元素
+              let step = text.length * (1 - (line.restWidth / textMetrics.width));
+              step = step < 1 ? 1 : step;
+              let lineText = text.slice(0, -step);
               element.shadows = [];
 
               while (text.length) {
                 if (line.restWidth <= 0) {
                   line = this.newLine(line.width);
                   continue;
+                } else if (lineText === '') {
+                  line = this.newLine(line.width);
+                  lineText = text;
+                  continue;
                 }
                 textMetrics = element.getTextMetrics(context, lineText);
                 const textWidth = textMetrics.width;
                 if (textWidth <= line.restWidth) {
-                  if (lineText === '') {
-                    line = this.newLine(line.width);
-                    lineText = text;
-                    continue;
-                  }
                   const el = element.clone();
                   el.nodeValue = lineText;
                   el.contentWidth = textWidth;
                   el.contentHeight = textMetrics.lineHeight;
+                  el.textMetric = textMetrics;
                   line.push(el);
                   element.shadows.push(el);
                   el.line = line;
@@ -361,7 +361,9 @@ export default class Element {
                     lineText = text;
                   }
                 } else {
-                  lineText = lineText.slice(0, -1);
+                  step = lineText.length * (1 - (line.restWidth / textMetrics.width));
+                  step = step < 1 ? 1 : step;
+                  lineText = lineText.slice(0, -step);
                 }
               }
               // element.contentHeight = element.shadows.length * textMetrics.lineHeight;
@@ -372,7 +374,7 @@ export default class Element {
         } else if (element.nodeType === NodeType.ELEMENT_NODE && childBlockType === BlockType.inline) {
           if (element.nodeName === SupportElement.br || element.nodeName === SupportElement.hr) {
             // br\hr 元素 强制换行
-            element.contentHeight = this.root.blankTextMetric.lineHeight;
+            element.contentHeight = this.root.textMetric.lineHeight;
             // if (line.restWidth <= 0) {
             line = this.newLine(line.width);
             line.push(element);
@@ -532,7 +534,7 @@ export default class Element {
         const br = new Element();
         br.nodeName = SupportElement.br;
         br.nodeType = NodeType.ELEMENT_NODE;
-        br.contentHeight = this.root ? this.root.blankTextMetric.lineHeight : this.blankTextMetric.lineHeight;
+        br.contentHeight = this.root ? this.root.textMetric.lineHeight : this.textMetric.lineHeight;
         line.append(br);
       }
       const {floats, normalHeight} = prev;
@@ -690,16 +692,14 @@ export default class Element {
       absolutes.push(...lineAbsolutes);
     });
 
-    // console.log(absolutes);
     absolutes.forEach(absolute => {
-      // TODO inline 定位 right bottom 计算错误
       const absoluteTop = absolute.style.get('top');
       const absoluteRight = absolute.style.get('right');
       const absoluteBottom = absolute.style.get('bottom');
       const absoluteLeft = absolute.style.get('left');
 
       let target: Element = this;
-      const shadows: Element[] = [target];
+      const shadows: Element[] = [];
       target.lineElement?.lines.forEach(line => {
         line.forEach(i => {
           if (
@@ -717,42 +717,63 @@ export default class Element {
        * 有宽高 忽略左右
        * 没宽高 适应宽高
        */
-      if (absoluteLeft && absoluteRight) {
-        // 同时有左右
-        const l = absolute.style.transformUnitToPx(absoluteLeft);
-        absolute.left = l;
-        if (!absolute.style.width) {
-          if (isInline) {
-            target = shadows[shadows.length - 1];
-          }
-          absolute.contentWidth = target.contentWidth - l - absolute.style.transformUnitToPx(absoluteRight);
-        }
-      } else if (absoluteLeft) {
-        absolute.left = absolute.style.transformUnitToPx(absoluteLeft)
-      } else if (absoluteRight) {
-        if (isInline) {
-          target = shadows[shadows.length - 1];
-        }
-        absolute.left = target.contentWidth - absolute.offsetWidth - absolute.style.transformUnitToPx(absoluteRight)
-      }
 
-      if (absoluteTop && absoluteBottom) {
-        const t = absolute.style.transformUnitToPx(absoluteTop);
-        absolute.top = t
-        if (!absolute.style.height) {
-          if (isInline) {
-            target = shadows[shadows.length - 1];
-          } else {
+      if (isInline) {
+        if (absoluteLeft && absoluteRight) {
+          // 同时有左右
+          target = shadows[0] || target;
+          const left = target.left + absolute.style.transformUnitToPx(absoluteLeft);
+          absolute.left = left;
+          if (!absolute.style.width) {
+            const last = shadows[shadows.length - 1] || target;
+            absolute.contentWidth = (last.left + last.contentWidth) - left - absolute.style.transformUnitToPx(absoluteRight);
+          }
+        } else if (absoluteLeft) {
+          target = shadows[0] || target;
+          absolute.left = target.left + absolute.style.transformUnitToPx(absoluteLeft)
+        } else if (absoluteRight) {
+          target = shadows[shadows.length - 1] || target;
+          absolute.left = target.left + target.contentWidth - absolute.offsetWidth - absolute.style.transformUnitToPx(absoluteRight);
+        }
+
+        // 同时有上下
+        if (absoluteTop && absoluteBottom) {
+          target = shadows[0] || target;
+          absolute.top = target.top + absolute.style.transformUnitToPx(absoluteTop);
+          if (!absolute.style.height) {
+            const last = shadows[shadows.length - 1] || target;
+            absolute.contentHeight = last.top + last.contentHeight - absolute.top - absolute.style.transformUnitToPx(absoluteBottom);
+          }
+        } else if (absoluteTop) {
+          target = shadows[0] || target;
+          absolute.top = target.top + absolute.style.transformUnitToPx(absoluteTop);
+        } else if (absoluteBottom) {
+          target = shadows[shadows.length - 1] || target;
+          absolute.top = target.top + target.contentHeight - absolute.offsetHeight - absolute.style.transformUnitToPx(absoluteBottom);
+        }
+      } else {
+        if (absoluteLeft && absoluteRight) {
+          // 同时有左右
+          const left = absolute.style.transformUnitToPx(absoluteLeft);
+          absolute.left = left;
+          if (!absolute.style.width) {
+            absolute.contentWidth = target.contentWidth - left - absolute.style.transformUnitToPx(absoluteRight);
+          }
+        } else if (absoluteLeft) {
+          absolute.left = absolute.style.transformUnitToPx(absoluteLeft)
+        } else if (absoluteRight) {
+          absolute.left = target.contentWidth - absolute.offsetWidth - absolute.style.transformUnitToPx(absoluteRight)
+        }
+        // 同时有上下
+        if (absoluteTop && absoluteBottom) {
+          const t = absolute.style.transformUnitToPx(absoluteTop);
+          absolute.top = t
+          if (!absolute.style.height) {
             absolute.contentHeight = target.contentHeight - t - absolute.style.transformUnitToPx(absoluteBottom);
           }
-        }
-      } else if (absoluteTop) {
-        absolute.top = absolute.style.transformUnitToPx(absoluteTop);
-      } else if (absoluteBottom) {
-        if (isInline) {
-          target = shadows[shadows.length - 1];
-          absolute.top = target.top - absolute.style.transformUnitToPx(absoluteBottom);
-        } else {
+        } else if (absoluteTop) {
+          absolute.top = absolute.style.transformUnitToPx(absoluteTop);
+        } else if (absoluteBottom) {
           absolute.top = target.contentHeight - absolute.offsetHeight - absolute.style.transformUnitToPx(absoluteBottom);
         }
       }
@@ -817,7 +838,7 @@ export default class Element {
   }
 
   public layout(context: CanvasRenderingContext2D) {
-    this.blankTextMetric = this.getTextMetrics(context, '');
+    this.textMetric = this.getTextMetrics(context, '');
     /**
      * 裸文字宽度
      * 固定宽度
