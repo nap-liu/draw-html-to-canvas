@@ -4,136 +4,110 @@
   <meta charset="utf-8" />
   <title>canvas上画动态图，视频也可以画</title>
 
-  <script type="text/javascript">
-    window.onload = function() {
-      var img = document.getElementById('img1');
-      var can = document.getElementById('can');
-      var cxt = can.getContext('2d');
-      setInterval(function() {
-        cxt.drawImage(img, 0, 0);
-      }, 20);
-    };
-  </script>
+
 </head>
 
 <body>
-
-<div
-  style="
-  border: 1px solid #000;
-  display: block;
-  /*height: 100%;*/
-  /*white-space: nowrap;*/
-   width: 600px;
-   font-family: 'PingFang SC';
-   "
-  id="renderTemplate"
->
-  <!--    <div style="height: 100px; width: 10%; background: #f00"></div>-->
-  <div style="display: inline; background: #ff0">
-    1
-    <div style="display: inline">
-      inline
-      <div style="display: inline-block;">
-        <div style="">
-          <div style="display: inline">
-              <span style="background: #BC8F8F;  padding: 0 10px">
-                setsocketopt函数 设置socket工作参数
-              </span>
-            <span style="background: #4169E1; padding: 0 10px">
-                该函数可以设置任意socket的所有可配置参数详细可查看手册
-              </span>
-            <span style="background: #A52A2A">
-                设置socket address重用，如果不设置的话重启的时候会报错
-              </span>
-
-            <div
-              style="
-              height: 60px;
-              float: left;
-               background: #0f0;
-               margin: 10px;
-               position: relative;
-                padding: 10px;
-                "
-            >
-              float 60
-
-              <span style="background: #BC8F8F">
-                  setsocketopt函数 设置socket工作参数
-                </span>
-            </div>
-            <span style="background: #D2691E">
-                错误代码1 EADDRINUSE
-              </span>
-            <span style="background: #5F9EA0">
-                提示信息1 Address already in use
-              </span>
-            <div style="background: #ccc">
-              block
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-
-            </div>
-            <span style="background: #008B8B">
-                为什么会这样呢？ 是因为TCP的连接断开后 TCP的资源并没有立即释放，而是进入了TIME_WAIT状态，该状态是为了保证TCP的可靠关闭，该状态会持续2分钟
-              </span>
-            <div style="height: 100px; float: left; background: #0f0">float 100</div>
-            <div style="height: 90px; float: left; background: #0f0; position: relative">
-              float 120
-            </div>
-            <span style="background: #D2691E; ">
-                错误代码2 EADDRINUSE
-              </span>
-            <span style="background: #5F9EA0">
-                提示信息2 Address already in use
-              </span>
-            <div style="height: 30px; float: left; background: #0f0">float 30</div>
-            <div style="height: 20px; float: left; background: #0f0">float 20</div>
-            <div style="float: right; background: #f00">float 1</div>
-            <div style="float: right; background: #f00">float 2</div>
-            <div style="float: right; background: #f00">float 3</div>
-            <span style="background: #B8860B">
-                如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息
-              </span>
-            <span>3 inline-block</span>
-            如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息
-
-            如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息
-
-          </div>
-        </div>
-        <div style="width: 240px; text-align: left">
-            <span style="position: relative; ">
-            4 position: relative
-            <br>
-            position: relative
-            <div
-              style="
-    position: absolute;
-     right: 10px;
-     bottom: 10px;
-     display: inline-block;
-    "
-            >absolute</div>
-            </span>
-
-        </div>
-        <div style="width: 10%; display: inline-block">
-          5
-          <br>
-          123456789
-        </div>
-      </div>
-    </div>
-    7
-  </div>
-  <div style="text-align: left">8</div>
-</div>
-
-<p>准备绘制的动态图片:</p>
-<img id="img1" src="/gif-test.gif" alt="你的浏览器不支持img标签"></img>
-<p>canvas画布上绘制的动态图片:</p>
+<img src="logo192.png" id="img1" alt="">
 <canvas id="can" width="800px" height="600px" style="background-color: #CCCCCC">你的浏览器不支持canvas标签</canvas>
 </body>
+<script type="text/javascript">
+  window.onload = function() {
+    var img = document.getElementById('img1');
+    var can = document.getElementById('can');
+    var ctx = can.getContext('2d');
+
+    const drawRepeatImage = (
+      ctx,
+      image,
+      imageWidth,
+      imageHeight,
+      left, top,
+      width, height,
+      repeat,
+    ) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(left, top, width, height);
+      ctx.clip();
+      if (repeat === 'repeat') {
+        let rows = Math.ceil(height / imageHeight);
+        let cols = Math.ceil(width / imageWidth);
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const x = c * imageWidth;
+            const y = r * imageHeight;
+            ctx.drawImage(image, left + x, top + y, imageWidth, imageHeight);
+          }
+        }
+      } else if (repeat === 'repeat-y') {
+        let rows = Math.ceil(height / imageHeight);
+        for (let r = 0; r < rows; r++) {
+          const y = r * imageHeight;
+          ctx.drawImage(image, left, top + y, imageWidth, imageHeight);
+        }
+      } else if (repeat === 'repeat-x') {
+        let cols = Math.ceil(width / imageWidth);
+        for (let c = 0; c < cols; c++) {
+          const x = c * imageWidth;
+          ctx.drawImage(image, left + x, top, imageWidth, imageHeight);
+        }
+      } else if (repeat === 'no-repeat') {
+        ctx.drawImage(image, left, top, imageWidth, imageHeight);
+      }
+      ctx.restore();
+    };
+
+    // drawRepeatImage(ctx, img, 80, 50, -10, -10, 500, 500, 'repeat-y');
+
+    const drawRadiusRect = (ctx, left, top, width, height, radius, clip) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(left + radius, top);
+      ctx.lineTo(left + width - radius, top);
+      ctx.arcTo(left + width - radius, top, left + width, top + radius, radius);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    function drawRoundRectPath(ctx, width, height, radius) {
+      const [r0, r1, r2, r3] = radius;
+      ctx.beginPath();
+      //从右下角顺时针绘制，弧度从0到1/2PI
+      ctx.arc(width - r0, height - r0, r0, 0, Math.PI / 2);
+
+
+
+      //矩形下边线
+      ctx.lineTo(r1, height);
+
+      //左下角圆弧，弧度从1/2PI到PI
+      ctx.arc(r1, height - r1, r1, Math.PI / 2, Math.PI);
+      //
+      // //矩形左边线
+      // ctx.lineTo(0, r2);
+      //
+      //左上角圆弧，弧度从PI到3/2PI
+      ctx.arc(r2, r2, r2, Math.PI, Math.PI * 3 / 2);
+      //
+      // //上边线
+      // ctx.lineTo(width - r3, 0);
+      //
+      //右上角圆弧
+      ctx.arc(width - r3, r3, r3, Math.PI * 3 / 2, Math.PI * 2);
+      //
+      // //右边线
+      // ctx.lineTo(width, height - r3);
+      // ctx.closePath();
+    }
+
+    ctx.save();
+    ctx.translate(10, 10);
+    ctx.lineWidth = 5;
+    drawRoundRectPath(ctx, 100, 100, [20, 30, 40, 10]);
+    ctx.stroke();
+    ctx.restore();
+
+  };
+</script>
 </html>

@@ -1,5 +1,5 @@
-import ElementImage from './element-image';
-import Element from './element';
+import type ElementImage from './element-image';
+import type Element from './element';
 
 export const DEFAULT_FONT_FAMILY = 'sans-serif';
 export const DEFAULT_FONT_SIZE = '16px';
@@ -50,11 +50,16 @@ export const REG_PCT = /%$/;
 export const REG_REM = /rem$/i;
 export const REG_EM = /em$/i;
 export const REG_NUM = /^\d+(.\d+)?$/;
-export const REG_URL = /url\(('([^']*)'|("[^"]*"))\)/i;
-export const REG_REPEAT = /repeat|repeat-y|repeat-x|no-repeat/i;
+export const REG_URL = /url\((?:'([^']+)'|("[^"]+")|([^)]+))\)/i;
+export const REG_REPEAT = /repeat-y|repeat-x|no-repeat|repeat/i;
 export const REG_BG_ATTACHMENT = /scroll|fixed|local/i;
 export const REG_BG_CLIP = /border-box|padding-box|content-box/i;
-export const REG_BG_POSITION_SIZE = /\s*((left|center|right|top|bottom)|((\d+)(%|px)))\s*((left|center|right|top|bottom)|((\d+)(%|px)))?(\s*\/\s*((auto|cover|contain)|((\d+)(%|px)))\s*((auto|cover|contain)|((\d+)(%|px))))?/i;
+
+export const REG_FLOAT = '((?:-?\\d*(?:\\.\\d+)?)(?:%|px))'
+const REG_BG_POS = `(?:(left|center|right|top|bottom)\\s+${REG_FLOAT}?)`
+const REG_BG_SIZE = `((auto|cover|contain)|${REG_FLOAT})`
+
+export const REG_BG_POSITION_SIZE = new RegExp(`\\s*(${REG_BG_POS}|${REG_FLOAT})\\s*(${REG_BG_POS}|${REG_FLOAT})?(\\s*\\/\\s*${REG_BG_SIZE}\\s+${REG_BG_SIZE})?`, 'i');
 
 export type SupportElementType = Element | ElementImage;
 

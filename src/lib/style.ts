@@ -1,5 +1,29 @@
-import BaseElement from './element';
-import {BackgroundAttachment, BackgroundClip, BackgroundPosition, BackgroundRepeat, BackgroundSize, BlockType, DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType, REG_BG_ATTACHMENT, REG_BG_CLIP, REG_BG_POSITION_SIZE, REG_COLOR, REG_EM, REG_PCT, REG_PX, REG_REM, REG_REPEAT, REG_URL} from './constants';
+import Element from './element';
+import {
+  BackgroundAttachment,
+  BackgroundClip,
+  BackgroundPosition,
+  BackgroundRepeat,
+  BackgroundSize,
+  NodeType,
+  BlockType,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_FONT_SIZE,
+  DEFAULT_LINE_HEIGHT,
+  REG_BG_ATTACHMENT,
+  REG_BG_CLIP,
+  REG_BG_POSITION_SIZE,
+  REG_COLOR,
+  REG_EM,
+  REG_PCT,
+  REG_PX,
+  REG_REM,
+  REG_REPEAT,
+  REG_URL,
+} from './constants';
+import ElementImage from './element-image';
+
+// import ElementImage from './element-image';
 
 interface IRound<T = any> {
   top: T;
@@ -21,7 +45,9 @@ interface IBackground<T = string | number> {
   image: string;
   position: {
     left: T;
+    leftOffset: T;
     top: T;
+    topOffset: T;
   };
   size: {
     width: T;
@@ -40,11 +66,17 @@ export default class Style {
   private style: { [x: string]: string } = {};
   private styleIndex: { [x: string]: number } = {};
   private index = 0;
-  private element: BaseElement;
+  private element: Element;
 
-  public constructor(element: BaseElement) {
+  public imageMap: { [x: string]: ElementImage } = {};
+
+  public constructor(element: Element) {
     this.element = element;
   }
+
+  public getImage = (url: string) => {
+    return this.imageMap[url];
+  };
 
   public getInheritStyle(style: string) {
     const {element, value} = this.getInheritNode(style);
@@ -55,7 +87,7 @@ export default class Style {
   }
 
   public getInheritNode(style: string) {
-    let element: BaseElement | null = this.element;
+    let element: Element | null = this.element;
     while (element) {
       const value = element.style.get(style);
       if (value && value !== 'inherit') {
@@ -256,8 +288,10 @@ export default class Style {
       let color = '';
       let image = '';
       const position = {
-        left: BackgroundPosition.left,
-        top: BackgroundPosition.top,
+        left: BackgroundPosition.center,
+        leftOffset: '',
+        top: BackgroundPosition.center,
+        topOffset: '',
       };
       const size = {
         width: BackgroundSize.auto,
@@ -269,7 +303,7 @@ export default class Style {
       let attachment = BackgroundAttachment.scroll
 
       full.replace(REG_URL, (matched, g1, g2, g3) => {
-        image = g2 || g3;
+        image = g1 || g2 || g3;
         return '';
       }).replace(REG_COLOR, (matched) => {
         color = matched;
@@ -289,21 +323,45 @@ export default class Style {
         return '';
       }).replace(REG_BG_POSITION_SIZE, (...args) => {
         const [
-          , leftAll, leftEnum, leftAllUnit, leftNum, leftUnit,
-          topAll, topEnum, topAllUnit, topNum, topUnit,
+          , leftAll, leftEnum, leftEnumAllOffset, leftAllUnit,
+          topAll, topEnum, topEnumAllOffset, topAllUnit,
           hasSize,
-          widthAll, widthEnum, widthAllUnit, widthNum, widthUnit,
-          heightAll, heightEnum, heightAllUnit, heightNum, heightUnit,
+          widthAll, widthEnum, widthAllUnit,
+          heightAll, heightEnum, heightAllUnit,
         ] = args;
+        // const [
+        //   ,
+        //   leftAll, leftAllEnum, leftEnum, leftEnumAllOffset, leftEnumOffsetNum, leftEnumOffsetFloat, leftEnumOffsetUnit, leftAllUnit, leftNum, leftFloat, leftUnit,
+        //   topAll, topAllEnum, topEnum, topEnumAllOffset, topEnumOffsetNum, topEnumOffsetFloat, topEnumOffsetUnit, topAllUnit, topNum, topFloat, topUnit,
+        //   hasSize,
+        //   widthAll, widthEnum, widthAllUnit, widthNum, widthFloat, widthUnit,
+        //   heightAll, heightEnum, heightAllUnit, heightNum, heightFloat, heightUnit,
+        // ] = args;
+        //
+        // console.log({
+        //   leftAll, leftAllEnum, leftEnum, leftEnumAllOffset, leftEnumOffsetNum, leftEnumOffsetFloat, leftEnumOffsetUnit, leftAllUnit, leftNum, leftFloat, leftUnit,
+        //   topAll, topAllEnum, topEnum, topEnumAllOffset, topEnumOffsetNum, topEnumOffsetFloat, topEnumOffsetUnit, topAllUnit, topNum, topFloat, topUnit,
+        //   hasSize,
+        //   widthAll, widthEnum, widthAllUnit, widthNum, widthFloat, widthUnit,
+        //   heightAll, heightEnum, heightAllUnit, heightNum, heightFloat, heightUnit,
+        // })
 
         if (leftAll) {
           position.left = leftEnum || leftAllUnit;
         }
 
+        if (leftEnumAllOffset) {
+          position.leftOffset = leftEnumAllOffset;
+        }
+
         if (topAll) {
           position.top = topEnum || topAllUnit;
-        } else if (leftAllUnit) {
-          position.top = leftAllUnit;
+        } else if (leftEnum && leftEnum === BackgroundPosition.center) {
+          position.top = BackgroundPosition.center;
+        }
+
+        if (topEnumAllOffset) {
+          position.topOffset = topEnumAllOffset;
         }
 
         if (hasSize) {
@@ -312,8 +370,8 @@ export default class Style {
           }
           if (heightAll) {
             size.height = heightEnum || heightAllUnit;
-          } else if (widthAllUnit) {
-            size.height = widthAllUnit;
+          } else {
+            size.height = size.width;
           }
         }
         return '';
@@ -378,7 +436,7 @@ export default class Style {
    * 属性继承自任意父级
    */
   public get isNoWrap() {
-    let element: BaseElement | null = this.element;
+    let element: Element | null = this.element;
     while (element) {
       const whiteSpace = element.style.get('white-space');
       if (whiteSpace) {

@@ -5,11 +5,11 @@ export default `<div
     /* height: 100%;*/
      text-align: left;
     /*font-family: 'PingFang SC';*/
-    background: #f00 url('12456') left  / 100% auto no-repeat fixed border-box;
+    background: url('img.png') right 10px bottom 20% / 100px auto repeat-y;
    "
   id="renderTemplate"
 >
-  <div style="display: none; background: #ff0">
+  <div style="display: inline">
     1
     <div style="display: inline;">
       in<br>line
@@ -29,14 +29,15 @@ export default `<div
               style="
                 height: 60px;
                 float: left;
-                background: #0f0; 
-                margin: 10px;
+                /*background: #0f0; */
                 position: relative;
                 padding: 10px;
+                border: 10px solid #f00;
+                margin-top: 0px;
               "
             >
               float 60
-              <span style="background: #BC8F8F">
+              <span style="background: #BC8F8F;">
                 setsocketopt函数 设置socket工作参数
               </span>
             </div>
@@ -52,7 +53,7 @@ export default `<div
               为什么会这样呢？ 是因为TCP的连接断开后 TCP的资源并没有立即释放，而是进入了TIME_WAIT状态，该状态是为了保证TCP的可靠关闭，该状态会持续2分钟
             </span>
             <div style="
-              background: #0f0;
+              /*background: #0f0;*/
               float: left;
               width: 200px;
               padding: 10px;
@@ -124,7 +125,7 @@ export default `<div
 
 export const html3 = `<div style="width: 500px; background-color: #f00"><div style="margin: 0 auto; width: 10px">123456</div></div>
 `
-export const html2 = `<div id="renderTemplate" style='border-radius: 24px; background-color: rgba(0,0,0,.1)'>
+export const html2 = `<div id="renderTemplate" style='border-radius: 24px; background: rgba(0,0,0,.1)'>
     <div className='head' style='height: 362px; position: relative'>
       <img src='http://127.0.0.1:8080/image/post-4.14-bg.png' style='width: 100%;position: absolute;left:0;top:0;'>
       <img
@@ -159,7 +160,7 @@ font-weight: 500;'
     </div>
     <div className='icon' style='position: relative;'>
       <img
-        style='width: 124px; height: 148px; margin: -64px auto 0; display: block'
+        style='width: 124px; height: 148px; margin: -100px auto 0; display: block'
         src='http://127.0.0.1:8080/image/post-4.14-day.png'
       />
       <div
@@ -370,7 +371,7 @@ font-weight: 800;'
       >KG</span>
     </div>
     <div className='text' style='margin-left: 247px; margin-top: 10px'>
-      <span style='width: 6px;height: 6px;background-color: #797881;border-radius: 6px;margin-top: 8px;margin-right: 14px;'></span>
+      <span style='display: inline-block;width: 6px;height: 6px;background-color: #797881;border-radius: 6px;margin-top: 8px;margin-right: 14px;'></span>
       <span
         style='
 font-family: PingFangSC-Heavy;

@@ -1,5 +1,5 @@
 import Line from './line';
-import BaseElement from './element';
+import Element from './element';
 import {NodeType, SupportElement} from './constants';
 
 /**
@@ -7,9 +7,9 @@ import {NodeType, SupportElement} from './constants';
  */
 
 export default class LineManger extends Array<Line> {
-  element: BaseElement;
+  element: Element;
 
-  constructor(element: BaseElement) {
+  constructor(element: Element) {
     super();
     this.element = element;
   }
@@ -34,7 +34,7 @@ export default class LineManger extends Array<Line> {
     if (prev) {
       if (prev.length === 0) {
         // 上一行没有内容的话 则 向当前行插入一个换行元素
-        const br = new BaseElement();
+        const br = new Element();
         br.nodeName = SupportElement.br;
         br.nodeType = NodeType.ELEMENT_NODE;
         br.contentHeight = this.element.root ? this.element.root.textMetric.lineHeight : this.element.textMetric.lineHeight;

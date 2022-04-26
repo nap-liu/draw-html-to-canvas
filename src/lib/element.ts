@@ -1,13 +1,9 @@
-import {
-  BlockType,
-  DEFAULT_COLOR, DEFAULT_LINE_HEIGHT,
-  NodeType,
-  REG_NUM, REG_PCT, REG_PX,
-  SupportElement,
-} from './constants';
+import {BackgroundPosition, BackgroundSize, BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, REG_NUM, REG_PCT, REG_PX, SupportElement} from './constants';
 import Style from './style';
 import Line from './line';
 import LineManger from './line-manger';
+import ElementImage from './element-image';
+import {drawRepeatImage} from './util';
 
 export default class Element {
   public nodeValue = '';
@@ -157,65 +153,6 @@ export default class Element {
       }
     }
     return Math.max(maxBlockWidth, inlineWidth);
-  }
-
-  public draw(context: CanvasRenderingContext2D) {
-    const {background: backgroundList, margin, border, padding, fontSize, lineHeight} = this.style;
-    // console.log(background, this.displayText, this);
-    // const offset = fontSize - lineHeight;
-    const offset = 0;
-
-    backgroundList.forEach(background => {
-      if (background.color) {
-        context.fillStyle = background.color;
-        // console.log(offset, fontSize, lineHeight);
-        context.fillRect(
-          this.offsetLeft + margin.left + border.left.width,
-          this.offsetTop + margin.top + border.top.width,
-          this.offsetWidth - (margin.left + margin.right),
-          this.offsetHeight - (margin.top + margin.bottom) - offset,
-        );
-      }
-    })
-
-    // if (border.left.width) {
-    //
-    // } else if () {
-    //
-    // }
-
-    if (this.nodeType === NodeType.TEXT_NODE) {
-      const {displayText} = this;
-      if (displayText) {
-        const textBaseline = this.style.get('vertical-align') || 'top';
-        const color = this.style.getInheritStyle('color') || DEFAULT_COLOR;
-        context.font = this.style.canvasFont;
-        context.textBaseline = textBaseline as any;
-        context.fillStyle = color;
-        context.fillText(this.displayText, this.offsetLeft, this.offsetTop);
-        context.strokeStyle = 'rgba(255,0,0,.5)';
-        context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
-      }
-    } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
-      context.strokeStyle = '#00f';
-      context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
-    }
-
-    this.lines.forEach(line => {
-      line.textFlows.forEach(el => el.draw(context));
-      // line.floats.all.forEach(el => el.draw(context));
-      // line.absolutes.forEach(el => el.draw(context));
-    })
-    this.lines.forEach(line => {
-      // line.textFlows.forEach(el => el.draw(context));
-      line.floats.all.forEach(el => el.draw(context));
-      // line.absolutes.forEach(el => el.draw(context));
-    })
-    this.lines.forEach(line => {
-      // line.textFlows.forEach(el => el.draw(context));
-      // line.floats.all.forEach(el => el.draw(context));
-      line.absolutes.forEach(el => el.draw(context));
-    })
   }
 
   /**
@@ -368,13 +305,9 @@ export default class Element {
       if (REG_PX.test(width)) {
         // 固定尺寸
         this.contentWidth = this.style.transformUnitToPx(width);
-
-        // image 自适应尺寸
-        if (this.nodeName === SupportElement.img) {
-
-        }
       }
       if (REG_PX.test(height)) {
+        // 固定尺寸
         this.contentHeight = this.style.transformUnitToPx(height);
       }
     }
@@ -395,7 +328,9 @@ export default class Element {
     if (!width) {
       if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
         const parent = this.getNearBlock();
+        // 继承的宽度不包含
         const offset = padding.left + padding.right + border.left.width + border.right.width + margin.left + margin.right;
+        // const offset = 0;
         if (parent) {
           this.contentWidth = parent.contentWidth - offset;
         }
@@ -431,6 +366,36 @@ export default class Element {
         }
       }
     }
+
+    if (this.nodeName === SupportElement.img) {
+      const img: ElementImage = this as any as ElementImage;
+      // 图片尺寸布局
+      const {width, height} = this.style;
+      if (width && height) { // 拉伸图片
+
+      } else if (width || height) { // 自适应
+        if (width) {
+          if (REG_PX.test(width)) { // 固定尺寸 缩放
+            const ratio = Math.abs(img.imageWidth - this.contentWidth) / img.imageWidth;
+            this.contentHeight = img.imageHeight * ratio;
+          } else if (REG_PCT.test(width)) { // 按比例缩放
+            this.contentHeight = this.style.transformUnitToPx(width, img.imageHeight);
+          }
+        } else if (height) {
+          if (REG_PX.test(height)) { // 固定尺寸 缩放
+            const ratio = Math.abs(img.imageWidth - this.contentWidth) / img.imageWidth;
+            this.contentWidth = img.contentWidth * ratio;
+          } else if (REG_PCT.test(height)) { // 按比例缩放
+            this.contentWidth = this.style.transformUnitToPx(height, img.imageWidth);
+          }
+        }
+      } else {
+        // 使用图片宽高
+        this.contentWidth = img.imageWidth;
+        this.contentHeight = img.imageHeight;
+      }
+    }
+
     this.children.forEach(el => {
       el.layoutPercentWidth(context);
     });
@@ -454,10 +419,9 @@ export default class Element {
    *
    * block元素新起一行 从新计算
    */
-  public layoutInlineBlockWidth(context: CanvasRenderingContext2D) {
+  public layoutLine(context: CanvasRenderingContext2D) {
     const blockType = this.blockType;
     const isNoWrap = this.style.isNoWrap;
-    // const lineHeight = this.style.lineHeight;
 
     if (blockType === BlockType.inlineBlock || blockType === BlockType.block) {
       // 重置行
@@ -578,20 +542,25 @@ export default class Element {
             element.line = line;
           }
 
-          element.layoutInlineBlockWidth(context);
+          // TODO img 标签优化
+          element.layoutLine(context);
 
           if (childBlockType === BlockType.inlineBlock) {
             // 计算真正的inline-block占用宽度
 
-            // TODO 宽度可能不准确 因为如果是手写是百分比宽度的话 则会出现异常
-            // TODO 块元素宽度应该不包含换行宽度
-            if (!element.style.width) {
-              element.contentWidth = Math.max(...element.lines.map(i => i.usedWidth));
-            }
+            if (element.nodeName === SupportElement.img) {
 
-            // TODO 高度可能不准确 因为如果是手写是百分比高度的话 则会出现异常
-            if (!element.style.height) {
-              element.contentHeight = element.lines.linesHeight;
+            } else {
+              // TODO 宽度可能不准确 因为如果是手写是百分比宽度的话 则会出现异常
+              // TODO 块元素宽度应该不包含换行宽度
+              if (!element.style.width) {
+                element.contentWidth = Math.max(...element.lines.map(i => i.usedWidth));
+              }
+
+              // TODO 高度可能不准确 因为如果是手写是百分比高度的话 则会出现异常
+              if (!element.style.height) {
+                element.contentHeight = element.lines.linesHeight;
+              }
             }
 
             if (element.style.isAbsolute) {
@@ -609,7 +578,6 @@ export default class Element {
                 }
                 element.line = line;
               }
-
             }
           } else if (childBlockType === BlockType.block) {
             if (line.length) {
@@ -619,11 +587,21 @@ export default class Element {
             element.line = line;
             line = this.lines.newLine(line.width);
             // TODO 高度可能不准确 因为如果是手写是百分比高度的话 则会出现异常
-            if (!element.style.height) {
-              element.contentHeight = element.lines.linesHeight;
+            if (element.nodeName === SupportElement.img) {
+
+            } else {
+              if (!element.style.height) {
+                element.contentHeight = element.lines.linesHeight;
+              }
             }
           }
 
+          // TODO BFC 闭合逻辑错误
+          //  应该是
+          //  inline-block
+          //  overflow: 非 visible
+          //  clear
+          //  闭合
           const childNewLine = element.lines.newLine(line.width);
           element.lines.pop();
           const lastLine = element.lines.lastLine();
@@ -632,10 +610,8 @@ export default class Element {
           if (lastLine && (lastLine.overLeftHeight || lastLine.overRightHeight)) {
             const newLine = this.lines.newLine(line.width);
             if (childBlockType === BlockType.block) {
-
               Object.assign(newLine, childNewLine);
               line = newLine;
-
             } else if (childBlockType === BlockType.inlineBlock) {
               // 空行插入占位元素 填充剩余高度
               const height = Math.max(lastLine.overLeftHeight, lastLine.overRightHeight);
@@ -645,20 +621,23 @@ export default class Element {
               e.contentHeight = height;
               newLine.push(e);
             }
-
             // console.log('last overflow', element.nodeValue, lastLine, newLine);
           }
         }
       }
+
       this.children.forEach(recursion);
 
-      // TODO 百分比高度会有问题
-      if (!this.style.height) {
-        this.contentHeight = this.lines.linesHeight;
-      }
+      if (this.nodeName === SupportElement.img) {
 
+      } else {
+        // TODO 百分比高度会有问题
+        if (!this.style.height) {
+          this.contentHeight = this.lines.linesHeight;
+        }
+      }
     } else {
-      this.children.forEach(e => e.layoutInlineBlockWidth(context));
+      this.children.forEach(e => e.layoutLine(context));
     }
     return;
   }
@@ -670,15 +649,8 @@ export default class Element {
     let contentOffsetTop = 0;
     let contentOffsetLeft = 0;
     let contentOffsetRight = 0;
+    // TODO box-sizing 支持
     if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
-      const originMargin = this.style.getOriginRoundStyle('margin');
-      // @ts-ignore
-      if (originMargin.left === 'auto' && originMargin.right === 'auto') {
-        const parent = this.parentNode;
-        if (parent) {
-          margin.left = (parent.contentWidth - this.offsetWidth) / 2;
-        }
-      }
       contentOffsetLeft = margin.left + border.left.width + padding.left;
       contentOffsetRight = margin.right + border.right.width + padding.right;
       contentOffsetTop = margin.top + border.top.width + padding.top;
@@ -726,9 +698,20 @@ export default class Element {
       })
       line.forEach(el => {
         el.layoutLinePosition();
+
+        // TODO margin 负值布局错误
         if (el.blockType === BlockType.block) {
           // block前面有float元素偏移问题
           el.left -= line.holdLeftWidth;
+
+          // margin: 0 auto; 移动盒子位置
+          const originMargin = el.style.getOriginRoundStyle('margin');
+          // @ts-ignore
+          if (originMargin.left === 'auto' && originMargin.right === 'auto') {
+            if (el.line) {
+              el.left += el.line.restWidth / 2;
+            }
+          }
         }
       });
       top += line.height;
@@ -855,20 +838,141 @@ export default class Element {
     this.layoutPercentWidth(context);
 
     /**
-     * 计算文字高度
-     * 从 block、inline-block 元素开始
-     *  1、行内元素
-     *    1、inline\inline-block元素按顺序排列
-     *    2、计算剩余宽度 元素宽度 - 浮动元素宽度 = 行内元素可用宽度
-     *    3、行内元素高度等于 向上舍入(文字宽度 / 行内元素可用宽度) * 行高
-     *  2、浮动元素、定位元素
-     *    1、递归计算
+     * 计算文字布局
      */
-    this.layoutInlineBlockWidth(context);
+    this.layoutLine(context);
 
     /**
      * 计算行内元素 坐标起点
      */
     this.layoutLinePosition();
+  }
+
+  public drawRepeatImage() {
+
+  }
+
+  public draw(context: CanvasRenderingContext2D) {
+    const {
+      background: backgroundList,
+      margin,
+      border,
+      padding,
+      lineHeight,
+      fontSize,
+    } = this.style;
+    const {
+      offsetLeft, offsetTop,
+      offsetWidth, offsetHeight,
+      contentWidth, contentHeight,
+    } = this;
+    let offset = 0;
+    if (this.blockType === BlockType.inline) {
+      offset = (lineHeight * fontSize) - fontSize;
+    }
+
+    backgroundList.forEach(background => {
+      if (background.color) {
+        context.fillStyle = background.color;
+        // console.log(offset, fontSize, lineHeight);
+        context.fillRect(
+          offsetLeft + margin.left + border.left.width,
+          offsetTop + margin.top + border.top.width,
+          offsetWidth - margin.left - margin.right - border.left.width - border.right.width,
+          offsetHeight - margin.top - margin.bottom - border.top.width - border.bottom.width - offset,
+        );
+      }
+
+      if (background.image) {
+        const img = this.style.getImage(background.image);
+        if (img && img.source) {
+          console.log('background image', background)
+
+          let left = 0
+          let top = 0;
+          let width = 100;
+          let height = 100;
+
+          if (background.position.left === BackgroundPosition.left) {
+            left = offsetLeft;
+          } else if (background.position.left === BackgroundPosition.right) {
+            left = offsetLeft + offsetWidth - width;
+          } else if (background.position.left === BackgroundPosition.center) {
+            left = (offsetLeft + offsetWidth) / 2 - width / 2;
+          } else if (REG_PX.test(background.position.left as string)) {
+            left = offsetLeft + this.style.transformUnitToPx(background.position.left as string);
+          } else if (REG_PCT.test(background.position.left as string)) {
+            left = offsetLeft + this.style.transformUnitToPx(
+              background.position.left as string,
+              offsetWidth - width,
+            );
+          }
+
+          if (background.position.top === BackgroundPosition.top) {
+            top = offsetTop
+          } else if (background.position.top === BackgroundPosition.bottom) {
+            top = offsetTop + offsetHeight - height;
+          } else if (background.position.top === BackgroundPosition.center) {
+            top = (offsetTop + offsetHeight) / 2 - height / 2;
+          } else if (REG_PX.test(background.position.top as string)) {
+            top = offsetTop + this.style.transformUnitToPx(background.position.top as string);
+          } else if (REG_PCT.test(background.position.top as string)) {
+            top = offsetTop + this.style.transformUnitToPx(
+              background.position.top as string,
+              offsetHeight - height,
+            );
+          }
+          // console.log(offsetLeft, offsetTop, offsetWidth, offsetHeight, img.imageWidth, img.imageHeight);
+          console.log(left, top, width, height, background);
+
+          drawRepeatImage(
+            context,
+            img.source,
+            width,
+            height,
+            offsetLeft,
+            offsetTop,
+            left, top,
+            offsetWidth,
+            offsetHeight,
+            background.repeat,
+          )
+        }
+      }
+    });
+
+    if (this.nodeType === NodeType.TEXT_NODE) {
+      const {displayText} = this;
+      if (displayText) {
+        const textBaseline = this.style.get('vertical-align') || 'top';
+        const color = this.style.getInheritStyle('color') || DEFAULT_COLOR;
+        context.font = this.style.canvasFont;
+        context.textBaseline = textBaseline as any;
+        context.fillStyle = color;
+        context.fillText(this.displayText, offsetLeft, offsetTop);
+        // context.strokeStyle = 'rgba(255,0,0,.5)';
+        // context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
+      }
+    } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
+      context.strokeStyle = '#00f';
+      context.strokeRect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
+    }
+
+    if (this.nodeName === SupportElement.img) {
+      const img: ElementImage = this as any;
+      if (img.source) {
+        context.drawImage(img.source, offsetLeft, offsetTop, contentWidth, contentHeight);
+      }
+    }
+
+    this.lines.forEach(line => {
+      line.textFlows.forEach(el => el.draw(context));
+    })
+    this.lines.forEach(line => {
+      line.floats.all.forEach(el => el.draw(context));
+    })
+    this.lines.forEach(line => {
+      line.absolutes.forEach(el => el.draw(context));
+    })
   }
 }

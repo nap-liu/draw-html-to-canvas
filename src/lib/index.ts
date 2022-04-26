@@ -1,5 +1,6 @@
 import parse from './parser';
 import {SupportElement, SupportElementType} from './constants';
+import ElementImage from './element-image';
 
 export default class Render {
   static fromHTML(html: string) {
@@ -18,7 +19,19 @@ export default class Render {
   }
 
   async loadSource() {
-    return Promise.all(this.elements.filter(i => i.nodeName === SupportElement.img).map((img: any) => img.load()));
+    // TODO 优化图片资源加载逻辑
+    await Promise.all(this.elements.map(async element => {
+      const background = element.style.background;
+      return Promise.all(background.filter(i => i.image).map(back => {
+        const el = new ElementImage();
+        el.attrs.src = back.image;
+        return el.load().then(() => {
+          console.log('background image load', element, back.image, el);
+          element.style.imageMap[back.image] = el;
+        });
+      }))
+    }));
+    return Promise.all(this.elements.filter(i => i.nodeName === SupportElement.img).map((img: any) => (img as ElementImage).load()));
   }
 
   layout(context: CanvasRenderingContext2D) {

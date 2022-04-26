@@ -17,14 +17,14 @@ export default function App() {
         const render = Render.fromHTML(html);
         console.timeEnd('Render.fromHTML(html)');
 
-        // console.time('Render.loadSource()');
-        // await render.loadSource();
-        // console.time('Render.loadSource()');
+        console.time('Render.loadSource()');
+        await render.loadSource();
+        console.time('Render.loadSource()');
 
         const context = canvas.current.getContext('2d');
         const rect = canvas.current.getBoundingClientRect();
         if (context) {
-          context.clearRect(0, 0, rect.width * scale * 10, rect.height * scale * 10)
+          context.clearRect(0, 0, rect.width * scale * 100, rect.height * scale * 100)
           // context.scale(scale, scale);
           console.time('render.layout(context)');
           render.rootNode.style.set('width', '500px');
