@@ -1,5 +1,5 @@
-import {BackgroundPosition, BackgroundSize, BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, REG_NUM, REG_PCT, REG_PX, SupportElement} from './constants';
-import Style from './style';
+import {BackgroundPosition, BackgroundRepeat, BackgroundSize, BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, REG_NUM, REG_PCT, REG_PX, SupportElement} from './constants';
+import Style, {IBackground} from './style';
 import Line from './line';
 import LineManger from './line-manger';
 import ElementImage from './element-image';
@@ -852,6 +852,134 @@ export default class Element {
 
   }
 
+  /**
+   * 绘制元素背景图
+   * @param context
+   * @param background
+   */
+  public drawBackground(context: CanvasRenderingContext2D, background: IBackground<string>) {
+    const {margin, border, lineHeight, fontSize} = this.style;
+    const {offsetLeft, offsetTop, offsetWidth, offsetHeight} = this;
+    let offset = 0;
+    if (this.blockType === BlockType.inline) {
+      offset = (lineHeight * fontSize) - fontSize;
+    }
+    if (background.color) {
+      context.fillStyle = background.color;
+      context.fillRect(
+        offsetLeft + margin.left + border.left.width,
+        offsetTop + margin.top + border.top.width,
+        offsetWidth - margin.left - margin.right - border.left.width - border.right.width,
+        offsetHeight - margin.top - margin.bottom - border.top.width - border.bottom.width - offset,
+      );
+    }
+
+    if (background.image) {
+      const img = this.style.getImage(background.image);
+      if (img && img.source) {
+        console.log('background', background);
+        let left = 0
+        let top = 0;
+        let width = 0;
+        let height = 0;
+        if (background.size.width === BackgroundSize.contain || background.size.width === BackgroundSize.cover) {
+          // 等比例缩放 contain 完整放下
+          // 等比例缩放 cover 超出裁剪
+          if (
+            (background.size.width === BackgroundSize.contain && img.imageWidth > img.imageHeight) ||
+            (background.size.width === BackgroundSize.cover && img.imageWidth < img.imageHeight)
+          ) {
+            const ratio = offsetWidth / img.imageWidth;
+            width = img.imageWidth * ratio;
+            height = img.imageHeight * ratio;
+          } else {
+            const ratio = offsetHeight / img.imageHeight;
+            width = img.imageWidth * ratio;
+            height = img.imageHeight * ratio;
+          }
+
+        } else {
+          if (REG_PX.test(background.size.width)) {
+            width = this.style.transformUnitToPx(background.size.width);
+          } else if (REG_PCT.test(background.size.width)) {
+            width = this.style.transformUnitToPx(
+              background.size.width,
+              offsetWidth,
+            );
+          }
+
+          if (REG_PX.test(background.size.height)) {
+            height = this.style.transformUnitToPx(background.size.height);
+          } else if (REG_PCT.test(background.size.height)) {
+            height = this.style.transformUnitToPx(
+              background.size.height,
+              offsetHeight,
+            );
+          }
+
+          if (background.size.width === BackgroundSize.auto) {
+            // 等比例缩放
+            const ratio = height / img.imageHeight;
+            width = img.imageWidth * ratio;
+          }
+
+          if (background.size.height === BackgroundSize.auto) {
+            // 等比例缩放
+            const ratio = width / img.imageWidth;
+            height = img.imageHeight * ratio;
+          }
+        }
+
+        if (REG_PX.test(background.position.leftOffset as string)) {
+          left = this.style.transformUnitToPx(background.position.leftOffset as string);
+        } else if (REG_PCT.test(background.position.leftOffset as string)) {
+          left = this.style.transformUnitToPx(
+            background.position.leftOffset as string,
+            offsetWidth - width,
+          );
+        }
+
+        if (background.position.left === BackgroundPosition.left) {
+          left += offsetLeft;
+        } else if (background.position.left === BackgroundPosition.right) {
+          left = offsetLeft + offsetWidth - width - left;
+        } else if (background.position.left === BackgroundPosition.center) {
+          left += (offsetLeft + offsetWidth) / 2 - width / 2;
+        }
+
+        if (REG_PX.test(background.position.topOffset as string)) {
+          top = this.style.transformUnitToPx(background.position.topOffset as string);
+        } else if (REG_PCT.test(background.position.topOffset as string)) {
+          top = this.style.transformUnitToPx(
+            background.position.topOffset as string,
+            offsetHeight - height,
+          );
+        }
+
+        if (background.position.top === BackgroundPosition.top) {
+          top += offsetTop
+        } else if (background.position.top === BackgroundPosition.bottom) {
+          top = offsetTop + offsetHeight - height - top;
+        } else if (background.position.top === BackgroundPosition.center) {
+          top += (offsetTop + offsetHeight) / 2 - height / 2;
+        }
+
+        drawRepeatImage(
+          context,
+          img.source,
+          width,
+          height,
+          offsetLeft,
+          offsetTop,
+          left, top,
+          offsetWidth,
+          offsetHeight,
+          background.repeat,
+        )
+      }
+    }
+  }
+
   public draw(context: CanvasRenderingContext2D) {
     const {
       background: backgroundList,
@@ -866,79 +994,18 @@ export default class Element {
       offsetWidth, offsetHeight,
       contentWidth, contentHeight,
     } = this;
+
     let offset = 0;
+
     if (this.blockType === BlockType.inline) {
       offset = (lineHeight * fontSize) - fontSize;
     }
 
-    backgroundList.forEach(background => {
-      if (background.color) {
-        context.fillStyle = background.color;
-        // console.log(offset, fontSize, lineHeight);
-        context.fillRect(
-          offsetLeft + margin.left + border.left.width,
-          offsetTop + margin.top + border.top.width,
-          offsetWidth - margin.left - margin.right - border.left.width - border.right.width,
-          offsetHeight - margin.top - margin.bottom - border.top.width - border.bottom.width - offset,
-        );
+    backgroundList.reverse().forEach((background, index) => {
+      if (index > 0) {
+        background.color = '';
       }
-
-      if (background.image) {
-        const img = this.style.getImage(background.image);
-        if (img && img.source) {
-          console.log('background image', background)
-
-          let left = 0
-          let top = 0;
-          let width = 100;
-          let height = 100;
-
-          if (background.position.left === BackgroundPosition.left) {
-            left = offsetLeft;
-          } else if (background.position.left === BackgroundPosition.right) {
-            left = offsetLeft + offsetWidth - width;
-          } else if (background.position.left === BackgroundPosition.center) {
-            left = (offsetLeft + offsetWidth) / 2 - width / 2;
-          } else if (REG_PX.test(background.position.left as string)) {
-            left = offsetLeft + this.style.transformUnitToPx(background.position.left as string);
-          } else if (REG_PCT.test(background.position.left as string)) {
-            left = offsetLeft + this.style.transformUnitToPx(
-              background.position.left as string,
-              offsetWidth - width,
-            );
-          }
-
-          if (background.position.top === BackgroundPosition.top) {
-            top = offsetTop
-          } else if (background.position.top === BackgroundPosition.bottom) {
-            top = offsetTop + offsetHeight - height;
-          } else if (background.position.top === BackgroundPosition.center) {
-            top = (offsetTop + offsetHeight) / 2 - height / 2;
-          } else if (REG_PX.test(background.position.top as string)) {
-            top = offsetTop + this.style.transformUnitToPx(background.position.top as string);
-          } else if (REG_PCT.test(background.position.top as string)) {
-            top = offsetTop + this.style.transformUnitToPx(
-              background.position.top as string,
-              offsetHeight - height,
-            );
-          }
-          // console.log(offsetLeft, offsetTop, offsetWidth, offsetHeight, img.imageWidth, img.imageHeight);
-          console.log(left, top, width, height, background);
-
-          drawRepeatImage(
-            context,
-            img.source,
-            width,
-            height,
-            offsetLeft,
-            offsetTop,
-            left, top,
-            offsetWidth,
-            offsetHeight,
-            background.repeat,
-          )
-        }
-      }
+      this.drawBackground(context, background);
     });
 
     if (this.nodeType === NodeType.TEXT_NODE) {
@@ -950,8 +1017,12 @@ export default class Element {
         context.textBaseline = textBaseline as any;
         context.fillStyle = color;
         context.fillText(this.displayText, offsetLeft, offsetTop);
-        // context.strokeStyle = 'rgba(255,0,0,.5)';
-        // context.strokeRect(this.offsetLeft, this.offsetTop, this.offsetWidth, this.offsetHeight);
+
+        const {textDecoration} = this.style;
+        if (textDecoration) {
+
+        }
+
       }
     } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
       context.strokeStyle = '#00f';

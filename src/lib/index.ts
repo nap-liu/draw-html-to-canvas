@@ -26,7 +26,6 @@ export default class Render {
         const el = new ElementImage();
         el.attrs.src = back.image;
         return el.load().then(() => {
-          console.log('background image load', element, back.image, el);
           element.style.imageMap[back.image] = el;
         });
       }))

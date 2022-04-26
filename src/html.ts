@@ -5,7 +5,8 @@ export default `<div
     /* height: 100%;*/
      text-align: left;
     /*font-family: 'PingFang SC';*/
-    background: url('img.png') right 10px bottom 20% / 100px auto repeat-y;
+    background: url('img_2.png') 10px 20px / 100px auto no-repeat;
+    /*url('img.png') center / 100px auto repeat-y;*/
    "
   id="renderTemplate"
 >
@@ -15,7 +16,8 @@ export default `<div
       in<br>line
       <div style="display: inline-block;">
         <div style="">
-          <div style="display: inline">
+          <div style="display: inline;text-decoration: underline;
+">
             <span style="background: #BC8F8F;  padding: 0 10px">
               setsocketopt函数 设置socket工作参数
             </span>

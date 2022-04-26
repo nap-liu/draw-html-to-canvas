@@ -1,26 +1,5 @@
 import Element from './element';
-import {
-  BackgroundAttachment,
-  BackgroundClip,
-  BackgroundPosition,
-  BackgroundRepeat,
-  BackgroundSize,
-  NodeType,
-  BlockType,
-  DEFAULT_FONT_FAMILY,
-  DEFAULT_FONT_SIZE,
-  DEFAULT_LINE_HEIGHT,
-  REG_BG_ATTACHMENT,
-  REG_BG_CLIP,
-  REG_BG_POSITION_SIZE,
-  REG_COLOR,
-  REG_EM,
-  REG_PCT,
-  REG_PX,
-  REG_REM,
-  REG_REPEAT,
-  REG_URL,
-} from './constants';
+import {BackgroundAttachment, BackgroundClip, BackgroundPosition, BackgroundRepeat, BackgroundSize, BlockType, DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType, REG_BG_ATTACHMENT, REG_BG_CLIP, REG_BG_POSITION_SIZE, REG_COLOR, REG_EM, REG_PCT, REG_PX, REG_REM, REG_REPEAT, REG_URL} from './constants';
 import ElementImage from './element-image';
 
 // import ElementImage from './element-image';
@@ -34,13 +13,13 @@ interface IRound<T = any> {
   [x: string]: T;
 }
 
-interface IBorder {
+export interface IBorder {
   width: number;
   style: string;
   color: string;
 }
 
-interface IBackground<T = string | number> {
+export interface IBackground<T = string | number> {
   color: string;
   image: string;
   position: {
@@ -57,6 +36,13 @@ interface IBackground<T = string | number> {
   attachment: BackgroundAttachment;
   origin: BackgroundClip;
   clip: BackgroundClip;
+}
+
+export interface ITextDecoration {
+  line: string;
+  style: string;
+  color: string;
+  thickness: string;
 }
 
 /**
@@ -256,13 +242,23 @@ export default class Style {
   }
 
   /**
+   * 文字修饰
+   */
+  public get textDecoration() {
+
+    return {};
+  }
+
+  /**
    * 背景继承只局限于inline元素
    */
-  public get background(): IBackground[] {
+  public get background(): IBackground<string>[] {
     if (this.element.nodeType === NodeType.TEXT_NODE &&
       this.element.parentNode && this.element.parentNode.blockType === BlockType.inline) {
       return this.element.parentNode.style.background;
     }
+
+    // TODO 背景样式优先级处理
 
     const all = this.style['background'];
     let allIdx = this.styleIndex['background'] || -1;
@@ -288,9 +284,9 @@ export default class Style {
       let color = '';
       let image = '';
       const position = {
-        left: BackgroundPosition.center,
+        left: BackgroundPosition.left,
         leftOffset: '',
-        top: BackgroundPosition.center,
+        top: BackgroundPosition.top,
         topOffset: '',
       };
       const size = {
@@ -322,32 +318,34 @@ export default class Style {
         attachment = matched as BackgroundAttachment;
         return '';
       }).replace(REG_BG_POSITION_SIZE, (...args) => {
-        const [
+        let [
           , leftAll, leftEnum, leftEnumAllOffset, leftAllUnit,
           topAll, topEnum, topEnumAllOffset, topAllUnit,
-          hasSize,
-          widthAll, widthEnum, widthAllUnit,
-          heightAll, heightEnum, heightAllUnit,
+          sizeEnum,
+          widthAll,
+          heightAll,
         ] = args;
-        // const [
-        //   ,
-        //   leftAll, leftAllEnum, leftEnum, leftEnumAllOffset, leftEnumOffsetNum, leftEnumOffsetFloat, leftEnumOffsetUnit, leftAllUnit, leftNum, leftFloat, leftUnit,
-        //   topAll, topAllEnum, topEnum, topEnumAllOffset, topEnumOffsetNum, topEnumOffsetFloat, topEnumOffsetUnit, topAllUnit, topNum, topFloat, topUnit,
-        //   hasSize,
-        //   widthAll, widthEnum, widthAllUnit, widthNum, widthFloat, widthUnit,
-        //   heightAll, heightEnum, heightAllUnit, heightNum, heightFloat, heightUnit,
-        // ] = args;
-        //
-        // console.log({
-        //   leftAll, leftAllEnum, leftEnum, leftEnumAllOffset, leftEnumOffsetNum, leftEnumOffsetFloat, leftEnumOffsetUnit, leftAllUnit, leftNum, leftFloat, leftUnit,
-        //   topAll, topAllEnum, topEnum, topEnumAllOffset, topEnumOffsetNum, topEnumOffsetFloat, topEnumOffsetUnit, topAllUnit, topNum, topFloat, topUnit,
-        //   hasSize,
-        //   widthAll, widthEnum, widthAllUnit, widthNum, widthFloat, widthUnit,
-        //   heightAll, heightEnum, heightAllUnit, heightNum, heightFloat, heightUnit,
-        // })
+
+        console.log({
+          leftAll, leftEnum, leftEnumAllOffset, leftAllUnit,
+          topAll, topEnum, topEnumAllOffset, topAllUnit,
+          sizeEnum,
+          widthAll,
+          heightAll,
+        })
+
+        if (leftEnumAllOffset && !topAll) {
+          // topAll = leftEnumAllOffset;
+          topEnumAllOffset = leftEnumAllOffset;
+          leftEnumAllOffset = '';
+        }
 
         if (leftAll) {
           position.left = leftEnum || leftAllUnit;
+          if (leftAllUnit) {
+            position.leftOffset = position.left;
+            position.left = BackgroundPosition.left;
+          }
         }
 
         if (leftEnumAllOffset) {
@@ -356,6 +354,10 @@ export default class Style {
 
         if (topAll) {
           position.top = topEnum || topAllUnit;
+          if (topAllUnit) {
+            position.topOffset = position.top;
+            position.top = BackgroundPosition.top;
+          }
         } else if (leftEnum && leftEnum === BackgroundPosition.center) {
           position.top = BackgroundPosition.center;
         }
@@ -364,14 +366,14 @@ export default class Style {
           position.topOffset = topEnumAllOffset;
         }
 
-        if (hasSize) {
+        if (sizeEnum) {
+          size.height = size.width = sizeEnum
+        } else {
           if (widthAll) {
-            size.width = widthEnum || widthAllUnit;
+            size.width = widthAll
           }
           if (heightAll) {
-            size.height = heightEnum || heightAllUnit;
-          } else {
-            size.height = size.width;
+            size.height = heightAll;
           }
         }
         return '';
