@@ -45,32 +45,49 @@ export enum SupportElement {
   span = 'span',
 }
 
-export const REG_COLOR = /rgba\(\s*(\d{1,3}\s*,\s*){3}\s*(\d|\.\d+|\d\.\d+)\s*\)|rgb\(\s*(\d{1,3}\s*,\s*){3}\s*\)|((#[a-z0-9]{3})|(#[a-z0-9]{6}))/i;
+const COLOR = `rgba\\(\\s*(?:\\d{1,3}\\s*,\\s*){3}\\s*(?:\\d|\\.\\d+|\\d\\.\\d+)\\s*\\)|rgb\\(\\s*(?:\\d{1,3}\\s*,\\s*){3}\\s*\\)|(?:#[a-z0-9]{6})|(?:#[a-z0-9]{3})`
+export const REG_COLOR = new RegExp(COLOR, 'i');
 export const REG_PX = /px$/i;
 export const REG_PCT = /%$/;
 export const REG_REM = /rem$/i;
 export const REG_EM = /em$/i;
 export const REG_NUM = /^\d+(?:.\d+)?$/;
 export const REG_URL = /url\((?:'([^']+)'|("[^"]+")|([^)]+))\)/i;
-export const REG_REPEAT = /repeat-y|repeat-x|no-repeat|repeat/i;
+export const REG_BG_REPEAT = /repeat-y|repeat-x|no-repeat|repeat/i;
 export const REG_BG_ATTACHMENT = /scroll|fixed|local/i;
-export const REG_BG_CLIP = /border-box|padding-box|content-box/i;
+export const REG_BG_CLIP = /border-box|padding-box|content-box/ig;
 
+const FLOAT_NO_GROUP = '(?:-?\\d*(?:\\.\\d+)?)(?:%|px)'
+const FLOAT_POSITIVE_NO_GROUP = '(?:\\d*(?:\\.\\d+)?)(?:%|px)'
+const FLOAT = `(${FLOAT_NO_GROUP})`
+const BG_POS = `(?:(left|center|right|top|bottom)\\s+${FLOAT}?)`
+const BG_SIZE_ENUM = '(cover|contain)'
+const BG_SIZE_NUM = `(auto|${FLOAT_NO_GROUP})`
+const BG_SIZE = `(?:${BG_SIZE_ENUM}|(?:${BG_SIZE_NUM}\\s+${BG_SIZE_NUM}?))`
 
+export const REG_BG_POSITION_SIZE = new RegExp(`\\s*(${BG_POS}|${FLOAT})\\s*(${BG_POS}|${FLOAT})?(?:\\s*\\/\\s*${BG_SIZE})`, 'i');
 
-export const REG_FLOAT_NO_GROUP = '(?:-?\\d*(?:\\.\\d+)?)(?:%|px)'
-export const REG_FLOAT = `(${REG_FLOAT_NO_GROUP})`
-const REG_BG_POS = `(?:(left|center|right|top|bottom)\\s+${REG_FLOAT}?)`
-const REG_BG_SIZE_ENUM = '(cover|contain)'
-const REG_BG_SIZE_NUM = `(auto|${REG_FLOAT_NO_GROUP})`
-const REG_BG_SIZE = `(?:${REG_BG_SIZE_ENUM}|(?:${REG_BG_SIZE_NUM}\\s+${REG_BG_SIZE_NUM}?))`
+const getRound = (value: string) => `((?:(${value})\\s+(${value})\\s+(${value})\\s+(${value}))|(?:(${value})\\s+(${value})\\s+(${value}))|(?:(${value})\\s+(${value}))|(${value}))`;
 
-export const REG_BG_POSITION_SIZE = new RegExp(`\\s*(${REG_BG_POS}|${REG_FLOAT})\\s*(${REG_BG_POS}|${REG_FLOAT})?(?:\\s*\\/\\s*${REG_BG_SIZE})`, 'i');
+const REG_ROUND_AUTO_VALUE = new RegExp(getRound(`auto|${FLOAT_NO_GROUP}`), 'i');
+// console.log('REG_ROUND_AUTO_VALUE', REG_ROUND_AUTO_VALUE);
 
-const REG_VALUE = `(auto|${REG_FLOAT_NO_GROUP})`
-export const REG_ROUND_VALUE = new RegExp(`((${REG_VALUE})|((${REG_VALUE})\\s+(${REG_VALUE}))|((${REG_VALUE})\\s+(${REG_VALUE})\\s+(${REG_VALUE}))|((${REG_VALUE})\\s+(${REG_VALUE})\\s+(${REG_VALUE})\\s+(${REG_VALUE})))`, 'i');
-console.log(REG_ROUND_VALUE);
-console.log(REG_BG_POSITION_SIZE);
+const ROUND_NUM = getRound(FLOAT_POSITIVE_NO_GROUP);
+export const REG_BORDER_RADIUS = new RegExp(`(?:${ROUND_NUM}(?:\\s*/\\s*${ROUND_NUM})?)`, 'i')
+// console.log('REG_BORDER_RADIUS', REG_BORDER_RADIUS);
+
+// console.log('REG_ROUND_VALUE',REG_ROUND_VALUE);
+// console.log('REG_ROUND_AUTO_VALUE',REG_ROUND_AUTO_VALUE);
+
+const BORDER_STYLE = '(none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset)';
+const BORDER_WIDTH = `((?:thin|medium|thick)|(?:${FLOAT_POSITIVE_NO_GROUP}))`
+
+export const REG_BORDER_WIDTH = new RegExp(BORDER_WIDTH, 'i');
+export const REG_BORDER_STYLE = new RegExp(BORDER_STYLE, 'i');
+export const REG_BORDER_COLOR = REG_COLOR;
+export const REG_BORDER = new RegExp(`${BORDER_WIDTH}\\s+${BORDER_STYLE}\\s+(${COLOR})`, 'i')
+
+// console.log(REG_BORDER);
 
 export type SupportElementType = Element | ElementImage;
 
@@ -106,3 +123,6 @@ export enum BackgroundAttachment {
   fixed = 'fixed',
   local = 'local',
 }
+
+export type TContinueDraw = (ctx: CanvasRenderingContext2D) => void;
+export type TCurvePath = [[number, number], [number, number], [number, number]];

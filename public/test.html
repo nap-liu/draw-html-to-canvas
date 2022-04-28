@@ -8,8 +8,8 @@
 </head>
 
 <body>
-<img src="logo192.png" id="img1" alt="">
 <canvas id="can" width="800px" height="600px" style="background-color: #CCCCCC">你的浏览器不支持canvas标签</canvas>
+<img src="logo192.png" id="img1" alt="">
 </body>
 <script type="text/javascript">
   window.onload = function() {
@@ -60,53 +60,423 @@
 
     // drawRepeatImage(ctx, img, 80, 50, -10, -10, 500, 500, 'repeat-y');
 
-    const drawRadiusRect = (ctx, left, top, width, height, radius, clip) => {
+    /**
+     *
+     */
+
+    /**
+     * 绘制一条曲线路径
+     * @param  {Object} ctx canvas渲染上下文
+     * @param  {Array<number>} start 起点
+     * @param  {Array<number>} end 终点
+     * @param  {Array<number>} control 控制点
+     * @param  {number} percent 绘制百分比(0-1)
+     */
+    function drawCurvePath(ctx, start, end, control, percent) {
+      const cp = control;
+      const t = percent;
+
+      const p0 = start;
+      const p1 = cp;
+      const p2 = end;
+
+      const v01 = [
+        p1[0] - p0[0],
+        p1[1] - p0[1],
+      ];     // 向量<p0, p1>
+
+      const v12 = [
+        p2[0] - p1[0],
+        p2[1] - p1[1],
+      ];     // 向量<p1, p2>
+
+      const q0 = [
+        p0[0] + v01[0] * t,
+        p0[1] + v01[1] * t,
+      ];
+
+      const q1 = [
+        p1[0] + v12[0] * t,
+        p1[1] + v12[1] * t,
+      ];
+
+      const v = [
+        q1[0] - q0[0],
+        q1[1] - q0[1],
+      ];       // 向量<q0, q1>
+
+      const b = [
+        q0[0] + v[0] * t,
+        q0[1] + v[1] * t,
+      ];
+
+      ctx.moveTo(p0[0], p0[1]);
+
+      ctx.quadraticCurveTo(
+        q0[0], q0[1],
+        b[0], b[1],
+      );
+    }
+
+    /**
+     * 从P0画截止到t点
+     * @param P0 起点
+     * @param P1 控制点
+     * @param P2 结束点
+     * @param t 截取百分比
+     * @returns {[number,number,number]} P0, M, B
+     */
+    const getCurveStart = (P0, P1, P2, t) => {
+      const M = (1 - t) * P0 + P1 * t;
+      const N = (1 - t) * P1 + P2 * t;
+      const B = (1 - t) * M + N * t; // 终点
+      return [P0, M, B];
+    };
+
+    /**
+     * 从t开始画到P2点
+     * @param P0
+     * @param P1
+     * @param P2
+     * @param t
+     * @returns {[number,number,number]} B, N, P2
+     */
+    const getCurveEnd = (P0, P1, P2, t) => {
+      const M = (1 - t) * P0 + P1 * t;
+      const N = (1 - t) * P1 + P2 * t;
+      const B = (1 - t) * M + N * t; // 起点
+      return [B, N, P2];
+    };
+
+    /**
+     * 截取指定比例中间线段
+     * @param P0
+     * @param P1
+     * @param P2
+     * @param t1 起始百分比
+     * @param t2 结束百分比
+     */
+    const getCurveMiddle = (P0, P1, P2, t1, t2) => {
+      const [s0, s1, s2] = getCurveStart(P0, P1, P2, t2);
+      return getCurveEnd(s0, s1, s2, t1 / t2);
+    };
+
+    const drawBorder = () => {
+      const width = 440;
+      const height = 400;
+      // const left = 100;
+      // const top = 100;
+      const top = {color: '#f00', style: 'solid', width: 50, radius: 30};
+      const right = {color: '#ff0', style: 'solid', width: 50, radius: 50};
+      const bottom = {color: '#0f0', style: 'solid', width: 50, radius: 90};
+      const left = {color: '#00f', style: 'solid', width: 50, radius: 50};
       ctx.save();
+
+      ctx.lineCap = 'butt';
+      ctx.translate(100, 100);
+      ctx.strokeRect(0, 0, width, height);
+
+      // top
+      {
+        ctx.beginPath();
+        ctx.lineWidth = top.width;
+        ctx.strokeStyle = top.color;
+        {
+          // [0, top.radius],
+          // [0, 0],
+          // [top.radius, 0]
+          const ratio = top.width / (left.width + top.width);
+          // console.log(ratio);
+          const [x1, x2, x3] = getCurveEnd(0, 0, top.radius, 1 - ratio);
+          const [y1, y2, y3] = getCurveEnd(top.radius, 0, 0, 1 - ratio);
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(x2, y2, x3, y3);
+          ctx.lineTo(width - right.radius, 0);
+        }
+        {
+          // [width - right.radius, 0],
+          // [width, 0],
+          // [width, right.radius]
+          const ratio = top.width / (right.width + top.width);
+          // console.log(ratio);
+          const [x1, x2, x3] = getCurveStart(width - right.radius, width, width, ratio);
+          const [y1, y2, y3] = getCurveStart(0, 0, right.radius, ratio);
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(x2, y2, x3, y3);
+        }
+        ctx.stroke();
+      }
+
+      // right
+      {
+        ctx.beginPath();
+        ctx.lineWidth = right.width;
+        ctx.strokeStyle = right.color;
+        {
+          // [width - right.radius, 0],
+          // [width, 0],
+          // [width, right.radius]
+          const ratio = right.width / (right.width + top.width);
+          const [x1, x2, x3] = getCurveEnd(width - right.radius, width, width, ratio);
+          const [y1, y2, y3] = getCurveEnd(0, 0, right.radius, ratio);
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(x2, y2, x3, y3);
+          ctx.lineTo(width, height - bottom.radius);
+        }
+        {
+          // [width, height - bottom.radius],
+          // [width, height],
+          // [width - bottom.radius, height]
+          const ratio = right.width / (right.width + bottom.width);
+          const [x1, x2, x3] = getCurveStart(width, width, width - bottom.radius, ratio);
+          const [y1, y2, y3] = getCurveStart(height - bottom.radius, height, height, ratio);
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(x2, y2, x3, y3);
+        }
+        ctx.stroke();
+      }
+
+      // bottom
+      {
+        ctx.beginPath();
+        ctx.lineWidth = bottom.width;
+        ctx.strokeStyle = bottom.color;
+        {
+          // [width, height - bottom.radius],
+          // [width, height],
+          // [width - bottom.radius, height]
+          const ratio = bottom.width / (bottom.width + right.width);
+          const [x1, x2, x3] = getCurveEnd(width, width, width - bottom.radius, ratio);
+          const [y1, y2, y3] = getCurveEnd(height - bottom.radius, height, height, ratio);
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(x2, y2, x3, y3);
+          ctx.lineTo(left.radius, height);
+        }
+        {
+          // [left.radius, height],
+          // [0, height],
+          // [0, height - left.radius]
+          const ratio = bottom.width / (left.width + bottom.width);
+          const [x1, x2, x3] = getCurveStart(left.radius, 0, 0, ratio);
+          const [y1, y2, y3] = getCurveStart(height, height, height - left.radius, ratio);
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(x2, y2, x3, y3);
+        }
+        ctx.stroke();
+      }
+
+      // left
+      {
+        ctx.beginPath();
+        ctx.lineWidth = left.width;
+        ctx.strokeStyle = left.color;
+        {
+          // [left.radius, height],
+          // [0, height],
+          // [0, height - left.radius]
+          const ratio = left.width / (bottom.width + left.width);
+          const [x1, x2, x3] = getCurveEnd(left.radius, 0, 0, ratio);
+          const [y1, y2, y3] = getCurveEnd(height, height, height - left.radius, ratio);
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(x2, y2, x3, y3);
+          ctx.lineTo(0, top.radius);
+        }
+        {
+          // [0, top.radius],
+          // [0, 0],
+          // [top.radius, 0]
+          const ratio = left.width / (left.width + top.width);
+          const [x1, x2, x3] = getCurveStart(0, 0, top.radius, ratio);
+          const [y1, y2, y3] = getCurveStart(top.radius, 0, 0, ratio);
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(x2, y2, x3, y3);
+        }
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    };
+
+    drawBorder();
+
+    const test = () => {
+      const [leftTop, rightTop, rightBottom, leftBottom] = [50, 50, 50, 50];
+      ctx.save();
+      ctx.translate(0, 0);
+      // right to bottom
+      // const width = 100;
+      // const height = 100;
+      ctx.lineWidth = 10;
       ctx.beginPath();
-      ctx.moveTo(left + radius, top);
-      ctx.lineTo(left + width - radius, top);
-      ctx.arcTo(left + width - radius, top, left + width, top + radius, radius);
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(0, 200, 150, 200);
+      ctx.lineTo(0, 200);
+      ctx.closePath();
+      // ctx.fill();
+      ctx.stroke();
+
+      ctx.translate(200, 0);
+      ctx.beginPath();
+      ctx.strokeStyle = '#f00';
+      drawCurvePath(ctx, [0, 0], [150, 200], [0, 200], 0.3);
+      ctx.lineTo(0, 200);
+      ctx.closePath();
+      ctx.stroke();
+
+      const start = [0, 0];
+      const control = [0, 200];
+      const end = [150, 200];
+
+      {
+        ctx.translate(100, 0);
+        ctx.beginPath();
+        ctx.strokeStyle = '#ff0';
+        ctx.moveTo(...start);
+        ctx.quadraticCurveTo(...control, ...end);
+        ctx.stroke();
+      }
+
+      {
+        ctx.translate(70, 0);
+        const [x1, x2, x3] = getCurveStart(start[0], control[0], end[0], 0.5);
+        const [y1, y2, y3] = getCurveStart(start[1], control[1], end[1], 0.5);
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255,0,0)';
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo(x2, y2, x3, y3);
+        ctx.stroke();
+      }
+
+      {
+        ctx.translate(10, 0);
+        const [x1, x2, x3] = getCurveMiddle(start[0], control[0], end[0], 0.3, 0.5);
+        const [y1, y2, y3] = getCurveMiddle(start[1], control[1], end[1], 0.3, 0.5);
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(0,0,0,.5)';
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo(x2, y2, x3, y3);
+        ctx.stroke();
+      }
+
+      {
+        const [x1, x2, x3] = getCurveEnd(start[0], control[0], end[0], 0.9);
+        const [y1, y2, y3] = getCurveEnd(start[1], control[1], end[1], 0.9);
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(0,255,0,.6)';
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo(x2, y2, x3, y3);
+        ctx.stroke();
+      }
+
+      {
+        // ctx.translate(10, 0);
+        const [x1, x2, x3] = getCurveStart(start[0], control[0], end[0], 0.9);
+        const [y1, y2, y3] = getCurveStart(start[1], control[1], end[1], 0.9);
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255,255,255,.6)';
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo(x2, y2, x3, y3);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    };
+    // test();
+
+    // ctx.save();
+    // ctx.translate(10, 10);
+    // ctx.lineWidth = 5;
+    // drawRoundRectPath(ctx, 100, 100, [20, 30, 40, 10]);
+    // ctx.stroke();
+    // ctx.restore();
+
+    const ellipse = (x, y, radiusX, radiusY, rotation) => {
+      ctx.save();
+      ctx.translate(x, y);
+      x = 0;
+      y = 0;
+      // ctx.clearRect(x, y, radiusX, radiusY);
+      ctx.strokeRect(x, y, radiusX, radiusY);
+      ctx.beginPath();
+
+      const base = Math.PI / 180;
+
+      const offset = Math.abs(radiusX - radiusY);
+
+      ctx.arc(x, y, radiusX, base * -45, base * 45);
+      ctx.arc(x, y, radiusY, base * 45, base * (90 + 45));
+      ctx.arc(x, y, radiusX, base * (90 + 45), base * (180 + 45));
+      ctx.arc(x, y, radiusY, base * (180 + 45), base * (180 + 45 + 45 + 45));
+
+      // ctx.arc(x ,y, radiusY, base * )
+      // ctx.moveTo(x, y);
+      // ctx.strokeStyle = '#f00';
+      // ctx.lineWidth = 10;
+      // ctx.arc(r1, r1, Math.PI / 180 * -45, Math.PI / 180 * 0);
+      // ctx.lineTo(width, height - r1);
+      ctx.closePath();
       ctx.stroke();
       ctx.restore();
     };
 
-    function drawRoundRectPath(ctx, width, height, radius) {
-      const [r0, r1, r2, r3] = radius;
-      ctx.beginPath();
-      //从右下角顺时针绘制，弧度从0到1/2PI
-      ctx.arc(width - r0, height - r0, r0, 0, Math.PI / 2);
+    // ellipse(100, 100, 100, 50, 0);
 
+    const round = (x, y, width, height, borders) => {
+      ctx.save();
 
+      const [top, right, bottom, left] = borders;
 
-      //矩形下边线
-      ctx.lineTo(r1, height);
+      // ctx.scale(scale, scale);
+      ctx.translate(x, y);
+      x = 0;
+      y = 0;
 
-      //左下角圆弧，弧度从1/2PI到PI
-      ctx.arc(r1, height - r1, r1, Math.PI / 2, Math.PI);
-      //
-      // //矩形左边线
-      // ctx.lineTo(0, r2);
-      //
-      //左上角圆弧，弧度从PI到3/2PI
-      ctx.arc(r2, r2, r2, Math.PI, Math.PI * 3 / 2);
-      //
-      // //上边线
-      // ctx.lineTo(width - r3, 0);
-      //
-      //右上角圆弧
-      ctx.arc(width - r3, r3, r3, Math.PI * 3 / 2, Math.PI * 2);
-      //
-      // //右边线
-      // ctx.lineTo(width, height - r3);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#0f0';
+
+      ctx.strokeRect(x, y, width, height);
+      /**
+       * 斜线分割逻辑为
+       * 外圆 圆角剪切
+       * 内圆
+       */
+
+      // ctx.save();
+      // ctx.lineWidth = 1;
+      // ctx.strokeStyle = '#f00';
+      // // ctx.strokeStyle = 'transparent'
+      // ctx.beginPath();
+      // ctx.translate(0, 1);
+      // ctx.moveTo(0, 0);
+      // ctx.lineTo(width, 0);
+      // ctx.lineTo(width / 2, height / 2);
+      // // ctx.fill();
       // ctx.closePath();
-    }
+      // ctx.stroke();
+      // ctx.clip();
+      // ctx.translate(0, -1);
+      //
+      // ctx.beginPath();
+      // ctx.lineWidth = 1;
+      // ctx.strokeStyle = '#00f';
+      // ctx.moveTo(0, leftBottom);
+      // ctx.arcTo(0, 0, width, 0, leftTop);
+      // ctx.lineTo(width - rightTop, 0);
+      // ctx.arcTo(width, 0, width, 1, rightTop);
+      // ctx.lineTo(width, height - rightBottom);
+      // ctx.stroke();
+      //
+      // ctx.restore();
 
-    ctx.save();
-    ctx.translate(10, 10);
-    ctx.lineWidth = 5;
-    drawRoundRectPath(ctx, 100, 100, [20, 30, 40, 10]);
-    ctx.stroke();
-    ctx.restore();
+      ctx.restore();
+    };
+
+    // round(20, 20, 500, 500, [
+    //   {radius: 10, width: 10, color: '#f00'},
+    //   {radius: 10, width: 10, color: '#ff0'},
+    //   {radius: 10, width: 10, color: '#0f0'},
+    //   {radius: 10, width: 10, color: '#00f'},
+    // ]);
 
   };
 </script>

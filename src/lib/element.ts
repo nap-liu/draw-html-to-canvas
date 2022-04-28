@@ -1,9 +1,9 @@
-import {BackgroundPosition, BackgroundRepeat, BackgroundSize, BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, REG_NUM, REG_PCT, REG_PX, SupportElement} from './constants';
+import {BackgroundClip, BackgroundPosition, BackgroundSize, BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, REG_NUM, REG_PCT, REG_PX, SupportElement, TContinueDraw} from './constants';
 import Style, {IBackground} from './style';
 import Line from './line';
 import LineManger from './line-manger';
 import ElementImage from './element-image';
-import {drawRepeatImage} from './util';
+import {cutCurveEndPath, cutCurveStartPath, drawRepeatImage, ellipse} from './util';
 
 export default class Element {
   public nodeValue = '';
@@ -848,40 +848,79 @@ export default class Element {
     this.layoutLinePosition();
   }
 
-  public drawRepeatImage() {
-
-  }
-
   /**
    * 绘制元素背景图
    * @param context
    * @param background
    */
   public drawBackground(context: CanvasRenderingContext2D, background: IBackground<string>) {
-    const {margin, border, lineHeight, fontSize} = this.style;
-    const {offsetLeft, offsetTop, offsetWidth, offsetHeight} = this;
+    const {margin, border, padding, lineHeight, fontSize} = this.style;
+    const {offsetLeft, offsetTop, contentWidth, contentHeight} = this;
     let offset = 0;
     if (this.blockType === BlockType.inline) {
       offset = (lineHeight * fontSize) - fontSize;
     }
+
+    const getBox = (clip: BackgroundClip) => {
+      let x = 0;
+      let y = 0;
+      let width = 0;
+      let height = 0;
+      if (clip === BackgroundClip.borderBox) {
+        x = offsetLeft + margin.left;
+        y = offsetTop + margin.top;
+        width = contentWidth + padding.left + padding.right + border.left.width + border.right.width;
+        height = contentHeight + padding.top + padding.bottom + border.top.width + border.bottom.width;
+      } else if (clip === BackgroundClip.paddingBox) {
+        x = offsetLeft + margin.left + border.left.width;
+        y = offsetTop + margin.top + border.top.width;
+        width = contentWidth + padding.left + padding.right
+        height = contentHeight + padding.top + padding.bottom
+      } else if (clip === BackgroundClip.contentBox) {
+        x = offsetLeft + margin.left + border.left.width + padding.left;
+        y = offsetTop + margin.top + border.top.width + padding.top;
+        width = contentWidth
+        height = contentHeight
+      }
+      return {
+        x,
+        y,
+        width,
+        height,
+      }
+    };
+
+    let {
+      x: boxX,
+      y: boxY,
+      width: boxWidth,
+      height: boxHeight,
+    } = getBox(background.clip);
+
     if (background.color) {
       context.fillStyle = background.color;
-      context.fillRect(
-        offsetLeft + margin.left + border.left.width,
-        offsetTop + margin.top + border.top.width,
-        offsetWidth - margin.left - margin.right - border.left.width - border.right.width,
-        offsetHeight - margin.top - margin.bottom - border.top.width - border.bottom.width - offset,
-      );
+      context.fillRect(boxX, boxY, boxWidth, boxHeight - offset);
     }
 
     if (background.image) {
+
       const img = this.style.getImage(background.image);
+
       if (img && img.source) {
+        if (background.origin !== background.clip) {
+          const box = getBox(background.origin);
+          boxY = box.x;
+          boxY = box.y;
+          boxHeight = box.height;
+          boxWidth = box.width;
+        }
         console.log('background', background);
-        let left = 0
+
+        let left = 0;
         let top = 0;
         let width = 0;
         let height = 0;
+
         if (background.size.width === BackgroundSize.contain || background.size.width === BackgroundSize.cover) {
           // 等比例缩放 contain 完整放下
           // 等比例缩放 cover 超出裁剪
@@ -889,11 +928,11 @@ export default class Element {
             (background.size.width === BackgroundSize.contain && img.imageWidth > img.imageHeight) ||
             (background.size.width === BackgroundSize.cover && img.imageWidth < img.imageHeight)
           ) {
-            const ratio = offsetWidth / img.imageWidth;
+            const ratio = boxWidth / img.imageWidth;
             width = img.imageWidth * ratio;
             height = img.imageHeight * ratio;
           } else {
-            const ratio = offsetHeight / img.imageHeight;
+            const ratio = boxHeight / img.imageHeight;
             width = img.imageWidth * ratio;
             height = img.imageHeight * ratio;
           }
@@ -904,7 +943,7 @@ export default class Element {
           } else if (REG_PCT.test(background.size.width)) {
             width = this.style.transformUnitToPx(
               background.size.width,
-              offsetWidth,
+              boxWidth,
             );
           }
 
@@ -913,7 +952,7 @@ export default class Element {
           } else if (REG_PCT.test(background.size.height)) {
             height = this.style.transformUnitToPx(
               background.size.height,
-              offsetHeight,
+              boxHeight,
             );
           }
 
@@ -935,16 +974,16 @@ export default class Element {
         } else if (REG_PCT.test(background.position.leftOffset as string)) {
           left = this.style.transformUnitToPx(
             background.position.leftOffset as string,
-            offsetWidth - width,
+            boxWidth - width,
           );
         }
 
         if (background.position.left === BackgroundPosition.left) {
-          left += offsetLeft;
+          left += boxX;
         } else if (background.position.left === BackgroundPosition.right) {
-          left = offsetLeft + offsetWidth - width - left;
+          left = boxX + boxWidth - width - left;
         } else if (background.position.left === BackgroundPosition.center) {
-          left += (offsetLeft + offsetWidth) / 2 - width / 2;
+          left += (boxX + boxWidth) / 2 - width / 2;
         }
 
         if (REG_PX.test(background.position.topOffset as string)) {
@@ -952,77 +991,529 @@ export default class Element {
         } else if (REG_PCT.test(background.position.topOffset as string)) {
           top = this.style.transformUnitToPx(
             background.position.topOffset as string,
-            offsetHeight - height,
+            boxHeight - height,
           );
         }
 
         if (background.position.top === BackgroundPosition.top) {
-          top += offsetTop
+          top += boxY
         } else if (background.position.top === BackgroundPosition.bottom) {
-          top = offsetTop + offsetHeight - height - top;
+          top = boxY + boxHeight - height - top;
         } else if (background.position.top === BackgroundPosition.center) {
-          top += (offsetTop + offsetHeight) / 2 - height / 2;
+          top += (boxY + boxHeight) / 2 - height / 2;
         }
+
+        console.log(
+          {
+            width,
+            height,
+            boxX,
+            boxY,
+            left,
+            top,
+            boxWidth,
+            boxHeight,
+          }
+        )
 
         drawRepeatImage(
           context,
           img.source,
           width,
           height,
-          offsetLeft,
-          offsetTop,
-          left, top,
-          offsetWidth,
-          offsetHeight,
+          boxX,
+          boxY,
+          left,
+          top,
+          boxWidth,
+          boxHeight,
           background.repeat,
         )
       }
     }
   }
 
-  public draw(context: CanvasRenderingContext2D) {
-    const {
-      background: backgroundList,
-      margin,
-      border,
-      padding,
-      lineHeight,
-      fontSize,
-    } = this.style;
-    const {
-      offsetLeft, offsetTop,
-      offsetWidth, offsetHeight,
-      contentWidth, contentHeight,
-    } = this;
+  /**
+   * 绘制边框
+   * @param ctx
+   * @param continueDraw
+   */
+  public drawBorder(ctx: CanvasRenderingContext2D, continueDraw?: TContinueDraw) {
+    const {border, radius, margin} = this.style;
+    const {offsetLeft, offsetTop, offsetWidth, offsetHeight} = this;
 
-    let offset = 0;
+    const {top, right, bottom, left} = border;
+    const {topLeft, topRight, bottomRight, bottomLeft, maxWidth, maxHeight} = radius;
 
-    if (this.blockType === BlockType.inline) {
-      offset = (lineHeight * fontSize) - fontSize;
+    // 排除边框位置
+    const x = offsetLeft + margin.left;
+    const y = offsetTop + margin.top;
+
+    const width = offsetWidth - margin.left - margin.right;
+    const height = offsetHeight - margin.top - margin.bottom;
+
+    if (top.width) {
+      console.log('border', border)
+      console.log('radius', radius)
+      console.log('width', width, 'height', height);
     }
 
-    backgroundList.reverse().forEach((background, index) => {
-      if (index > 0) {
-        background.color = '';
+    ctx.save();
+
+    ctx.lineCap = 'butt';
+    ctx.translate(x, y);
+
+    const noRadius = (
+      topLeft.width === 0 && topLeft.height === 0 &&
+      topRight.width === 0 && topRight.height === 0 &&
+      bottomRight.width === 0 && bottomRight.height === 0 &&
+      bottomLeft.width === 0 && bottomLeft.height === 0
+    );
+
+    const noBorder = (
+      top.width === 0 &&
+      right.width === 0 &&
+      bottom.width === 0 &&
+      left.width === 0
+    )
+
+    const sameWidth = (
+      top.width === right.width &&
+      right.width === bottom.width &&
+      bottom.width === left.width &&
+      left.width === top.width
+    )
+
+    const sameColor = (
+      top.color === right.color &&
+      right.color === bottom.color &&
+      bottom.color === left.color &&
+      left.color === top.color
+    )
+
+    const sameStyle = (
+      top.style === right.style &&
+      right.style === bottom.style &&
+      bottom.style === left.style &&
+      left.style === top.style
+    )
+
+    const isCycle = (
+      topLeft.width === maxWidth && topLeft.height === maxHeight &&
+      topRight.width === maxWidth && topRight.height === maxHeight &&
+      bottomRight.width === maxWidth && bottomRight.height === maxHeight &&
+      bottomLeft.width === maxWidth && bottomLeft.height === maxHeight
+    );
+
+    if (noRadius && !noBorder) {
+      if (typeof continueDraw === 'function') {
+        ctx.save();
+        ctx.rect(0, 0, width, height);
+        ctx.clip();
+        ctx.translate(-x, -y);
+        continueDraw(ctx);
+        ctx.restore();
       }
-      this.drawBackground(context, background);
+
+      // 矩形
+      if (sameWidth && sameStyle && sameColor) {
+        // 一次画完
+        ctx.beginPath();
+        ctx.lineWidth = top.width;
+        ctx.strokeStyle = top.color;
+        ctx.strokeRect(top.width / 2, top.width / 2, width, height);
+      } else {
+        // 上边
+        {
+          ctx.save();
+
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(width, 0);
+          ctx.lineTo(width - right.width, top.width);
+          ctx.lineTo(left.width, top.width);
+          ctx.closePath();
+          ctx.clip();
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.translate(0, top.width / 2);
+          ctx.strokeStyle = top.color;
+          ctx.lineWidth = top.width;
+          ctx.moveTo(0, 0);
+          ctx.lineTo(width, 0);
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.restore();
+        }
+
+        // 右边
+        {
+          ctx.save();
+
+          ctx.beginPath();
+          ctx.moveTo(width, 0);
+          ctx.lineTo(width, height);
+          ctx.lineTo(width - right.width, height - bottom.width);
+          ctx.lineTo(width - right.width, top.width);
+          ctx.closePath();
+          // ctx.stroke();
+          ctx.clip();
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.translate(-right.width / 2, 0);
+          ctx.strokeStyle = right.color;
+          ctx.lineWidth = right.width;
+          ctx.moveTo(width, 0);
+          ctx.lineTo(width, height);
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.restore();
+        }
+
+        // 下边
+        {
+          ctx.save();
+
+          ctx.beginPath();
+          ctx.moveTo(width - right.width, height - bottom.width);
+          ctx.lineTo(width, height);
+          ctx.lineTo(0, height);
+          ctx.lineTo(left.width, height - bottom.width);
+          ctx.closePath();
+          // ctx.stroke();
+          ctx.clip();
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.translate(0, -bottom.width / 2);
+          ctx.strokeStyle = bottom.color;
+          ctx.lineWidth = bottom.width;
+          ctx.moveTo(0, height);
+          ctx.lineTo(width, height);
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.restore();
+        }
+
+        // 左边
+        {
+          ctx.save();
+
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(left.width, top.width);
+          ctx.lineTo(left.width, height - bottom.width);
+          ctx.lineTo(0, height);
+          ctx.closePath();
+          // ctx.stroke();
+          ctx.clip();
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.translate(left.width / 2, 0);
+          ctx.strokeStyle = left.color;
+          ctx.lineWidth = left.width;
+          ctx.moveTo(0, 0);
+          ctx.lineTo(0, height);
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.restore();
+        }
+      }
+    } else if (!noBorder && !noRadius && isCycle) {
+      const halfLineWidth = top.width / 2;
+      if (maxHeight === maxWidth) { // 正圆
+        if (sameColor && sameStyle && sameWidth) { // 样式完全一致 直接一次画完
+          ctx.lineWidth = top.width;
+          ctx.strokeStyle = top.color;
+          ctx.beginPath();
+          ctx.arc(
+            width / 2,
+            height / 2,
+            width / 2 - halfLineWidth, 0, 2 * Math.PI,
+          );
+          ctx.stroke();
+        } else {
+          if (sameWidth) {
+            // 左上角
+            const halfSize = width / 2 - halfLineWidth;
+            ctx.lineWidth = top.width;
+            const oneDegree = Math.PI / 180;
+            // 上弧
+            ctx.strokeStyle = top.color;
+            ctx.beginPath();
+            ctx.arc(
+              halfSize + halfLineWidth, halfSize + halfLineWidth,
+              halfSize,
+              oneDegree * 225, oneDegree * 315,
+            );
+            ctx.stroke();
+
+            // 右弧
+            ctx.strokeStyle = right.color;
+            ctx.beginPath();
+            ctx.arc(
+              halfSize + halfLineWidth, halfSize + halfLineWidth,
+              halfSize,
+              oneDegree * -45, oneDegree * 45,
+            );
+            ctx.stroke();
+
+            // 下弧
+            ctx.strokeStyle = bottom.color;
+            ctx.beginPath();
+            ctx.arc(
+              halfSize + halfLineWidth, halfSize + halfLineWidth,
+              halfSize,
+              oneDegree * 45, oneDegree * 135,
+            );
+            ctx.stroke();
+
+            // 左弧
+            ctx.strokeStyle = left.color;
+            ctx.beginPath();
+            ctx.arc(
+              halfSize + halfLineWidth, halfSize + halfLineWidth,
+              halfSize,
+              oneDegree * 135, oneDegree * 225,
+            );
+
+            ctx.stroke();
+
+          } else {
+            // TODO 线条宽度不一致 需要重新画
+          }
+        }
+
+        if (typeof continueDraw === 'function') {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(
+            width / 2,
+            height / 2,
+            width / 2 - halfLineWidth, 0, 2 * Math.PI,
+          );
+          ctx.clip();
+          ctx.translate(-x, -y);
+          continueDraw(ctx);
+          ctx.restore();
+        }
+      } else { //  椭圆
+        // TODO 椭圆支持分线段画图
+        ctx.beginPath();
+        ellipse(ctx, width / 2, height / 2, width - top.width, height - top.width);
+
+        if (typeof continueDraw === 'function') {
+          ctx.save();
+          ctx.clip();
+          ctx.translate(-x, -y);
+          continueDraw(ctx);
+          ctx.restore();
+        }
+
+        ctx.lineWidth = top.width;
+        ctx.strokeStyle = top.color;
+        ctx.stroke();
+      }
+    } else if (!noBorder && !noRadius) {
+      // 圆角矩形
+      if (sameWidth) {
+        ctx.save()
+        ctx.translate(top.width / 2, top.width / 2);
+        // 上边框
+        {
+          ctx.strokeStyle = top.color;
+          ctx.lineWidth = top.width;
+          {
+            ctx.beginPath();
+            const [p1, p2, p3] = cutCurveEndPath([
+              [0, topLeft.height],
+              [0, 0],
+              [topLeft.width, 0],
+            ], 0.5);
+            ctx.moveTo(...p1);
+            ctx.quadraticCurveTo(...p2, ...p3);
+          }
+
+          {
+            const [p1, p2, p3] = cutCurveStartPath([
+              [width - topRight.width - right.width, 0],
+              [width - right.width, 0],
+              [width - right.width, topRight.height],
+            ], 0.5);
+            ctx.lineTo(...p1);
+            ctx.quadraticCurveTo(...p2, ...p3);
+            ctx.stroke();
+          }
+        }
+
+        // 右边框
+        {
+          ctx.strokeStyle = right.color;
+          ctx.lineWidth = right.width;
+          {
+            ctx.beginPath();
+            const [p1, p2, p3] = cutCurveEndPath([
+              [width - topRight.width - right.width, 0],
+              [width - right.width, 0],
+              [width - right.width, topRight.height],
+            ], 0.5);
+            ctx.moveTo(...p1);
+            ctx.quadraticCurveTo(...p2, ...p3);
+          }
+
+          {
+            const [p1, p2, p3] = cutCurveStartPath([
+              [width - right.width, height - bottomRight.height - bottom.width],
+              [width - right.width, height - bottom.width],
+              [width - right.width - bottomRight.width, height - bottom.width],
+            ], 0.5);
+            ctx.lineTo(...p1);
+            ctx.quadraticCurveTo(...p2, ...p3);
+            ctx.stroke();
+          }
+        }
+
+        // 下边框
+        {
+          ctx.strokeStyle = bottom.color;
+          ctx.lineWidth = bottom.width;
+          {
+            ctx.beginPath();
+            const [p1, p2, p3] = cutCurveEndPath([
+              [width - right.width, height - bottomRight.height - bottom.width],
+              [width - right.width, height - bottom.width],
+              [width - right.width - bottomRight.width, height - bottom.width],
+            ], 0.5);
+            ctx.moveTo(...p1);
+            ctx.quadraticCurveTo(...p2, ...p3);
+          }
+
+          {
+            const [p1, p2, p3] = cutCurveStartPath([
+              [bottomLeft.width, height - bottom.width],
+              [0, height - bottom.width],
+              [0, height - bottomLeft.height - bottom.width],
+            ], 0.5);
+            ctx.lineTo(...p1);
+            ctx.quadraticCurveTo(...p2, ...p3);
+            ctx.stroke();
+          }
+        }
+
+        // 左边框
+        {
+          ctx.strokeStyle = left.color;
+          ctx.lineWidth = left.width;
+          {
+            ctx.beginPath();
+            const [p1, p2, p3] = cutCurveEndPath([
+              [bottomLeft.width, height - bottom.width],
+              [0, height - bottom.width],
+              [0, height - bottomLeft.height - bottom.width],
+            ], 0.5);
+            ctx.moveTo(...p1);
+            ctx.quadraticCurveTo(...p2, ...p3);
+          }
+
+          {
+            const [p1, p2, p3] = cutCurveStartPath([
+              [0, topLeft.height],
+              [0, 0],
+              [topLeft.width, 0],
+            ], 0.5);
+            ctx.lineTo(...p1);
+            ctx.quadraticCurveTo(...p2, ...p3);
+            ctx.stroke();
+          }
+        }
+
+        ctx.restore();
+      } else {
+        // TODO 处理 宽度不一致
+      }
+
+      // 外切圆角矩形 顺时针绘制
+      const roundPath = new Path2D();
+      // 上边 + 右上角
+      roundPath.moveTo(topLeft.width, 0);
+      roundPath.lineTo(width - topRight.width, 0);
+      roundPath.quadraticCurveTo(width, 0, width, topRight.height);
+
+      // 右边 + 右下角
+      roundPath.lineTo(width, height - bottomRight.height);
+      roundPath.quadraticCurveTo(width, height, width - bottomRight.width, height);
+
+      // 下边 + 左下角
+      roundPath.lineTo(bottomLeft.width, height)
+      roundPath.quadraticCurveTo(0, height, 0, height - bottomLeft.height);
+
+      // 左边 + 左上角
+      roundPath.lineTo(0, topLeft.height);
+      roundPath.quadraticCurveTo(0, 0, topLeft.width, 0);
+      roundPath.closePath();
+
+      if (typeof continueDraw === 'function') {
+        ctx.save();
+        ctx.clip();
+        ctx.translate(-x, -y);
+        continueDraw(ctx);
+        ctx.restore();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  /**
+   * 画文字
+   * @param context
+   */
+  public drawText(context: CanvasRenderingContext2D) {
+    const {offsetLeft, offsetTop} = this;
+    const textBaseline = this.style.get('vertical-align') || 'top';
+    const color = this.style.getInheritStyle('color') || DEFAULT_COLOR;
+    context.font = this.style.canvasFont;
+    context.textBaseline = textBaseline as any;
+    context.fillStyle = color;
+    context.fillText(this.displayText, offsetLeft, offsetTop);
+  }
+
+  /**
+   * 画文字附加线
+   */
+  public drawTextDecoration(context: CanvasRenderingContext2D) {
+
+  }
+
+  public draw(context: CanvasRenderingContext2D) {
+    const {background: backgroundList} = this.style;
+    const {
+      offsetLeft, offsetTop,
+      contentWidth, contentHeight,
+      offsetWidth, offsetHeight,
+    } = this;
+
+    this.drawBorder(context, () => {
+      backgroundList.reverse().forEach((background, index) => {
+        if (index > 0) {
+          background.color = '';
+        }
+        this.drawBackground(context, background);
+      });
     });
 
     if (this.nodeType === NodeType.TEXT_NODE) {
       const {displayText} = this;
       if (displayText) {
-        const textBaseline = this.style.get('vertical-align') || 'top';
-        const color = this.style.getInheritStyle('color') || DEFAULT_COLOR;
-        context.font = this.style.canvasFont;
-        context.textBaseline = textBaseline as any;
-        context.fillStyle = color;
-        context.fillText(this.displayText, offsetLeft, offsetTop);
-
-        const {textDecoration} = this.style;
-        if (textDecoration) {
-
-        }
-
+        this.drawText(context);
+        this.drawTextDecoration(context);
       }
     } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
       context.strokeStyle = '#00f';

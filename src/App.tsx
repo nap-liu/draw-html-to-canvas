@@ -48,7 +48,7 @@ export default function App() {
         ref={canvas}
         width={size}
         height={size * 5}
-        style={{width: '100%', height: '100%', boxSizing: 'border-box', border: '1px solid #f00'}}
+        style={{width: '100%', height: '100%', boxSizing: 'border-box'}}
       />
     </>
   );

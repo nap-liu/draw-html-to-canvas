@@ -1,123 +1,137 @@
 export default `<div
   style="
-    border: 1px solid #000;
+    /*border: 1px solid #000;*/
     /*display: block;*/
     /* height: 100%;*/
      text-align: left;
+     line-height: 1;
     /*font-family: 'PingFang SC';*/
-    background: url('img_2.png') 10px 20px / 100px auto no-repeat;
+    /*background: url('img_2.png') 10px 20px / 100px auto no-repeat;*/
     /*url('img.png') center / 100px auto repeat-y;*/
    "
   id="renderTemplate"
 >
   <div style="display: inline">
-    1
+<!--    1-->
     <div style="display: inline;">
-      in<br>line
+<!--      in<br>line-->
       <div style="display: inline-block;">
         <div style="">
           <div style="display: inline;text-decoration: underline;
 ">
-            <span style="background: #BC8F8F;  padding: 0 10px">
-              setsocketopt函数 设置socket工作参数
-            </span>
-            <span style="background: #4169E1; padding: 0 100px;">
-              该函数可以设置任意socket的所有可配置参数详细可查看手册
-            </span>
-            <span style="background: #A52A2A">
-              设置socket address重用，如果不设置的话重启的时候会报错
-            </span>
+<!--            <span style="background: #BC8F8F;  padding: 0 10px">-->
+<!--              setsocketopt函数 设置socket工作参数-->
+<!--            </span>-->
+<!--            <span style="background: #4169E1; padding: 0 100px;">-->
+<!--              该函数可以设置任意socket的所有可配置参数详细可查看手册-->
+<!--            </span>-->
+<!--            <span style="background: #A52A2A">-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--            </span>-->
             <div
               style="
-                height: 60px;
+                height: 300px;
+                /*width: 300px;*/
                 float: left;
+                color: #fff;
+                margin: 5px 10px 15px 20px;
                 /*background: #0f0; */
                 position: relative;
-                padding: 10px;
-                border: 10px solid #f00;
-                margin-top: 0px;
+                padding: 5px 10px 15px 20px;
+                border: 20px solid rgba(0,128,0,0.5);
+                border-left-color: rgba(184,134,11,0.5);
+                border-right-color: rgba(65,105,225,0.5);
+                border-bottom-color: rgba(225,0,0,0.5);
+                background: #000 url('img.png') left top / 100px auto no-repeat content-box border-box;
+                /*border-left-width: 20px;*/
+                /*border-right-width: 150px;*/
+                /*border-bottom: 1px solid #008000;*/
+                /*border-bottom-width: 10px;*/
+                /*border-radius: 10000px;*/
+                /*border-radius: 100px 200px 50px 250px;*/
+                /*border-radius: 50px 60px 70px 80px / 80px 70px 60px 50px;*/
+                /*border-style: groove;*/
               "
-            >
-              float 60
+            >float 60
               <span style="background: #BC8F8F;">
                 setsocketopt函数 设置socket工作参数
               </span>
             </div>
             <span style="background: #D2691E;">错误代码1 EADDRINUSE</span>
             <span style="background: #5F9EA0">提示信息1 Address already in use</span>
-            <div style="background: #ccc">block
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-            </div>
-            <span style="background: #008B8B">
-              为什么会这样呢？ 是因为TCP的连接断开后 TCP的资源并没有立即释放，而是进入了TIME_WAIT状态，该状态是为了保证TCP的可靠关闭，该状态会持续2分钟
-            </span>
-            <div style="
-              /*background: #0f0;*/
-              float: left;
-              width: 200px;
-              padding: 10px;
-              margin: 10px;
-             "
-            >
-              float 100
-              <br>
-              设置socket address重用,123456
-              <div style="float: right; padding: 10px">float: right</div>
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-              设置socket address重用，如果不设置的话重启的时候会报错
-            </div>
-            <div style="height: 90px; float: left; background: #0f0; position: relative">
-              float 120
-            </div>
-            <span style="background: #D2691E; ">错误代码2 EADDRINUSE</span>
-            <span style="background: #5F9EA0">提示信息2 Address already in use</span>
-            <div style="height: 30px; float: left; background: #0f0">float 30</div>
-            <div style="height: 20px; float: left; background: #0f0">float 20</div>
-            <div style="float: right; background: #f00">float 1</div>
-            <div style="float: right; background: #f00">float 2</div>
-            <div style="float: right; background: #f00">float 3</div>
-            <span style="background: #B8860B">如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息</span>
-            <span>3 inline-block</span>
-            如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息
-            如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息
+<!--            <div style="background: #ccc;">block-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--            </div>-->
+<!--            <span style="background: #008B8B">-->
+<!--              为什么会这样呢？ 是因为TCP的连接断开后 TCP的资源并没有立即释放，而是进入了TIME_WAIT状态，该状态是为了保证TCP的可靠关闭，该状态会持续2分钟-->
+<!--            </span>-->
+<!--            <div style="-->
+<!--              /*background: #0f0;*/-->
+<!--              float: left;-->
+<!--              width: 200px;-->
+<!--              padding: 10px;-->
+<!--              margin: 10px;-->
+<!--             "-->
+<!--            >-->
+<!--              float 100-->
+<!--              <br>-->
+<!--              设置socket address重用,123456-->
+<!--              <div style="float: right; padding: 10px">float: right</div>-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--              设置socket address重用，如果不设置的话重启的时候会报错-->
+<!--            </div>-->
+<!--            <div style="height: 90px; float: left; background: #0f0; position: relative">-->
+<!--              float 120-->
+<!--            </div>-->
+<!--            <span style="background: #D2691E; ">错误代码2 EADDRINUSE</span>-->
+<!--            <span style="background: #5F9EA0">提示信息2 Address already in use</span>-->
+<!--            <div style="height: 30px; float: left; background: #0f0">float 30</div>-->
+<!--            <div style="height: 20px; float: left; background: #0f0">float 20</div>-->
+<!--            <div style="float: right; background: #f00">float 1</div>-->
+<!--            <div style="float: right; background: #f00">float 2</div>-->
+<!--            <div style="float: right; background: #f00">float 3</div>-->
+<!--            <span style="background: #B8860B">如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息</span>-->
+<!--            <span>3 inline-block</span>-->
+<!--            如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息-->
+<!--            如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息-->
           </div>
         </div>
-        <div style="width: 200px; text-align: center; float: left; ">
-          <span style="position: relative; display: inline; ">
-            position: 1
-            <br>
-            position: 2222
-            <br>
-            position: 3333333
-            <div
-              style="
-              /*background: rgba(0,0,0,.5);*/
-              /*left: 10px;*/
-              right: 10px;
-              /*top: 10px;*/
-              bottom: 10px;
-              position: absolute;
-              display: inline-block;
-              "
-            >absolute</div>
-          </span>
-        </div>
-        <div style="width: 10%; display: inline-block">
-          5
-        </div>
+<!--        <div style="width: 200px; text-align: center; float: left; ">-->
+<!--          <span style="position: relative; display: inline; ">-->
+<!--            position: 1-->
+<!--            <br>-->
+<!--            position: 2222-->
+<!--            <br>-->
+<!--            position: 3333333-->
+<!--            <div-->
+<!--              style="-->
+<!--              /*background: rgba(0,0,0,.5);*/-->
+<!--              /*left: 10px;*/-->
+<!--              right: 10px;-->
+<!--              /*top: 10px;*/-->
+<!--              bottom: 10px;-->
+<!--              position: absolute;-->
+<!--              display: inline-block;-->
+<!--              "-->
+<!--            >absolute</div>-->
+<!--          </span>-->
+<!--        </div>-->
+<!--        <div style="width: 10%; display: inline-block">-->
+<!--          5-->
+<!--        </div>-->
       </div>
     </div>
     7

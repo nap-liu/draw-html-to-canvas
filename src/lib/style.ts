@@ -1,5 +1,5 @@
 import Element from './element';
-import {BackgroundAttachment, BackgroundClip, BackgroundPosition, BackgroundRepeat, BackgroundSize, BlockType, DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType, REG_BG_ATTACHMENT, REG_BG_CLIP, REG_BG_POSITION_SIZE, REG_COLOR, REG_EM, REG_PCT, REG_PX, REG_REM, REG_REPEAT, REG_URL} from './constants';
+import {BackgroundAttachment, BackgroundClip, BackgroundPosition, BackgroundRepeat, BackgroundSize, BlockType, DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType, REG_BG_ATTACHMENT, REG_BG_CLIP, REG_BG_POSITION_SIZE, REG_BG_REPEAT, REG_BORDER, REG_BORDER_COLOR, REG_BORDER_RADIUS, REG_BORDER_STYLE, REG_BORDER_WIDTH, REG_COLOR, REG_EM, REG_PCT, REG_PX, REG_REM, REG_URL} from './constants';
 import ElementImage from './element-image';
 
 // import ElementImage from './element-image';
@@ -17,6 +17,8 @@ export interface IBorder {
   width: number;
   style: string;
   color: string;
+
+  [x: string]: any;
 }
 
 export interface IBackground<T = string | number> {
@@ -43,6 +45,20 @@ export interface ITextDecoration {
   style: string;
   color: string;
   thickness: string;
+}
+
+export interface ISize<T = any> {
+  width: T;
+  height: T;
+}
+
+export interface IRadius<T = string | number> {
+  topLeft: ISize<T>;
+  topRight: ISize<T>;
+  bottomRight: ISize<T>;
+  bottomLeft: ISize<T>;
+
+  [x: string]: any;
 }
 
 /**
@@ -295,7 +311,7 @@ export default class Style {
       };
       let repeat = BackgroundRepeat.repeat
       let clip = BackgroundClip.borderBox
-      let origin = BackgroundClip.borderBox
+      let origin: BackgroundClip = '' as BackgroundClip;
       let attachment = BackgroundAttachment.scroll
 
       full.replace(REG_URL, (matched, g1, g2, g3) => {
@@ -304,14 +320,14 @@ export default class Style {
       }).replace(REG_COLOR, (matched) => {
         color = matched;
         return '';
-      }).replace(REG_REPEAT, (matched) => {
+      }).replace(REG_BG_REPEAT, (matched) => {
         repeat = matched as BackgroundRepeat;
         return '';
       }).replace(REG_BG_CLIP, (matched) => {
         if (origin) {
           clip = matched as BackgroundClip;
         } else {
-          origin = matched as BackgroundClip;
+          clip = origin = matched as BackgroundClip;
         }
         return '';
       }).replace(REG_BG_ATTACHMENT, (matched) => {
@@ -325,14 +341,6 @@ export default class Style {
           widthAll,
           heightAll,
         ] = args;
-
-        console.log({
-          leftAll, leftEnum, leftEnumAllOffset, leftAllUnit,
-          topAll, topEnum, topEnumAllOffset, topAllUnit,
-          sizeEnum,
-          widthAll,
-          heightAll,
-        })
 
         if (leftEnumAllOffset && !topAll) {
           // topAll = leftEnumAllOffset;
@@ -379,6 +387,8 @@ export default class Style {
         return '';
       });
 
+      origin = origin || BackgroundClip.borderBox;
+
       return {
         color,
         image,
@@ -410,28 +420,232 @@ export default class Style {
   }
 
   public get border(): IRound<IBorder> {
-    const all = this.style['border'];
-    const allIdx = this.styleIndex['border'];
-    const dir = ['top', 'right', 'bottom', 'left'];
-    return dir.reduce((total, key) => {
-      const value = this.style[`border-${key}`];
-      const idx = this.styleIndex[`border-${key}`]
-      let width, style, color;
-      if (value && all) {
-        ;[width, style, color] = `${(allIdx > idx ? all : value) || ''}`.split(/\s+/);
-      } else if (value) {
-        ;[width, style, color] = `${value || ''}`.split(/\s+/);
-      } else {
-        ;[width, style, color] = `${all || ''}`.split(/\s+/);
+    const parseBorder = (border: string) => {
+      const item = {width: 0, style: '', color: '', image: ''};
+      `${border || ''}`.replace(REG_BORDER, (matched, width, style, color) => {
+        item.width = this.transformUnitToPx(width);
+        item.style = style;
+        item.color = color;
+        return '';
+      });
+      return item;
+    };
+
+    const parseWidth = (width: string) => {
+      // TODO 边框枚举宽度处理
+      if (REG_BORDER_WIDTH.test(width)) {
+        return this.transformUnitToPx(width);
       }
-      // @ts-ignore
-      total[key] = {
-        width: this.transformUnitToPx(width),
-        style,
-        color,
-      };
-      return total;
-    }, {}) as IRound<IBorder>;
+      return 0;
+    };
+
+    const parseStyle = (style: string) => {
+      return REG_BORDER_STYLE.test(style) ? style : '';
+    }
+
+    const parseColor = (color: string) => {
+      return REG_BORDER_COLOR.test(color) ? color : '';
+    };
+
+    const all = parseBorder(this.style['border']);
+    const allIndex = this.styleIndex['border'] || 0;
+
+    let top = {...all};
+    let right = {...all};
+    let bottom = {...all};
+    let left = {...all};
+
+    const single = [
+      this.style['border-top'] ? parseBorder(this.style['border-top']) : top,
+      this.style['border-right'] ? parseBorder(this.style['border-right']) : right,
+      this.style['border-bottom'] ? parseBorder(this.style['border-bottom']) : bottom,
+      this.style['border-left'] ? parseBorder(this.style['border-left']) : left,
+    ];
+
+    const singleIndex = [
+      this.styleIndex['border-top'] || 0,
+      this.styleIndex['border-right'] || 0,
+      this.styleIndex['border-bottom'] || 0,
+      this.styleIndex['border-left'] || 0,
+    ];
+
+    const width = [
+      parseWidth(this.style['border-top-width']),
+      parseWidth(this.style['border-right-width']),
+      parseWidth(this.style['border-bottom-width']),
+      parseWidth(this.style['border-left-width']),
+    ]
+
+    const widthIndex = [
+      this.styleIndex['border-top-width'] || 0,
+      this.styleIndex['border-right-width'] || 0,
+      this.styleIndex['border-bottom-width'] || 0,
+      this.styleIndex['border-left-width'] || 0,
+    ]
+
+    widthIndex.forEach((i, idx) => {
+      if (i > singleIndex[idx]) {
+        single[idx].width = width[idx];
+      }
+    })
+
+    const style = [
+      parseStyle(this.style['border-top-style']),
+      parseStyle(this.style['border-right-style']),
+      parseStyle(this.style['border-bottom-style']),
+      parseStyle(this.style['border-left-style']),
+    ]
+
+    const styleIndex = [
+      this.styleIndex['border-top-style'] || 0,
+      this.styleIndex['border-right-style'] || 0,
+      this.styleIndex['border-bottom-style'] || 0,
+      this.styleIndex['border-left-style'] || 0,
+    ]
+
+    styleIndex.forEach((i, idx) => {
+      if (i > singleIndex[idx]) {
+        single[idx].style = style[idx];
+      }
+    })
+
+    const color = [
+      parseColor(this.style['border-top-color']),
+      parseColor(this.style['border-right-color']),
+      parseColor(this.style['border-bottom-color']),
+      parseColor(this.style['border-left-color']),
+    ];
+
+    const colorIndex = [
+      this.styleIndex['border-top-color'] || 0,
+      this.styleIndex['border-right-color'] || 0,
+      this.styleIndex['border-bottom-color'] || 0,
+      this.styleIndex['border-left-color'] || 0,
+    ]
+
+    colorIndex.forEach((i, idx) => {
+      if (i > singleIndex[idx]) {
+        single[idx].color = color[idx];
+      }
+    });
+
+    if (singleIndex[0] > allIndex) {
+      top = single[0];
+    }
+    if (singleIndex[1] > allIndex) {
+      right = single[1];
+    }
+    if (singleIndex[2] > allIndex) {
+      bottom = single[2];
+    }
+    if (singleIndex[3] > allIndex) {
+      left = single[3];
+    }
+    return {
+      top,
+      right,
+      bottom,
+      left,
+    }
+  }
+
+  public get radius() {
+    // TODO 处理优先级样式
+    const topLeft: ISize<number | string> = {width: 0, height: 0};
+    const topRight: ISize<number | string> = {width: 0, height: 0};
+    const bottomRight: ISize<number | string> = {width: 0, height: 0};
+    const bottomLeft: ISize<number | string> = {width: 0, height: 0};
+    const all = this.style['border-radius'];
+
+    if (all) {
+      all.replace(REG_BORDER_RADIUS, (matched, ...args) => {
+        const [
+          hasWidth,
+          wTop, wRight, wBottom, wLeft,
+          wTop1, wLeftRight, wBottom1,
+          wTopBottom, wLeftRight1,
+          wAll,
+
+          hasHeight,
+          hTop, hRight, hBottom, hLeft,
+          hTop1, hLeftRight, hBottom1,
+          hTopBottom, hLeftRight1,
+          hAll,
+        ] = args;
+
+        if (wTop) {
+          topLeft.width = topLeft.height = wTop;
+          topRight.width = topRight.height = wRight;
+          bottomRight.width = bottomRight.height = wBottom;
+          bottomLeft.width = bottomLeft.height = wLeft;
+        } else if (wTop1) {
+          topLeft.width = topLeft.height = wTop;
+          bottomLeft.width = bottomLeft.height = topRight.width = topRight.height = wLeftRight;
+          bottomRight.width = bottomRight.height = wBottom1;
+        } else if (wTopBottom) {
+          topLeft.width = topLeft.height = bottomRight.width = bottomRight.height = wTopBottom;
+          bottomLeft.width = bottomLeft.height = topRight.width = topRight.height = wLeftRight1;
+        } else if (wAll) {
+          topLeft.width = topLeft.height = topRight.width = topRight.height = bottomRight.width = bottomRight.height = bottomLeft.width = bottomLeft.height = wAll;
+        }
+
+        if (hasHeight) { // 高度和宽度不一致 则 重新设置宽度
+          if (hTop) {
+            topLeft.height = hTop;
+            topRight.height = hRight;
+            bottomRight.height = hBottom;
+            bottomLeft.height = hLeft;
+          } else if (hTop1) {
+            topLeft.height = hTop1;
+            bottomLeft.height = topRight.height = hLeftRight;
+            bottomRight.height = hBottom1;
+          } else if (hTopBottom) {
+            topLeft.height = bottomRight.height = hTopBottom;
+            bottomLeft.height = topRight.height = hLeftRight1;
+          } else if (hAll) {
+            topLeft.height = topRight.height = bottomRight.height = bottomLeft.height = hAll;
+          }
+        }
+        return '';
+      });
+    }
+
+    const {offsetWidth, offsetHeight} = this.element;
+    const {margin} = this;
+    const contentWidth = offsetWidth - margin.left - margin.right;
+    const contentHeight = offsetHeight - margin.top - margin.bottom;
+    const maxWidth = contentWidth / 2;
+    const maxHeight = contentHeight / 2;
+    ;[topLeft, topRight, bottomRight, bottomLeft].forEach(item => {
+
+      // TODO
+      //  1、处理枚举默认值
+      //  2、处理其他单位数值
+      if (REG_PX.test(item.width as string)) {
+        item.width = this.transformUnitToPx(item.width as string);
+      } else if (REG_PCT.test(item.width as string)) {
+        item.width = this.transformUnitToPx(item.width as string, contentWidth);
+      }
+
+      item.width = item.width > maxWidth ? maxWidth : item.width;
+
+      if (REG_PX.test(item.height as string)) {
+        item.height = this.transformUnitToPx(item.height as string);
+      } else if (REG_PCT.test(item.height as string)) {
+        item.height = this.transformUnitToPx(item.height as string, contentHeight);
+      }
+
+      item.height = item.height > maxHeight ? maxHeight : item.height;
+    })
+
+    return {
+      topLeft,
+      topRight,
+      bottomRight,
+      bottomLeft,
+      maxWidth,
+      maxHeight,
+    } as IRadius<number>;
   }
 
   /**
