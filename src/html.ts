@@ -42,7 +42,7 @@ export default `<div
                 border-left-color: rgba(184,134,11,0.5);
                 border-right-color: rgba(65,105,225,0.5);
                 border-bottom-color: rgba(225,0,0,0.5);
-                background: #000 url('img.png') left top / 100px auto no-repeat content-box border-box;
+                background: rgba(0,0,0,0.3) url('img.png') left 10px top 10px / 100px auto no-repeat border-box padding-box;
                 /*border-left-width: 20px;*/
                 /*border-right-width: 150px;*/
                 /*border-bottom: 1px solid #008000;*/
@@ -54,7 +54,7 @@ export default `<div
               "
             >float 60
               <span style="background: #BC8F8F;">
-                setsocketopt函数 设置socket工作参数
+                setsocketopt函数
               </span>
             </div>
             <span style="background: #D2691E;">错误代码1 EADDRINUSE</span>

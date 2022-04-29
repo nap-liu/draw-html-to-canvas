@@ -1,4 +1,4 @@
-import {BackgroundClip, BackgroundPosition, BackgroundSize, BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, REG_NUM, REG_PCT, REG_PX, SupportElement, TContinueDraw} from './constants';
+import {BackgroundClip, BackgroundPosition, BackgroundRepeat, BackgroundSize, BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, REG_NUM, REG_PCT, REG_PX, SupportElement, TContinueDraw} from './constants';
 import Style, {IBackground} from './style';
 import Line from './line';
 import LineManger from './line-manger';
@@ -849,36 +849,41 @@ export default class Element {
   }
 
   /**
-   * 绘制元素背景图
+   * 绘制元素背景图 不包含margin区域
    * @param context
    * @param background
    */
   public drawBackground(context: CanvasRenderingContext2D, background: IBackground<string>) {
-    const {margin, border, padding, lineHeight, fontSize} = this.style;
-    const {offsetLeft, offsetTop, contentWidth, contentHeight} = this;
+    context.save();
+
+    const {border, padding, lineHeight, fontSize} = this.style;
+    const {
+      offsetLeft, offsetTop,
+      contentWidth, contentHeight,
+    } = this;
     let offset = 0;
     if (this.blockType === BlockType.inline) {
       offset = (lineHeight * fontSize) - fontSize;
     }
 
-    const getBox = (clip: BackgroundClip) => {
+    const getClipBox = (clip: BackgroundClip) => {
       let x = 0;
       let y = 0;
       let width = 0;
       let height = 0;
       if (clip === BackgroundClip.borderBox) {
-        x = offsetLeft + margin.left;
-        y = offsetTop + margin.top;
+        x = offsetLeft;
+        y = offsetTop;
         width = contentWidth + padding.left + padding.right + border.left.width + border.right.width;
         height = contentHeight + padding.top + padding.bottom + border.top.width + border.bottom.width;
       } else if (clip === BackgroundClip.paddingBox) {
-        x = offsetLeft + margin.left + border.left.width;
-        y = offsetTop + margin.top + border.top.width;
+        x = offsetLeft + border.left.width;
+        y = offsetTop + border.top.width;
         width = contentWidth + padding.left + padding.right
         height = contentHeight + padding.top + padding.bottom
       } else if (clip === BackgroundClip.contentBox) {
-        x = offsetLeft + margin.left + border.left.width + padding.left;
-        y = offsetTop + margin.top + border.top.width + padding.top;
+        x = offsetLeft + border.left.width + padding.left;
+        y = offsetTop + border.top.width + padding.top;
         width = contentWidth
         height = contentHeight
       }
@@ -886,35 +891,23 @@ export default class Element {
         x,
         y,
         width,
-        height,
+        height: height - offset,
       }
     };
 
-    let {
-      x: boxX,
-      y: boxY,
-      width: boxWidth,
-      height: boxHeight,
-    } = getBox(background.clip);
-
+    const clipBox = getClipBox(background.clip);
     if (background.color) {
       context.fillStyle = background.color;
-      context.fillRect(boxX, boxY, boxWidth, boxHeight - offset);
+      context.fillRect(clipBox.x, clipBox.y, clipBox.width, clipBox.height);
     }
 
     if (background.image) {
-
       const img = this.style.getImage(background.image);
-
       if (img && img.source) {
+        let originBox = clipBox;
         if (background.origin !== background.clip) {
-          const box = getBox(background.origin);
-          boxY = box.x;
-          boxY = box.y;
-          boxHeight = box.height;
-          boxWidth = box.width;
+          originBox = getClipBox(background.origin);
         }
-        console.log('background', background);
 
         let left = 0;
         let top = 0;
@@ -928,22 +921,21 @@ export default class Element {
             (background.size.width === BackgroundSize.contain && img.imageWidth > img.imageHeight) ||
             (background.size.width === BackgroundSize.cover && img.imageWidth < img.imageHeight)
           ) {
-            const ratio = boxWidth / img.imageWidth;
+            const ratio = clipBox.width / img.imageWidth;
             width = img.imageWidth * ratio;
             height = img.imageHeight * ratio;
           } else {
-            const ratio = boxHeight / img.imageHeight;
+            const ratio = clipBox.height / img.imageHeight;
             width = img.imageWidth * ratio;
             height = img.imageHeight * ratio;
           }
-
         } else {
           if (REG_PX.test(background.size.width)) {
             width = this.style.transformUnitToPx(background.size.width);
           } else if (REG_PCT.test(background.size.width)) {
             width = this.style.transformUnitToPx(
               background.size.width,
-              boxWidth,
+              clipBox.width,
             );
           }
 
@@ -952,7 +944,7 @@ export default class Element {
           } else if (REG_PCT.test(background.size.height)) {
             height = this.style.transformUnitToPx(
               background.size.height,
-              boxHeight,
+              clipBox.height,
             );
           }
 
@@ -974,16 +966,16 @@ export default class Element {
         } else if (REG_PCT.test(background.position.leftOffset as string)) {
           left = this.style.transformUnitToPx(
             background.position.leftOffset as string,
-            boxWidth - width,
+            clipBox.width - width,
           );
         }
 
         if (background.position.left === BackgroundPosition.left) {
-          left += boxX;
+          left += originBox.x;
         } else if (background.position.left === BackgroundPosition.right) {
-          left = boxX + boxWidth - width - left;
+          left = clipBox.width - width - left + originBox.x;
         } else if (background.position.left === BackgroundPosition.center) {
-          left += (boxX + boxWidth) / 2 - width / 2;
+          left += clipBox.width / 2 - width / 2;
         }
 
         if (REG_PX.test(background.position.topOffset as string)) {
@@ -991,46 +983,35 @@ export default class Element {
         } else if (REG_PCT.test(background.position.topOffset as string)) {
           top = this.style.transformUnitToPx(
             background.position.topOffset as string,
-            boxHeight - height,
+            clipBox.height - height,
           );
         }
 
         if (background.position.top === BackgroundPosition.top) {
-          top += boxY
+          top += originBox.y
         } else if (background.position.top === BackgroundPosition.bottom) {
-          top = boxY + boxHeight - height - top;
+          top = clipBox.height - height - top + originBox.y;
         } else if (background.position.top === BackgroundPosition.center) {
-          top += (boxY + boxHeight) / 2 - height / 2;
+          top += clipBox.height / 2 - height / 2;
         }
-
-        console.log(
-          {
-            width,
-            height,
-            boxX,
-            boxY,
-            left,
-            top,
-            boxWidth,
-            boxHeight,
-          }
-        )
 
         drawRepeatImage(
           context,
           img.source,
           width,
           height,
-          boxX,
-          boxY,
-          left,
-          top,
-          boxWidth,
-          boxHeight,
+          left - clipBox.x,
+          top - clipBox.y,
+          clipBox.x,
+          clipBox.y,
+          clipBox.width,
+          clipBox.height,
           background.repeat,
         )
       }
     }
+
+    context.restore();
   }
 
   /**
@@ -1039,6 +1020,8 @@ export default class Element {
    * @param continueDraw
    */
   public drawBorder(ctx: CanvasRenderingContext2D, continueDraw?: TContinueDraw) {
+    ctx.save();
+
     const {border, radius, margin} = this.style;
     const {offsetLeft, offsetTop, offsetWidth, offsetHeight} = this;
 
@@ -1057,8 +1040,6 @@ export default class Element {
       console.log('radius', radius)
       console.log('width', width, 'height', height);
     }
-
-    ctx.save();
 
     ctx.lineCap = 'butt';
     ctx.translate(x, y);
@@ -1110,7 +1091,6 @@ export default class Element {
         ctx.save();
         ctx.rect(0, 0, width, height);
         ctx.clip();
-        ctx.translate(-x, -y);
         continueDraw(ctx);
         ctx.restore();
       }
@@ -1300,7 +1280,6 @@ export default class Element {
             width / 2 - halfLineWidth, 0, 2 * Math.PI,
           );
           ctx.clip();
-          ctx.translate(-x, -y);
           continueDraw(ctx);
           ctx.restore();
         }
@@ -1312,7 +1291,6 @@ export default class Element {
         if (typeof continueDraw === 'function') {
           ctx.save();
           ctx.clip();
-          ctx.translate(-x, -y);
           continueDraw(ctx);
           ctx.restore();
         }
@@ -1462,7 +1440,6 @@ export default class Element {
       if (typeof continueDraw === 'function') {
         ctx.save();
         ctx.clip();
-        ctx.translate(-x, -y);
         continueDraw(ctx);
         ctx.restore();
       }

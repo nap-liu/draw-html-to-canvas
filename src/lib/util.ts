@@ -15,12 +15,12 @@ export const randomColor = (start = 0, end = 255) => {
  * @param image
  * @param imageWidth 图像宽度
  * @param imageHeight 图像高度
- * @param originLeft 裁剪起点
- * @param originTop 裁剪起点
  * @param startLeft 绘制起点
  * @param startTop 绘制起点
- * @param width 容器尺寸
- * @param height 容器尺寸
+ * @param boxLeft 容器起点
+ * @param boxTop 容器起点
+ * @param boxWidth 容器尺寸
+ * @param boxHeight 容器尺寸
  * @param repeat 重复类型
  * @param continueDraw 选区内继续绘图
  */
@@ -28,28 +28,32 @@ export const drawRepeatImage = (
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
   imageWidth: number, imageHeight: number,
-  originLeft: number, originTop: number,
   startLeft: number, startTop: number,
-  width: number, height: number,
+  boxLeft: number, boxTop: number,
+  boxWidth: number, boxHeight: number,
   repeat: BackgroundRepeat,
   continueDraw?: TContinueDraw,
 ) => {
   ctx.save();
 
+  ctx.translate(boxLeft, boxTop);
+
   ctx.beginPath();
-  ctx.rect(originLeft, originTop, width, height);
+  ctx.rect(-1, -1, boxWidth + 1, boxHeight + 1);
   ctx.clip();
 
-  const offsetTopLength = startTop - originTop;
-  const offsetTopCount = Math.ceil(offsetTopLength / imageHeight);
-  const offsetTop = -offsetTopCount * imageHeight + offsetTopLength;
+  ctx.beginPath();
+  ctx.rect(0, 0, boxWidth, boxHeight);
+  ctx.clip();
 
-  const offsetLeftLength = startLeft - originLeft;
-  const offsetLeftCount = Math.ceil(offsetLeftLength / imageWidth);
-  const offsetLeft = -offsetLeftCount * imageWidth + offsetLeftLength;
+  const offsetLeftCount = Math.ceil(startLeft / imageWidth);
+  const offsetLeft = -offsetLeftCount * imageWidth + startLeft;
 
-  const rows = Math.ceil(height / imageHeight) + 1;
-  const cols = Math.ceil(width / imageWidth) + 1;
+  const offsetTopCount = Math.ceil(startTop / imageHeight);
+  const offsetTop = -offsetTopCount * imageHeight + startTop;
+
+  const rows = Math.ceil(boxHeight / imageHeight) + 1;
+  const cols = Math.ceil(boxWidth / imageWidth) + 1;
 
   if (repeat === BackgroundRepeat.repeat) {
     for (let r = 0; r < rows; r++) {
@@ -74,7 +78,7 @@ export const drawRepeatImage = (
   }
 
   if (typeof continueDraw === 'function') {
-    continueDraw(ctx);
+    // continueDraw(ctx);
   }
 
   ctx.restore();

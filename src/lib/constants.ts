@@ -47,6 +47,7 @@ export enum SupportElement {
 
 const COLOR = `rgba\\(\\s*(?:\\d{1,3}\\s*,\\s*){3}\\s*(?:\\d|\\.\\d+|\\d\\.\\d+)\\s*\\)|rgb\\(\\s*(?:\\d{1,3}\\s*,\\s*){3}\\s*\\)|(?:#[a-z0-9]{6})|(?:#[a-z0-9]{3})`
 export const REG_COLOR = new RegExp(COLOR, 'i');
+console.log(REG_COLOR);
 export const REG_PX = /px$/i;
 export const REG_PCT = /%$/;
 export const REG_REM = /rem$/i;

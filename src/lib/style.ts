@@ -127,8 +127,8 @@ export default class Style {
         // top right bottom left
         allResult.top = list[0];
         allResult.right = list[1];
-        allResult.left = list[2];
-        allResult.bottom = list[3];
+        allResult.bottom = list[2];
+        allResult.left = list[3];
       }
     }
     return dir.reduce<any>((map, key) => {
@@ -294,10 +294,14 @@ export default class Style {
     // let repeat = this.style['background-repeat'];
     // let repeatIdx = this.styleIndex['background-repeat'] || -1;
 
+    const colors: string[] = [];
     // console.log(all);
-    const list = `${all}`.split(',');
-    const backgrounds = list.map<IBackground<string>>(full => {
-      let color = '';
+    const list = `${all}`.replace(REG_COLOR, (matched) => {
+      colors.push(matched);
+      return '';
+    }).split(',');
+    const backgrounds = list.map<IBackground<string>>((full, index) => {
+      let color = colors[index] || '';
       let image = '';
       const position = {
         left: BackgroundPosition.left,
@@ -316,9 +320,6 @@ export default class Style {
 
       full.replace(REG_URL, (matched, g1, g2, g3) => {
         image = g1 || g2 || g3;
-        return '';
-      }).replace(REG_COLOR, (matched) => {
-        color = matched;
         return '';
       }).replace(REG_BG_REPEAT, (matched) => {
         repeat = matched as BackgroundRepeat;
