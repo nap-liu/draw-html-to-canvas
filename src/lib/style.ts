@@ -1,8 +1,38 @@
 import Element from './element';
-import {BackgroundAttachment, BackgroundClip, BackgroundPosition, BackgroundRepeat, BackgroundSize, BlockType, DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, NodeType, REG_BG_ATTACHMENT, REG_BG_CLIP, REG_BG_POSITION_SIZE, REG_BG_REPEAT, REG_BORDER, REG_BORDER_COLOR, REG_BORDER_RADIUS, REG_BORDER_STYLE, REG_BORDER_WIDTH, REG_COLOR, REG_EM, REG_PCT, REG_PX, REG_REM, REG_URL} from './constants';
+import {
+  BackgroundAttachment,
+  BackgroundClip,
+  BackgroundPosition,
+  BackgroundRepeat,
+  BackgroundSize,
+  DEFAULT_COLOR,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_FONT_SIZE,
+  DEFAULT_LINE_HEIGHT,
+  DEFAULT_VERTICAL_ALIGN,
+  REG_BG_ATTACHMENT,
+  REG_BG_CLIP,
+  REG_BG_POSITION_SIZE,
+  REG_BG_REPEAT,
+  REG_BORDER,
+  REG_BORDER_COLOR,
+  REG_BORDER_RADIUS,
+  REG_BORDER_STYLE,
+  REG_BORDER_WIDTH,
+  REG_COLOR,
+  REG_EM,
+  REG_PCT,
+  REG_PX,
+  REG_REM,
+  REG_TEXT_DECORATION_COLOR,
+  REG_TEXT_DECORATION_LINE,
+  REG_TEXT_DECORATION_STYLE,
+  REG_TEXT_DECORATION_THICKNESS,
+  REG_URL,
+  TEXT_DECORATION_LINE,
+  TEXT_DECORATION_STYLE,
+} from './constants';
 import ElementImage from './element-image';
-
-// import ElementImage from './element-image';
 
 interface IRound<T = any> {
   top: T;
@@ -41,10 +71,10 @@ export interface IBackground<T = string | number> {
 }
 
 export interface ITextDecoration {
-  line: string;
-  style: string;
+  line: TEXT_DECORATION_LINE;
+  style: TEXT_DECORATION_STYLE;
   color: string;
-  thickness: string;
+  thickness: number;
 }
 
 export interface ISize<T = any> {
@@ -80,22 +110,36 @@ export default class Style {
     return this.imageMap[url];
   };
 
-  public getInheritStyle(style: string) {
-    const {element, value} = this.getInheritNode(style);
+  /**
+   * 获取包含自身的继承样式
+   * @param style
+   * @param force 强制回溯到任意父级
+   */
+  public getInheritStyle(style: string, force = false) {
+    const {element, value} = this.getInheritNode(style, force);
     if (element) {
       return value;
     }
     return null;
   }
 
-  public getInheritNode(style: string) {
+  public getInheritNode(style: string, force = false) {
     let element: Element | null = this.element;
     while (element) {
       const value = element.style.get(style);
       if (value && value !== 'inherit') {
         return {element, value};
       }
+      // if (element.blockType === BlockType.inline) {
       element = element.parentNode;
+      if (!force && element) {
+        if (element.style.isAbsolute || element.style.isFloat) {
+          break;
+        }
+      }
+      // } else {
+      //   break;
+      // }
     }
     return {element: null, value: ''};
   }
@@ -260,24 +304,50 @@ export default class Style {
   /**
    * 文字修饰
    */
-  public get textDecoration() {
+  public get textDecoration(): ITextDecoration[] {
+    let all = this.getInheritStyle('text-decoration');
 
-    return {};
+    const decorations: ITextDecoration[] = [];
+    let color = '#000';
+    let style: TEXT_DECORATION_STYLE = '' as TEXT_DECORATION_STYLE;
+    let thickness = 1;
+    let hasNone = false;
+    ;`${all}`.replace(REG_TEXT_DECORATION_COLOR, (matched) => {
+      color = matched;
+      return '';
+    }).replace(REG_TEXT_DECORATION_STYLE, (matched) => {
+      style = matched as TEXT_DECORATION_STYLE;
+      return '';
+    }).replace(REG_TEXT_DECORATION_THICKNESS, (matched) => {
+      thickness = this.transformUnitToPx(matched);
+      return '';
+    }).replace(REG_TEXT_DECORATION_LINE, (matched) => {
+      if (matched === 'none') {
+        hasNone = true;
+      } else {
+        decorations.push({
+          color,
+          style,
+          line: matched as TEXT_DECORATION_LINE,
+          thickness,
+        });
+      }
+      return '';
+    });
+    if (hasNone) {
+      return [];
+    }
+    return decorations;
   }
 
   /**
    * 背景继承只局限于inline元素
    */
   public get background(): IBackground<string>[] {
-    if (this.element.nodeType === NodeType.TEXT_NODE &&
-      this.element.parentNode && this.element.parentNode.blockType === BlockType.inline) {
-      return this.element.parentNode.style.background;
-    }
-
     // TODO 背景样式优先级处理
 
-    const all = this.style['background'];
-    let allIdx = this.styleIndex['background'] || -1;
+    const all = this.getInheritStyle('background');
+    let allIdx = this.getInheritStyle('background') || -1;
 
     // let image = this.style['background-image'];
     // let imageIdx = this.styleIndex['background-image'] || -1;
@@ -388,7 +458,7 @@ export default class Style {
         return '';
       });
 
-      origin = origin || BackgroundClip.borderBox;
+      origin = origin || BackgroundClip.paddingBox;
 
       return {
         color,
@@ -647,6 +717,14 @@ export default class Style {
       maxWidth,
       maxHeight,
     } as IRadius<number>;
+  }
+
+  public get color() {
+    return this.getInheritStyle('color', true) || DEFAULT_COLOR;
+  }
+
+  public get verticalAlign() {
+    return this.getInheritStyle('vertical-align', true) || DEFAULT_VERTICAL_ALIGN;
   }
 
   /**

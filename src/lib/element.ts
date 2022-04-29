@@ -1,4 +1,4 @@
-import {BackgroundClip, BackgroundPosition, BackgroundRepeat, BackgroundSize, BlockType, DEFAULT_COLOR, DEFAULT_LINE_HEIGHT, NodeType, REG_NUM, REG_PCT, REG_PX, SupportElement, TContinueDraw} from './constants';
+import {BackgroundClip, BackgroundPosition, BackgroundSize, BlockType, DEFAULT_LINE_HEIGHT, NodeType, REG_NUM, REG_PCT, REG_PX, SupportElement, TContinueDraw, TEXT_DECORATION_LINE, TEXT_DECORATION_STYLE} from './constants';
 import Style, {IBackground} from './style';
 import Line from './line';
 import LineManger from './line-manger';
@@ -91,68 +91,8 @@ export default class Element {
     return null;
   }
 
-  public getInlineChildWidth() {
-    let inlineWidth = 0;
-    const width = this.children.reduce((total, cur) => {
-      const type = cur.blockType;
-      if (type === BlockType.inline) {
-        // TODO 文字换行处理
-        // 文字如果可以换行 则只有左半部分的padding + border
-        total += cur.offsetWidth;
-      } else if (type === BlockType.inlineBlock) {
-        // inline-block 直接使用offsetWidth
-        total += cur.offsetWidth;
-      } else {
-        inlineWidth = total;
-        total = 0;
-      }
-      return total;
-    }, 0);
-    return Math.max(inlineWidth, width);
-  }
-
   public isInlineORInlineBlock(item: Element) {
     return [BlockType.inline, BlockType.inlineBlock].includes(item.blockType);
-  }
-
-  /**
-   * inline-block
-   * 1、block元素宽度
-   * 2、不换行的文字宽度
-   * max(1, 2)
-   */
-  public getMaxChildWidth() {
-    let maxBlockWidth = 0;
-    let inlineWidth = 0;
-    const isNoWrap = this.style.isNoWrap;
-
-    // 合并连续行元素宽度
-    for (let i = 0; i < this.children.length; i++) {
-      const item = this.children[i];
-      const prev = this.children[i - 1];
-
-      if (item.blockType === BlockType.block) {
-        // 强制不换行情况下 出现block则清空累计的inline、inline-block宽度
-        maxBlockWidth = Math.max(
-          maxBlockWidth,
-          isNoWrap ? inlineWidth : 0,
-          item.offsetWidth,
-        );
-        inlineWidth = 0;
-      } else if (this.isInlineORInlineBlock(item)) {
-        if (isNoWrap) { // 强制不换行
-          if (prev && this.isInlineORInlineBlock(prev)) {
-            inlineWidth += item.offsetWidth;
-          } else {
-            inlineWidth = item.offsetWidth;
-          }
-        } else {
-          // 行元素宽度自动按照block元素宽度换行 所以行元素没有宽度
-          // inlineWidth = item.offsetWidth;
-        }
-      }
-    }
-    return Math.max(maxBlockWidth, inlineWidth);
   }
 
   /**
@@ -160,7 +100,7 @@ export default class Element {
    */
   public get displayText() {
     const text = this.nodeValue.replace(/\s+/g, ' ');
-    return text === ' ' ? '' : text;
+    return text === ' ' ? '' : text.trim();
   }
 
   /**
@@ -575,6 +515,12 @@ export default class Element {
               } else {
                 while (!line.append(element)) {
                   line = this.lines.newLine(line.width);
+                  // 强制换行 避免死循环
+                  if (element.offsetWidth > line.width) {
+                    line.push(element);
+                    console.log('死循环 强制换行');
+                    break;
+                  }
                 }
                 element.line = line;
               }
@@ -652,7 +598,7 @@ export default class Element {
     // TODO box-sizing 支持
     if (blockType === BlockType.block || blockType === BlockType.inlineBlock) {
       contentOffsetLeft = margin.left + border.left.width + padding.left;
-      contentOffsetRight = margin.right + border.right.width + padding.right;
+      contentOffsetRight = margin.left + border.left.width + padding.left;
       contentOffsetTop = margin.top + border.top.width + padding.top;
     } else if (blockType === BlockType.inline) {
       contentOffsetLeft = border.left.width + padding.left;
@@ -855,16 +801,10 @@ export default class Element {
    */
   public drawBackground(context: CanvasRenderingContext2D, background: IBackground<string>) {
     context.save();
+    const {border, padding, fontSize} = this.style;
+    const {contentWidth, contentHeight} = this;
 
-    const {border, padding, lineHeight, fontSize} = this.style;
-    const {
-      offsetLeft, offsetTop,
-      contentWidth, contentHeight,
-    } = this;
-    let offset = 0;
-    if (this.blockType === BlockType.inline) {
-      offset = (lineHeight * fontSize) - fontSize;
-    }
+    const isInline = this.blockType === BlockType.inline;
 
     const getClipBox = (clip: BackgroundClip) => {
       let x = 0;
@@ -872,26 +812,44 @@ export default class Element {
       let width = 0;
       let height = 0;
       if (clip === BackgroundClip.borderBox) {
-        x = offsetLeft;
-        y = offsetTop;
+        x = 0;
+        y = 0;
         width = contentWidth + padding.left + padding.right + border.left.width + border.right.width;
         height = contentHeight + padding.top + padding.bottom + border.top.width + border.bottom.width;
       } else if (clip === BackgroundClip.paddingBox) {
-        x = offsetLeft + border.left.width;
-        y = offsetTop + border.top.width;
+        x = border.left.width;
+        y = border.top.width;
         width = contentWidth + padding.left + padding.right
         height = contentHeight + padding.top + padding.bottom
       } else if (clip === BackgroundClip.contentBox) {
-        x = offsetLeft + border.left.width + padding.left;
-        y = offsetTop + border.top.width + padding.top;
+        x = border.left.width + padding.left;
+        y = border.top.width + padding.top;
         width = contentWidth
         height = contentHeight
+      }
+
+      if (isInline) {
+        const result = {
+          x,
+          y: y - padding.top,
+          width,
+          height: fontSize + padding.top + padding.bottom,
+        }
+        if (this.nodeType === NodeType.TEXT_NODE) {
+          const parent = this.parentNode;
+          if (parent) {
+            const {padding: parentPadding} = parent.style;
+            result.y -= parentPadding.top;
+            result.height += parentPadding.top + parentPadding.bottom;
+          }
+        }
+        return result;
       }
       return {
         x,
         y,
         width,
-        height: height - offset,
+        height,
       }
     };
 
@@ -1034,12 +992,6 @@ export default class Element {
 
     const width = offsetWidth - margin.left - margin.right;
     const height = offsetHeight - margin.top - margin.bottom;
-
-    if (top.width) {
-      console.log('border', border)
-      console.log('radius', radius)
-      console.log('width', width, 'height', height);
-    }
 
     ctx.lineCap = 'butt';
     ctx.translate(x, y);
@@ -1443,6 +1395,10 @@ export default class Element {
         continueDraw(ctx);
         ctx.restore();
       }
+    } else {
+      if (typeof continueDraw === 'function') {
+        continueDraw(ctx);
+      }
     }
 
     ctx.restore();
@@ -1453,20 +1409,71 @@ export default class Element {
    * @param context
    */
   public drawText(context: CanvasRenderingContext2D) {
+    context.save();
     const {offsetLeft, offsetTop} = this;
-    const textBaseline = this.style.get('vertical-align') || 'top';
-    const color = this.style.getInheritStyle('color') || DEFAULT_COLOR;
+    const {color, verticalAlign} = this.style;
     context.font = this.style.canvasFont;
-    context.textBaseline = textBaseline as any;
+    context.textBaseline = verticalAlign as any;
     context.fillStyle = color;
     context.fillText(this.displayText, offsetLeft, offsetTop);
+    context.restore();
   }
 
   /**
    * 画文字附加线
    */
   public drawTextDecoration(context: CanvasRenderingContext2D) {
+    context.save();
+    const {offsetLeft, offsetTop, offsetWidth} = this;
+    const {textDecoration, fontSize} = this.style;
+    textDecoration.forEach(decoration => {
+      context.strokeStyle = decoration.color;
+      context.lineWidth = decoration.thickness;
 
+      let offset = decoration.thickness / 2;
+
+      switch (decoration.style) {
+        case TEXT_DECORATION_STYLE.solid:
+          context.setLineDash([]);
+          break;
+        case TEXT_DECORATION_STYLE.dashed:
+          context.setLineDash([4, 2]);
+          break;
+        case TEXT_DECORATION_STYLE.double:
+          context.setLineDash([]);
+          break;
+        case TEXT_DECORATION_STYLE.wavy:
+          // TODO 波浪线
+          break;
+      }
+
+      switch (decoration.line) {
+        case TEXT_DECORATION_LINE.lineThrough:
+          offset += fontSize / 2;
+          break;
+        case TEXT_DECORATION_LINE.underline:
+          offset += fontSize;
+          break;
+      }
+
+      if (decoration.style === TEXT_DECORATION_STYLE.double) {
+        offset -= 3;
+        context.moveTo(Math.ceil(offsetLeft), Math.ceil(offsetTop + offset));
+        context.lineTo(Math.ceil(offsetLeft + offsetWidth), Math.ceil(offsetTop + offset));
+        context.stroke();
+
+        offset += 3;
+        context.moveTo(Math.ceil(offsetLeft), Math.ceil(offsetTop + offset));
+        context.lineTo(Math.ceil(offsetLeft + offsetWidth), Math.ceil(offsetTop + offset));
+        context.stroke();
+      } else {
+        context.moveTo(Math.ceil(offsetLeft), Math.ceil(offsetTop + offset));
+        context.lineTo(Math.ceil(offsetLeft + offsetWidth), Math.ceil(offsetTop + offset));
+        context.stroke();
+      }
+
+    });
+    context.restore();
   }
 
   public draw(context: CanvasRenderingContext2D) {
@@ -1493,8 +1500,8 @@ export default class Element {
         this.drawTextDecoration(context);
       }
     } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
-      context.strokeStyle = '#00f';
-      context.strokeRect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
+      // context.strokeStyle = '#00f';
+      // context.strokeRect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
     }
 
     if (this.nodeName === SupportElement.img) {

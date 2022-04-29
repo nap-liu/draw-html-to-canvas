@@ -192,3 +192,7 @@ export const ellipse = (ctx: CanvasRenderingContext2D, x: number, y: number, wid
   ctx.bezierCurveTo(x - k, y + h, x - k, y - h, x, y - h);
   ctx.closePath();
 }
+
+export const values = (obj: any) => {
+  return Object.values ? Object.values(obj) : Object.keys(obj).map(i => obj[i]);
+}
