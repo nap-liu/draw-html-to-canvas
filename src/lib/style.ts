@@ -9,13 +9,14 @@ import {
   DEFAULT_COLOR,
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
-  DEFAULT_LINE_HEIGHT,
   DEFAULT_VERTICAL_ALIGN,
   NodeType,
   REG_BG_ATTACHMENT,
   REG_BG_CLIP,
+  REG_BG_POSITION,
   REG_BG_POSITION_SIZE,
   REG_BG_REPEAT,
+  REG_BG_SIZE,
   REG_BORDER,
   REG_BORDER_COLOR,
   REG_BORDER_RADIUS,
@@ -25,12 +26,13 @@ import {
   REG_EM,
   REG_PCT,
   REG_PX,
-  REG_REM, REG_ROUND_AUTO_VALUE,
+  REG_REM,
+  REG_ROUND_AUTO_VALUE,
   REG_TEXT_DECORATION_COLOR,
   REG_TEXT_DECORATION_LINE,
   REG_TEXT_DECORATION_STYLE,
   REG_TEXT_DECORATION_THICKNESS,
-  REG_URL,
+  REG_URL, styleKeywords,
   TEXT_DECORATION_LINE,
   TEXT_DECORATION_STYLE,
 } from './constants';
@@ -134,7 +136,7 @@ export default class Style {
     let element: Element | null = this.element;
     while (element) {
       const value = element.style.get(style);
-      if (value && value !== 'inherit') {
+      if (value && value !== styleKeywords.inherit) {
         return {element, value};
       }
       if (!force && element) {
@@ -160,8 +162,7 @@ export default class Style {
 
     ;`${all}`.replace(REG_ROUND_AUTO_VALUE, (matched, ...args) => {
       const [
-        hasValue,
-        top, right, bottom, left,
+        , top, right, bottom, left,
         top1, leftRight, bottom1,
         topBottom, leftRight1,
         all,
@@ -207,10 +208,10 @@ export default class Style {
    * @param style
    */
   private getRoundStyle(style: string) {
-    const dir = ['top', 'right', 'bottom', 'left'];
+    const dir = [styleKeywords.top, styleKeywords.right, styleKeywords.bottom, styleKeywords.left];
     const result: IRound<string | number> = this.getOriginRoundStyle(style);
     dir.forEach((key) => {
-      if (result[key] === 'auto') {
+      if (result[key] === styleKeywords.auto) {
         result[key] = 0;
       } else {
         result[key] = this.transformUnitToPx(result[key] as string);
@@ -277,14 +278,14 @@ export default class Style {
   }
 
   public get canvasFont() {
-    const fontStyle = this.getInheritStyle('font-style', true);
-    const fontVariant = this.getInheritStyle('font-variant', true);
-    const fontWeight = this.getInheritStyle('font-weight', true);
-    const fontStretch = this.getInheritStyle('font-stretch', true);
+    const fontStyle = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.style}`, true);
+    const fontVariant = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.variant}`, true);
+    const fontWeight = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.weight}`, true);
+    const fontStretch = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.stretch}`, true);
     const fontSize = this.fontSize;
     // const lineHeight = this.lineHeight;
     const lineHeight = '';
-    const fontFamily = this.getInheritStyle('font-family', true) || DEFAULT_FONT_FAMILY;
+    const fontFamily = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.family}`, true) || DEFAULT_FONT_FAMILY;
     return [
       fontStyle,
       fontVariant,
@@ -296,31 +297,23 @@ export default class Style {
   }
 
   public get fontSize() {
-    const fontSize = this.getInheritStyle('font-size', true) || DEFAULT_FONT_SIZE;
+    const fontSize = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.size}`, true) || DEFAULT_FONT_SIZE;
     return parseInt(fontSize);
-  }
-
-  public get lineHeight() {
-    const lineHeight = this.style['line-height'] || DEFAULT_LINE_HEIGHT;
-    if (REG_PX.test(lineHeight)) {
-      return parseFloat(lineHeight);
-    } else if (/^\d+(.\d+)?$/.test(lineHeight)) {
-      return parseFloat(lineHeight)
-    }
-    return +DEFAULT_LINE_HEIGHT;
   }
 
   /**
    * 文字修饰
    */
   public get textDecoration(): ITextDecoration[] {
-    let all = this.getInheritStyle('text-decoration');
+    // TODO P3 处理优先级
+    let all = this.getInheritStyle(`${styleKeywords.text}-${styleKeywords.decoration}`);
 
     const decorations: ITextDecoration[] = [];
     let color = '#000';
     let style: TEXT_DECORATION_STYLE = '' as TEXT_DECORATION_STYLE;
     let thickness = 1;
     let hasNone = false;
+
     ;`${all}`.replace(REG_TEXT_DECORATION_COLOR, (matched) => {
       color = matched;
       return '';
@@ -331,7 +324,7 @@ export default class Style {
       thickness = this.transformUnitToPx(matched);
       return '';
     }).replace(REG_TEXT_DECORATION_LINE, (matched) => {
-      if (matched === 'none') {
+      if (matched === styleKeywords.none) {
         hasNone = true;
       } else {
         decorations.push({
@@ -361,34 +354,43 @@ export default class Style {
         return [];
       }
     }
+
     if (!element) {
       return [];
     }
-    // TODO 背景样式优先级处理
-    const all = element.style.style['background'];
-    let allIdx = element.style.styleIndex['background'] || -1;
 
-    // let image = this.style['background-image'];
-    // let imageIdx = this.styleIndex['background-image'] || -1;
-    //
-    // let color = this.style['background-color'];
-    // let colorIdx = this.styleIndex['background-color'] || -1;
-    //
-    // let position = this.style['background-position'];
-    // let positionIdx = this.styleIndex['background-position'] || -1;
-    //
-    // let size = this.style['background-size'];
-    // let sizeIdx = this.styleIndex['background-size'] || -1;
-    //
-    // let repeat = this.style['background-repeat'];
-    // let repeatIdx = this.styleIndex['background-repeat'] || -1;
+    const all = element.style.style[styleKeywords.background];
+    const allIdx = element.style.styleIndex[styleKeywords.background] || 0;
+
+    const image = this.style[`${styleKeywords.background}-${styleKeywords.image}`];
+    const imageIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.image}`] || 0;
+
+    const color = this.style[`${styleKeywords.background}-${styleKeywords.color}`];
+    const colorIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.color}`] || 0;
+
+    const position = this.style[`${styleKeywords.background}-${styleKeywords.position}`];
+    const positionIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.position}`] || 0;
+
+    const size = this.style[`${styleKeywords.background}-${styleKeywords.size}`];
+    const sizeIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.size}`] || 0;
+
+    const repeat = this.style[`${styleKeywords.background}-${styleKeywords.repeat}`];
+    const repeatIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.repeat}`] || 0;
+
+    const clip = this.style[`${styleKeywords.background}-${styleKeywords.clip}`];
+    const clipIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.clip}`] || 0;
+
+    const origin = this.style[`${styleKeywords.background}-${styleKeywords.origin}`];
+    const originIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.origin}`] || 0;
 
     const colors: string[] = [];
-    // console.log(all);
+
+    // 优先处理color
     const list = `${all}`.replace(REG_COLOR, (matched) => {
       colors.push(matched);
       return '';
     }).split(',');
+
     const backgrounds = list.map<IBackground<string>>((full, index) => {
       let color = colors[index] || '';
       let image = '';
@@ -490,23 +492,175 @@ export default class Style {
         clip,
       }
     });
-    return backgrounds;
+
+    const getDefaultBackground = () => ({
+      color: '',
+      image: '',
+      position: {
+        left: BackgroundPosition.left,
+        leftOffset: '',
+        top: BackgroundPosition.top,
+        topOffset: '',
+      },
+      size: {
+        width: BackgroundSize.auto,
+        height: BackgroundSize.auto,
+      },
+      repeat: BackgroundRepeat.repeat,
+      clip: BackgroundClip.borderBox,
+      origin: BackgroundClip.paddingBox,
+      attachment: BackgroundAttachment.scroll,
+    });
+
+    if (positionIdx > allIdx) {
+      position.split(',').forEach((s, index) => {
+        s.replace(REG_BG_POSITION, (matched, ...args) => {
+          let [
+            leftAll, leftEnum, leftEnumAllOffset, leftAllUnit,
+            topAll, topEnum, topEnumAllOffset, topAllUnit,
+          ] = args;
+
+          if (!backgrounds[index]) {
+            backgrounds.push(getDefaultBackground());
+          }
+
+          const position = backgrounds[index].position;
+
+          if (leftEnumAllOffset && !topAll) {
+            // topAll = leftEnumAllOffset;
+            topEnumAllOffset = leftEnumAllOffset;
+            leftEnumAllOffset = '';
+          }
+
+          if (leftAll) {
+            position.left = leftEnum || leftAllUnit;
+            if (leftAllUnit) {
+              position.leftOffset = position.left;
+              position.left = BackgroundPosition.left;
+            }
+          }
+
+          if (leftEnumAllOffset) {
+            position.leftOffset = leftEnumAllOffset;
+          }
+
+          if (topAll) {
+            position.top = topEnum || topAllUnit;
+            if (topAllUnit) {
+              position.topOffset = position.top;
+              position.top = BackgroundPosition.top;
+            }
+          } else if (leftEnum && leftEnum === BackgroundPosition.center) {
+            position.top = BackgroundPosition.center;
+          }
+
+          if (topEnumAllOffset) {
+            position.topOffset = topEnumAllOffset;
+          }
+          return '';
+        });
+      })
+    }
+
+    if (sizeIdx > allIdx) {
+      size.split(',').forEach((s, index) => {
+        s.trim().replace(REG_BG_SIZE, (matched, ...args) => {
+          const [sizeEnum, widthAll, heightAll] = args;
+          if (!backgrounds[index]) {
+            backgrounds.push(getDefaultBackground());
+          }
+          const size = backgrounds[index].size;
+          if (sizeEnum) {
+            size.width = sizeEnum
+          } else {
+            if (widthAll) {
+              size.width = widthAll;
+            }
+            if (heightAll) {
+              size.height = heightAll;
+            } else {
+              size.height = styleKeywords.auto;
+            }
+          }
+          return '';
+        })
+      })
+    }
+
+    if (imageIdx > allIdx) {
+      image.split(',').forEach((s, index) => {
+        s.replace(REG_URL, (matched, g1, g2, g3) => {
+          if (!backgrounds[index]) {
+            backgrounds.push(getDefaultBackground());
+          }
+          backgrounds[index].image = g1 || g2 || g3;
+          return '';
+        })
+      })
+    }
+
+    if (repeatIdx > allIdx) {
+      repeat.split(',').forEach((s, index) => {
+        s.replace(REG_BG_REPEAT, (matched) => {
+          if (!backgrounds[index]) {
+            backgrounds.push(getDefaultBackground());
+          }
+          backgrounds[index].repeat = matched as BackgroundRepeat;
+          return '';
+        })
+      })
+    }
+
+    if (clipIdx > allIdx) {
+      clip.split(',').forEach((s, index) => {
+        s.replace(REG_BG_CLIP, (matched) => {
+          if (!backgrounds[index]) {
+            backgrounds.push(getDefaultBackground());
+          }
+          backgrounds[index].clip = matched as BackgroundClip;
+          return '';
+        })
+      })
+    }
+
+    if (originIdx > allIdx) {
+      origin.split(',').forEach((s, index) => {
+        s.replace(REG_BG_CLIP, (matched) => {
+          if (!backgrounds[index]) {
+            backgrounds.push(getDefaultBackground());
+          }
+          backgrounds[index].origin = matched as BackgroundClip;
+          return '';
+        })
+      })
+    }
+
+    // 背景颜色只有一个
+    if (colorIdx > allIdx && REG_COLOR.test(color)) {
+      if (backgrounds.length === 0) {
+        backgrounds.push(getDefaultBackground())
+      }
+      backgrounds[backgrounds.length - 1].color = color;
+    }
+
+    // 只保留有效内容
+    return backgrounds.filter(i => i.color || i.image);
   }
 
   public get width() {
-    return this.style['width'];
+    return this.style[styleKeywords.width];
   }
 
   public get height() {
-    return this.style['height'];
+    return this.style[styleKeywords.height];
   }
 
   public get padding() {
-    return this.getRoundStyle('padding');
+    return this.getRoundStyle(styleKeywords.padding);
   }
 
   public get margin() {
-    return this.getRoundStyle('margin');
+    return this.getRoundStyle(styleKeywords.margin);
   }
 
   public get border(): IRound<IBorder> {
@@ -537,8 +691,14 @@ export default class Style {
       return REG_BORDER_COLOR.test(color) ? color : '';
     };
 
-    const all = parseBorder(this.style['border']);
-    const allIndex = this.styleIndex['border'] || 0;
+    const base = styleKeywords.border;
+    const baseTop = `${base}-${styleKeywords.top}`;
+    const baseRight = `${base}-${styleKeywords.right}`;
+    const baseBottom = `${base}-${styleKeywords.bottom}`;
+    const baseLeft = `${base}-${styleKeywords.left}`;
+
+    const all = parseBorder(this.style[base]);
+    const allIndex = this.styleIndex[base] || 0;
 
     let top = {...all};
     let right = {...all};
@@ -546,31 +706,31 @@ export default class Style {
     let left = {...all};
 
     const single = [
-      this.style['border-top'] ? parseBorder(this.style['border-top']) : top,
-      this.style['border-right'] ? parseBorder(this.style['border-right']) : right,
-      this.style['border-bottom'] ? parseBorder(this.style['border-bottom']) : bottom,
-      this.style['border-left'] ? parseBorder(this.style['border-left']) : left,
+      this.style[`${baseTop}`] ? parseBorder(this.style[`${baseTop}`]) : top,
+      this.style[`${baseRight}`] ? parseBorder(this.style[`${baseRight}`]) : right,
+      this.style[`${baseBottom}`] ? parseBorder(this.style[`${baseBottom}`]) : bottom,
+      this.style[`${baseLeft}`] ? parseBorder(this.style[`${baseLeft}`]) : left,
     ];
 
     const singleIndex = [
-      this.styleIndex['border-top'] || 0,
-      this.styleIndex['border-right'] || 0,
-      this.styleIndex['border-bottom'] || 0,
-      this.styleIndex['border-left'] || 0,
+      this.styleIndex[`${baseTop}`] || 0,
+      this.styleIndex[`${baseRight}`] || 0,
+      this.styleIndex[`${baseBottom}`] || 0,
+      this.styleIndex[`${baseLeft}`] || 0,
     ];
 
     const width = [
-      parseWidth(this.style['border-top-width']),
-      parseWidth(this.style['border-right-width']),
-      parseWidth(this.style['border-bottom-width']),
-      parseWidth(this.style['border-left-width']),
+      parseWidth(this.style[`${baseTop}-${styleKeywords.width}`]),
+      parseWidth(this.style[`${baseRight}-${styleKeywords.width}`]),
+      parseWidth(this.style[`${baseBottom}-${styleKeywords.width}`]),
+      parseWidth(this.style[`${baseLeft}-${styleKeywords.width}`]),
     ]
 
     const widthIndex = [
-      this.styleIndex['border-top-width'] || 0,
-      this.styleIndex['border-right-width'] || 0,
-      this.styleIndex['border-bottom-width'] || 0,
-      this.styleIndex['border-left-width'] || 0,
+      this.styleIndex[`${baseTop}-${styleKeywords.width}`] || 0,
+      this.styleIndex[`${baseRight}-${styleKeywords.width}`] || 0,
+      this.styleIndex[`${baseBottom}-${styleKeywords.width}`] || 0,
+      this.styleIndex[`${baseLeft}-${styleKeywords.width}`] || 0,
     ]
 
     widthIndex.forEach((i, idx) => {
@@ -580,17 +740,17 @@ export default class Style {
     })
 
     const style = [
-      parseStyle(this.style['border-top-style']),
-      parseStyle(this.style['border-right-style']),
-      parseStyle(this.style['border-bottom-style']),
-      parseStyle(this.style['border-left-style']),
+      parseStyle(this.style[`${baseTop}-${styleKeywords.style}`]),
+      parseStyle(this.style[`${baseRight}-${styleKeywords.style}`]),
+      parseStyle(this.style[`${baseBottom}-${styleKeywords.style}`]),
+      parseStyle(this.style[`${baseLeft}-${styleKeywords.style}`]),
     ]
 
     const styleIndex = [
-      this.styleIndex['border-top-style'] || 0,
-      this.styleIndex['border-right-style'] || 0,
-      this.styleIndex['border-bottom-style'] || 0,
-      this.styleIndex['border-left-style'] || 0,
+      this.styleIndex[`${baseTop}-${styleKeywords.style}`] || 0,
+      this.styleIndex[`${baseRight}-${styleKeywords.style}`] || 0,
+      this.styleIndex[`${baseBottom}-${styleKeywords.style}`] || 0,
+      this.styleIndex[`${baseLeft}-${styleKeywords.style}`] || 0,
     ]
 
     styleIndex.forEach((i, idx) => {
@@ -600,17 +760,17 @@ export default class Style {
     })
 
     const color = [
-      parseColor(this.style['border-top-color']),
-      parseColor(this.style['border-right-color']),
-      parseColor(this.style['border-bottom-color']),
-      parseColor(this.style['border-left-color']),
+      parseColor(this.style[`${baseTop}-${styleKeywords.color}`]),
+      parseColor(this.style[`${baseRight}-${styleKeywords.color}`]),
+      parseColor(this.style[`${baseBottom}-${styleKeywords.color}`]),
+      parseColor(this.style[`${baseLeft}-${styleKeywords.color}`]),
     ];
 
     const colorIndex = [
-      this.styleIndex['border-top-color'] || 0,
-      this.styleIndex['border-right-color'] || 0,
-      this.styleIndex['border-bottom-color'] || 0,
-      this.styleIndex['border-left-color'] || 0,
+      this.styleIndex[`${baseTop}-${styleKeywords.color}`] || 0,
+      this.styleIndex[`${baseRight}-${styleKeywords.color}`] || 0,
+      this.styleIndex[`${baseBottom}-${styleKeywords.color}`] || 0,
+      this.styleIndex[`${baseLeft}-${styleKeywords.color}`] || 0,
     ]
 
     colorIndex.forEach((i, idx) => {
@@ -640,12 +800,16 @@ export default class Style {
   }
 
   public get radius() {
-    // TODO 处理优先级样式
     const topLeft: ISize<number | string> = {width: 0, height: 0};
     const topRight: ISize<number | string> = {width: 0, height: 0};
     const bottomRight: ISize<number | string> = {width: 0, height: 0};
     const bottomLeft: ISize<number | string> = {width: 0, height: 0};
-    const all = this.style['border-radius'];
+
+    const {border, radius, top, left, right, bottom} = styleKeywords;
+    const baseRadius = `${border}-${radius}`;
+
+    const all = this.style[baseRadius];
+    const allIndex = this.styleIndex[baseRadius];
 
     if (all) {
       all.replace(REG_BORDER_RADIUS, (matched, ...args) => {
@@ -700,6 +864,20 @@ export default class Style {
       });
     }
 
+    // TODO 处理圆角优先级样式
+    let key = `${border}-${top}-${left}-${radius}`
+    const topLeftStyle = this.style[key];
+    const topLeftStyleIndex = this.styleIndex[key];
+    key = `${border}-${top}-${right}-${radius}`
+    const topRightStyle = this.style[key];
+    const topRightStyleIndex = this.styleIndex[key];
+    key = `${border}-${bottom}-${right}-${radius}`
+    const bottomRightStyle = this.style[key];
+    const bottomRightStyleIndex = this.styleIndex[key];
+    key = `${border}-${bottom}-${left}-${radius}`
+    const bottomLeftStyle = this.style[key];
+    const bottomLeftStyleIndex = this.styleIndex[key];
+
     const {offsetWidth, offsetHeight} = this.element;
     const {margin} = this;
     const contentWidth = offsetWidth - margin.left - margin.right;
@@ -739,7 +917,7 @@ export default class Style {
   }
 
   public get color() {
-    return this.getInheritStyle('color', true) || DEFAULT_COLOR;
+    return this.getInheritStyle(styleKeywords.color, true) || DEFAULT_COLOR;
   }
 
   public get verticalAlign() {
@@ -770,19 +948,19 @@ export default class Style {
   // }
 
   public get isHidden() {
-    return this.style['display'] === 'none';
+    return this.style[styleKeywords.display] === styleKeywords.none;
   }
 
   public get isAbsolute() {
-    return this.style['position'] === 'absolute';
+    return this.style[styleKeywords.position] === styleKeywords.absolute;
   }
 
   public get isRelative() {
-    return this.style['position'] === 'relative';
+    return this.style[styleKeywords.position] === styleKeywords.relative;
   }
 
   public get isFloat() {
-    const float = this.style['float'];
-    return float === 'left' || float === 'right';
+    const float = this.style[styleKeywords.float];
+    return float === styleKeywords.left || float === styleKeywords.right;
   }
 }

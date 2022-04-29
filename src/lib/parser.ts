@@ -1,5 +1,5 @@
 import Element from './element';
-import {NodeType, SupportElement, SupportElementType} from './constants';
+import {NodeType, REG_URL, SupportElement, SupportElementType} from './constants';
 import ElementImage from './element-image';
 
 export default function parse(html: string) {
@@ -106,11 +106,24 @@ export default function parse(html: string) {
         switch (key) {
           case 'style': {
             const style = currentNode.style;
-            (attrs[key] as string).replace(/\s*([^:]+)\s*:\s*([^;]+)\s*;?/g, (...args) => {
-              const [, g1, g2] = args;
+            const urls: string[] = [];
+            const fullStyle = (attrs[key] as string).replace(REG_URL, (matched) => {
+              urls.push(matched);
+              return '#__URL__#';
+            });
+
+            fullStyle.replace(/\s*([^:]+)\s*:\s*([^;]+)\s*;?/g, (...args) => {
+              let [, g1, g2] = args;
               if (/\/\*\s*/.test(g1)) {
                 return '';
               }
+
+              g2 = g2.replace(/#__URL__#/g, () => {
+                const url = urls[0];
+                urls.shift()
+                return url;
+              });
+
               style.set(g1.replace(/\*\/\s*/g, ''), g2);
               return '';
             })

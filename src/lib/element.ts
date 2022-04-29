@@ -368,6 +368,8 @@ export default class Element {
     const blockType = this.blockType;
     const isNoWrap = this.style.isNoWrap;
 
+    // TODO 修复 嵌套 float元素 影响文字布局问题
+
     if (blockType === BlockType.inlineBlock || blockType === BlockType.block) {
       // 重置行
       this.lines = new LineManger(this);
@@ -915,13 +917,13 @@ export default class Element {
           if (background.size.width === BackgroundSize.auto) {
             // 等比例缩放
             const ratio = height / img.imageHeight;
-            width = img.imageWidth * ratio;
+            width = height ? img.imageWidth * ratio : img.imageWidth;
           }
 
           if (background.size.height === BackgroundSize.auto) {
             // 等比例缩放
             const ratio = width / img.imageWidth;
-            height = img.imageHeight * ratio;
+            height = width ? img.imageHeight * ratio : img.imageHeight;
           }
         }
 

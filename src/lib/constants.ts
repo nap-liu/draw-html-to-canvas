@@ -2,10 +2,57 @@ import type ElementImage from './element-image';
 import type Element from './element';
 import {values} from './util';
 
+export const styleKeywords = {
+  inherit: '',
+  initial: '',
+  auto: '',
+  color: '',
+  font: '',
+  style: '',
+  variant: '',
+  weight: '',
+  stretch: '',
+  family: '',
+  top: '',
+  right: '',
+  bottom: '',
+  left: '',
+  size: '',
+  line: '',
+  text: '',
+  decoration: '',
+  none: '',
+  background: '',
+  image: '',
+  position: '',
+  repeat: '',
+  clip: '',
+  origin: '',
+  width: '',
+  height: '',
+  padding: '',
+  margin: '',
+  border: '',
+  radius: '',
+  display: '',
+  'vertical-align': '',
+  'white-space': '',
+  absolute: '',
+  relative: '',
+  float: '',
+  align: '',
+  center: '',
+}
+
+Object.keys(styleKeywords).forEach(i => {
+  // @ts-ignore
+  styleKeywords[i] = i;
+})
+
 export const DEFAULT_FONT_FAMILY = 'sans-serif';
 export const DEFAULT_FONT_SIZE = '16px';
 export const DEFAULT_COLOR = '#000';
-export const DEFAULT_VERTICAL_ALIGN = 'top';
+export const DEFAULT_VERTICAL_ALIGN = styleKeywords.top;
 export const DEFAULT_LINE_HEIGHT = '1.2';
 
 export enum NodeType {
@@ -64,14 +111,19 @@ const FLOAT = `(${FLOAT_NO_GROUP})`
 const BG_POS = `(?:(left|center|right|top|bottom)\\s+${FLOAT}?)`
 const BG_SIZE_ENUM = '(cover|contain)'
 const BG_SIZE_NUM = `(auto|${FLOAT_NO_GROUP})`
-const BG_SIZE = `(?:${BG_SIZE_ENUM}|(?:${BG_SIZE_NUM}\\s+${BG_SIZE_NUM}?))`
+const BG_SIZE = `(?:${BG_SIZE_ENUM}|(?:${BG_SIZE_NUM}(?:\\s+${BG_SIZE_NUM})?))`
 
+export const REG_BG_POSITION = new RegExp(`(${BG_POS}|${FLOAT})\\s*(${BG_POS}|${FLOAT})?`, 'i')
+export const REG_BG_SIZE = new RegExp(BG_SIZE, 'i');
+// console.log(REG_BG_SIZE);
 export const REG_BG_POSITION_SIZE = new RegExp(`\\s*(${BG_POS}|${FLOAT})\\s*(${BG_POS}|${FLOAT})?(?:\\s*\\/\\s*${BG_SIZE})`, 'i');
+
+// console.log(REG_BG_POSITION_SIZE);
 
 const getRound = (value: string) => `((?:(${value})\\s+(${value})\\s+(${value})\\s+(${value}))|(?:(${value})\\s+(${value})\\s+(${value}))|(?:(${value})\\s+(${value}))|(${value}))`;
 
 export const REG_ROUND_AUTO_VALUE = new RegExp(getRound(`auto|${FLOAT_NO_GROUP}`), 'i');
-console.log('REG_ROUND_AUTO_VALUE', REG_ROUND_AUTO_VALUE);
+// console.log('REG_ROUND_AUTO_VALUE', REG_ROUND_AUTO_VALUE);
 
 const ROUND_NUM = getRound(FLOAT_POSITIVE_NO_GROUP);
 export const REG_BORDER_RADIUS = new RegExp(`(?:${ROUND_NUM}(?:\\s*/\\s*${ROUND_NUM})?)`, 'i')
