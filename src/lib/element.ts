@@ -314,19 +314,24 @@ export default class Element {
       if (width && height) { // 拉伸图片
 
       } else if (width || height) { // 自适应
-        if (width) {
-          if (REG_PX.test(width)) { // 固定尺寸 缩放
-            const ratio = Math.abs(img.imageWidth - this.contentWidth) / img.imageWidth;
-            this.contentHeight = img.imageHeight * ratio;
-          } else if (REG_PCT.test(width)) { // 按比例缩放
-            this.contentHeight = this.style.transformUnitToPx(width, img.imageHeight);
-          }
-        } else if (height) {
-          if (REG_PX.test(height)) { // 固定尺寸 缩放
-            const ratio = Math.abs(img.imageWidth - this.contentWidth) / img.imageWidth;
-            this.contentWidth = img.contentWidth * ratio;
-          } else if (REG_PCT.test(height)) { // 按比例缩放
-            this.contentWidth = this.style.transformUnitToPx(height, img.imageWidth);
+        const parent = this.getNearBlock();
+        if (parent) {
+          if (width) {
+            if (REG_PX.test(width)) { // 固定尺寸 缩放
+              const ratio = Math.abs(img.imageWidth - this.contentWidth) / img.imageWidth;
+              this.contentHeight = img.imageHeight * ratio;
+            } else if (REG_PCT.test(width)) { // 按比例缩放
+              const ratio = this.contentWidth / img.imageWidth;
+              this.contentHeight = img.imageHeight * ratio;
+            }
+          } else if (height) {
+            if (REG_PX.test(height)) { // 固定尺寸 缩放
+              const ratio = Math.abs(img.imageWidth - this.contentWidth) / img.imageWidth;
+              this.contentWidth = img.contentWidth * ratio;
+            } else if (REG_PCT.test(height)) { // 按比例缩放
+              const ratio = this.contentHeight / img.imageHeight
+              this.contentWidth = img.imageWidth * ratio;
+            }
           }
         }
       } else {
@@ -388,6 +393,7 @@ export default class Element {
               let lineText = text.slice(0, -step);
               element.shadows = [];
 
+              // TODO 单词组合不允许拆分换行
               while (text.length) {
                 if (line.restWidth <= 0) {
                   line = this.lines.newLine(line.width);
@@ -431,15 +437,9 @@ export default class Element {
           if (element.nodeName === SupportElement.br || element.nodeName === SupportElement.hr) {
             // br\hr 元素 强制换行
             element.contentHeight = this.root.textMetric.lineHeight;
-            // if (line.restWidth <= 0) {
             line = this.lines.newLine(line.width);
             line.push(element);
             element.line = line;
-            // element.contentWidth = line.restWidth;
-            // } else {
-            // line.push(element);
-            // element.contentWidth = line.restWidth;
-            // }
           } else {
             if (isNoWrap) {
               line.push(element);
@@ -458,6 +458,8 @@ export default class Element {
                   lastLine.push(half);
                 }
                 half.line = lastLine;
+                // TODO 元素闭合有问题
+                line = lastLine;
                 return half;
               }
               // 左侧进入布局
@@ -504,6 +506,7 @@ export default class Element {
             }
 
             if (element.style.isAbsolute) {
+              // TODO 绝对定位 如果没有指明位置的话 则使用当前文档位置
               let relativeBlock = element.getNearRelativeBlock() || this.root;
               const relLine = relativeBlock.lines.lastLineOrNewLine(relativeBlock.contentWidth);
               element.lineElement = relativeBlock;
@@ -518,7 +521,6 @@ export default class Element {
                   // 强制换行 避免死循环
                   if (element.offsetWidth > line.width) {
                     line.push(element);
-                    console.log('死循环 强制换行');
                     break;
                   }
                 }
@@ -612,7 +614,7 @@ export default class Element {
     const absolutes: Element[] = [];
     this.lines.forEach(line => {
       let left = line.holdLeftWidth + contentOffsetLeft;
-      const {textFlows, floats, absolutes: lineAbsolutes} = line;
+      const {textFlows, floats, absolutes: lineAbsolutes, height} = line;
       let floatLeft = 0;
       let floatRight = line.holdRightWidth;
       floats.left.forEach(float => {
@@ -638,8 +640,12 @@ export default class Element {
             offset = restWidth;
           }
         }
+
+        // 文字和行内块 不一样高时 需要向文字添加高度
+        // TODO 支持 vertical-align
+        const textTopHolder = height - el.offsetHeight;
         el.left = floatLeft + left + offset;
-        el.top = top;
+        el.top = top + textTopHolder;
         left += el.offsetWidth;
       })
       line.forEach(el => {
@@ -974,6 +980,7 @@ export default class Element {
 
   /**
    * 绘制边框
+   * TODO 重新绘制边框
    * @param ctx
    * @param continueDraw
    */
@@ -1053,7 +1060,7 @@ export default class Element {
         ctx.beginPath();
         ctx.lineWidth = top.width;
         ctx.strokeStyle = top.color;
-        ctx.strokeRect(top.width / 2, top.width / 2, width, height);
+        ctx.strokeRect(top.width / 2, top.width / 2, width - left.width, height - top.width);
       } else {
         // 上边
         {
@@ -1426,7 +1433,10 @@ export default class Element {
     context.save();
     const {offsetLeft, offsetTop, offsetWidth} = this;
     const {textDecoration, fontSize} = this.style;
+
     textDecoration.forEach(decoration => {
+      context.beginPath();
+
       context.strokeStyle = decoration.color;
       context.lineWidth = decoration.thickness;
 
@@ -1457,12 +1467,12 @@ export default class Element {
       }
 
       if (decoration.style === TEXT_DECORATION_STYLE.double) {
-        offset -= 3;
+        offset -= 2;
         context.moveTo(Math.ceil(offsetLeft), Math.ceil(offsetTop + offset));
         context.lineTo(Math.ceil(offsetLeft + offsetWidth), Math.ceil(offsetTop + offset));
         context.stroke();
 
-        offset += 3;
+        offset += 2;
         context.moveTo(Math.ceil(offsetLeft), Math.ceil(offsetTop + offset));
         context.lineTo(Math.ceil(offsetLeft + offsetWidth), Math.ceil(offsetTop + offset));
         context.stroke();
@@ -1481,7 +1491,6 @@ export default class Element {
     const {
       offsetLeft, offsetTop,
       contentWidth, contentHeight,
-      offsetWidth, offsetHeight,
     } = this;
 
     this.drawBorder(context, () => {
@@ -1500,8 +1509,8 @@ export default class Element {
         this.drawTextDecoration(context);
       }
     } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
-      // context.strokeStyle = '#00f';
-      // context.strokeRect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
+      // context.strokeStyle = '#00a113';
+      // context.strokeRect(offsetLeft, offsetTop, this.offsetWidth, this.offsetHeight);
     }
 
     if (this.nodeName === SupportElement.img) {
@@ -1511,12 +1520,17 @@ export default class Element {
       }
     }
 
+    if (this.shadow && this.shadow.shadows.indexOf(this) > 0) {
+      // console.log('inline shadow 跳过重复渲染')
+      return;
+    }
     this.lines.forEach(line => {
       line.textFlows.forEach(el => el.draw(context));
     })
     this.lines.forEach(line => {
       line.floats.all.forEach(el => el.draw(context));
     })
+    // TODO z-index 支持
     this.lines.forEach(line => {
       line.absolutes.forEach(el => el.draw(context));
     })

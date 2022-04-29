@@ -39,10 +39,6 @@ export const drawRepeatImage = (
   ctx.translate(boxLeft, boxTop);
 
   ctx.beginPath();
-  ctx.rect(-1, -1, boxWidth + 1, boxHeight + 1);
-  ctx.clip();
-
-  ctx.beginPath();
   ctx.rect(0, 0, boxWidth, boxHeight);
   ctx.clip();
 
@@ -78,7 +74,7 @@ export const drawRepeatImage = (
   }
 
   if (typeof continueDraw === 'function') {
-    // continueDraw(ctx);
+    continueDraw(ctx);
   }
 
   ctx.restore();

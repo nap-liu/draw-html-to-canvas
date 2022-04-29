@@ -5,11 +5,13 @@ import {
   BackgroundPosition,
   BackgroundRepeat,
   BackgroundSize,
+  BlockType,
   DEFAULT_COLOR,
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
   DEFAULT_LINE_HEIGHT,
   DEFAULT_VERTICAL_ALIGN,
+  NodeType,
   REG_BG_ATTACHMENT,
   REG_BG_CLIP,
   REG_BG_POSITION_SIZE,
@@ -23,7 +25,7 @@ import {
   REG_EM,
   REG_PCT,
   REG_PX,
-  REG_REM,
+  REG_REM, REG_ROUND_AUTO_VALUE,
   REG_TEXT_DECORATION_COLOR,
   REG_TEXT_DECORATION_LINE,
   REG_TEXT_DECORATION_STYLE,
@@ -123,6 +125,11 @@ export default class Style {
     return null;
   }
 
+  /**
+   * 获取指定的继承元素和样式
+   * @param style
+   * @param force
+   */
   public getInheritNode(style: string, force = false) {
     let element: Element | null = this.element;
     while (element) {
@@ -130,66 +137,68 @@ export default class Style {
       if (value && value !== 'inherit') {
         return {element, value};
       }
-      // if (element.blockType === BlockType.inline) {
-      element = element.parentNode;
       if (!force && element) {
         if (element.style.isAbsolute || element.style.isFloat) {
           break;
         }
       }
-      // } else {
-      //   break;
-      // }
+      element = element.parentNode;
     }
     return {element: null, value: ''};
   }
 
   public getOriginRoundStyle(style: string): IRound<string> {
     const all = this.style[style];
-    const allIndex = this.styleIndex[style];
-    let list: any = [];
-    let allResult: IRound = {} as IRound;
-    const dir = ['top', 'right', 'bottom', 'left'];
-    if (all) {
-      list = all.split(/\s+/g).filter(i => i);
-      if (list.length === 1) {
-        // all dir
-        allResult = dir.reduce<any>((map, key) => {
-          map[key] = list[0];
-          return map;
-        }, {});
-      } else if (list.length === 2) {
-        // top/bottom left/right
-        allResult.top = allResult.bottom = list[0];
-        allResult.left = allResult.right = list[1];
-      } else if (list.length === 3) {
-        // top left/right bottom
-        allResult.top = list[0];
-        allResult.left = allResult.right = list[1];
-        allResult.bottom = list[2];
-      } else if (list.length > 3) {
-        // top right bottom left
-        allResult.top = list[0];
-        allResult.right = list[1];
-        allResult.bottom = list[2];
-        allResult.left = list[3];
+    const allIndex = this.styleIndex[style] || 0;
+
+    const round: IRound<string> = {
+      top: '',
+      right: '',
+      bottom: '',
+      left: '',
+    };
+
+    ;`${all}`.replace(REG_ROUND_AUTO_VALUE, (matched, ...args) => {
+      const [
+        hasValue,
+        top, right, bottom, left,
+        top1, leftRight, bottom1,
+        topBottom, leftRight1,
+        all,
+      ] = args;
+
+      if (top) {
+        round.top = top;
+        round.right = right;
+        round.bottom = bottom;
+        round.left = left;
+      } else if (top1) {
+        round.top = top1;
+        round.right = leftRight;
+        round.bottom = bottom1;
+        round.left = leftRight;
+      } else if (topBottom) {
+        round.top = topBottom;
+        round.right = leftRight1;
+        round.bottom = topBottom;
+        round.left = leftRight1;
+      } else if (all) {
+        round.top = all;
+        round.right = all;
+        round.bottom = all;
+        round.left = all;
       }
-    }
-    return dir.reduce<any>((map, key) => {
-      const fullKey = style + '-' + key
-      const idx = this.styleIndex[fullKey];
-      // @ts-ignore
-      if (idx) {
-        if (allIndex > idx) {
-          map[key] = allResult[key];
-        } else {
-          map[key] = this.style[fullKey];
-        }
-      } else {
-        map[key] = allResult[key];
+      return '';
+    });
+
+    Object.keys(round).forEach(key => {
+      const fullKey = `${style}-${key}`
+      const idx = this.styleIndex[fullKey] || 0;
+      if (idx > allIndex) {
+        round[key] = this.style[fullKey];
       }
-      return map;
-    }, {});
+    });
+    return round;
   };
 
   /**
@@ -268,14 +277,14 @@ export default class Style {
   }
 
   public get canvasFont() {
-    const fontStyle = this.getInheritStyle('font-style');
-    const fontVariant = this.getInheritStyle('font-variant');
-    const fontWeight = this.getInheritStyle('font-weight');
-    const fontStretch = this.getInheritStyle('font-stretch');
+    const fontStyle = this.getInheritStyle('font-style', true);
+    const fontVariant = this.getInheritStyle('font-variant', true);
+    const fontWeight = this.getInheritStyle('font-weight', true);
+    const fontStretch = this.getInheritStyle('font-stretch', true);
     const fontSize = this.fontSize;
     // const lineHeight = this.lineHeight;
     const lineHeight = '';
-    const fontFamily = this.getInheritStyle('font-family') || DEFAULT_FONT_FAMILY;
+    const fontFamily = this.getInheritStyle('font-family', true) || DEFAULT_FONT_FAMILY;
     return [
       fontStyle,
       fontVariant,
@@ -287,7 +296,7 @@ export default class Style {
   }
 
   public get fontSize() {
-    const fontSize = this.getInheritStyle('font-size') || DEFAULT_FONT_SIZE;
+    const fontSize = this.getInheritStyle('font-size', true) || DEFAULT_FONT_SIZE;
     return parseInt(fontSize);
   }
 
@@ -344,10 +353,20 @@ export default class Style {
    * 背景继承只局限于inline元素
    */
   public get background(): IBackground<string>[] {
+    let element: Element | null = this.element;
+    if (element.nodeType === NodeType.TEXT_NODE) {
+      element = element.parentNode
+      // 背景继承规则文本只继承inline父元素的背景
+      if (element && element.blockType !== BlockType.inline) {
+        return [];
+      }
+    }
+    if (!element) {
+      return [];
+    }
     // TODO 背景样式优先级处理
-
-    const all = this.getInheritStyle('background');
-    let allIdx = this.getInheritStyle('background') || -1;
+    const all = element.style.style['background'];
+    let allIdx = element.style.styleIndex['background'] || -1;
 
     // let image = this.style['background-image'];
     // let imageIdx = this.styleIndex['background-image'] || -1;

@@ -4,18 +4,21 @@ export default `<div
     /*display: block;*/
     /* height: 100%;*/
      text-align: left;
-     
+     /*font-size: 20px;*/
+     /*color: #fff;*/
+     font-style: italic;
      /*line-height: 1;*/
     /*font-family: 'PingFang SC';*/
-    /*background: url('img_2.png') 10px 20px / 100px auto no-repeat;*/
+    /*background: url('img_2.png') 10px 20px / 100px auto repeat;*/
     /*url('img.png') center / 100px auto repeat-y;*/
+
    "
   id="renderTemplate"
 >
   <div style="display: inline; ">
-<!--    1-->
+    1
     <div style="display: inline;">
-<!--      in<br>line-->
+      in<br>line
       <div style="display: inline-block;">
         <div style="">
           <div style="display: inline; ">
@@ -30,19 +33,20 @@ export default `<div
             </span>
             <div
               style="
-                height: 300px;
-                /*width: 600px;*/
+                /*height: 300px;*/
+                /*width: 300px;*/
                 float: right;
                 color: #fff;
                 margin: 5px 10px 15px 20px;
                 /*background: #0f0; */
                 position: relative;
                 padding: 5px 10px 15px 20px;
-                border: 20px solid rgba(0,128,0,0.5);
-                border-left-color: rgba(184,134,11,0.5);
-                border-right-color: rgba(65,105,225,0.5);
-                border-bottom-color: rgba(225,0,0,0.5);
-                background: rgba(0,0,0,0.3) url('img.png') left top / 100px auto no-repeat content-box;
+                /*border: 20px solid rgba(0,128,0,0.5);*/
+                /*border-right-width: 10px;*/
+                /*border-left-color: rgba(184,134,11,0.5);*/
+                /*border-right-color: rgba(65,105,225,0.5);*/
+                /*border-bottom-color: rgba(225,0,0,0.5);*/
+                background: rgba(0,0,0,0.3) url('img.png') left top / 100px auto repeat-x content-box;
                 /*border-left-width: 20px;*/
                 /*border-right-width: 150px;*/
                 /*border-bottom: 1px solid #008000;*/
@@ -52,8 +56,8 @@ export default `<div
                 /*border-radius: 50px 60px 70px 80px / 80px 70px 60px 50px;*/
                 /*border-style: groove;*/
               "
-            >float 60
-              <span style="background: #BC8F8F; padding: 5px;">
+            >float 601234789
+              <span style="">
                 setsocketopt123456函数
               </span>
             </div>
@@ -109,8 +113,8 @@ export default `<div
             如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息
           </div>
         </div>
-        <div style="width: 200px; text-align: center; float: left; ">
-          <span style="position: relative; display: inline; ">
+        <div style="width: 200px;color: #000; text-align: center; float: left; ">
+          <span style="position: relative; display: inline-block; ">
             position: 1
             <br>
             position: 2222
@@ -136,7 +140,7 @@ export default `<div
     </div>
     7
   </div>
-  <div style="text-align: left; display: none">8</div>
+  <div style="text-align: left;">8</div>
 </div>`
 
 export const html3 = `<div style="width: 500px; background-color: #f00"><div style="margin: 0 auto; width: 10px">123456</div></div>

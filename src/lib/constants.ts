@@ -58,8 +58,8 @@ export const REG_BG_REPEAT = /repeat-y|repeat-x|no-repeat|repeat/i;
 export const REG_BG_ATTACHMENT = /scroll|fixed|local/i;
 export const REG_BG_CLIP = /border-box|padding-box|content-box/ig;
 
-const FLOAT_NO_GROUP = '(?:-?\\d*(?:\\.\\d+)?)(?:%|px)'
-const FLOAT_POSITIVE_NO_GROUP = '(?:\\d*(?:\\.\\d+)?)(?:%|px)'
+const FLOAT_NO_GROUP = '(?:-?\\d*(?:\\.\\d+)?)(?:%|px)?'
+const FLOAT_POSITIVE_NO_GROUP = '(?:\\d*(?:\\.\\d+)?)(?:%|px)?'
 const FLOAT = `(${FLOAT_NO_GROUP})`
 const BG_POS = `(?:(left|center|right|top|bottom)\\s+${FLOAT}?)`
 const BG_SIZE_ENUM = '(cover|contain)'
@@ -70,8 +70,8 @@ export const REG_BG_POSITION_SIZE = new RegExp(`\\s*(${BG_POS}|${FLOAT})\\s*(${B
 
 const getRound = (value: string) => `((?:(${value})\\s+(${value})\\s+(${value})\\s+(${value}))|(?:(${value})\\s+(${value})\\s+(${value}))|(?:(${value})\\s+(${value}))|(${value}))`;
 
-const REG_ROUND_AUTO_VALUE = new RegExp(getRound(`auto|${FLOAT_NO_GROUP}`), 'i');
-// console.log('REG_ROUND_AUTO_VALUE', REG_ROUND_AUTO_VALUE);
+export const REG_ROUND_AUTO_VALUE = new RegExp(getRound(`auto|${FLOAT_NO_GROUP}`), 'i');
+console.log('REG_ROUND_AUTO_VALUE', REG_ROUND_AUTO_VALUE);
 
 const ROUND_NUM = getRound(FLOAT_POSITIVE_NO_GROUP);
 export const REG_BORDER_RADIUS = new RegExp(`(?:${ROUND_NUM}(?:\\s*/\\s*${ROUND_NUM})?)`, 'i')
