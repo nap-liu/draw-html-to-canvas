@@ -3,7 +3,7 @@ import Style, {IBackground} from './style';
 import Line from './line';
 import LineManger from './line-manger';
 import ElementImage from './element-image';
-import {cutCurveEndPath, cutCurveStartPath, drawRepeatImage, ellipse} from './util';
+import {drawRepeatImage, ellipse} from './util';
 
 export default class Element {
   public nodeValue = '';
@@ -395,29 +395,46 @@ export default class Element {
               let lineText = text.slice(0, -step);
               element.shadows = [];
 
+              const pushElement = (lineText: string, textWidth: number) => {
+                const el = element.clone();
+                el.nodeValue = lineText;
+                el.contentWidth = textWidth;
+                el.contentHeight = textMetrics.lineHeight;
+                el.textMetric = textMetrics;
+                line.push(el);
+                element.shadows.push(el);
+                el.line = line;
+                element.line = line;
+                el.shadow = element;
+              }
+
               // TODO 单词组合不允许拆分换行
               while (text.length) {
                 if (line.restWidth <= 0) {
-                  line = this.lines.newLine(line.width);
-                  continue;
+                  if (line.width <= 0) { // 新行没有宽 强制放置
+                    textMetrics = element.getTextMetrics(context, text);
+                    pushElement(text, textMetrics.width);
+                    break;
+                  } else {
+                    line = this.lines.newLine(line.width);
+                    continue;
+                  }
                 } else if (lineText === '') {
-                  line = this.lines.newLine(line.width);
-                  lineText = text;
+                  if (line.length === 0) {
+                    // TODO 宽度不够 强制换行
+                    textMetrics = element.getTextMetrics(context, text);
+                    pushElement(text, textMetrics.width);
+                    break;
+                  } else {
+                    line = this.lines.newLine(line.width);
+                    lineText = text;
+                  }
                   continue;
                 }
                 textMetrics = element.getTextMetrics(context, lineText);
                 const textWidth = textMetrics.width;
                 if (textWidth <= line.restWidth) {
-                  const el = element.clone();
-                  el.nodeValue = lineText;
-                  el.contentWidth = textWidth;
-                  el.contentHeight = textMetrics.lineHeight;
-                  el.textMetric = textMetrics;
-                  line.push(el);
-                  element.shadows.push(el);
-                  el.line = line;
-                  element.line = line;
-                  el.shadow = element;
+                  pushElement(lineText, textWidth);
                   text = text.slice(lineText.length);
                   if (text.length > step) {
                     lineText = text.slice(0, step);
@@ -531,7 +548,12 @@ export default class Element {
             }
           } else if (childBlockType === BlockType.block) {
             if (line.length) {
-              line = this.lines.newLine(line.width);
+              if (line.length === 1 && line.last.nodeName === SupportElement.br) {
+                // 弹出没用的换行符
+                line.pop();
+              } else {
+                line = this.lines.newLine(line.width);
+              }
             }
             line.push(element);
             element.line = line;
@@ -586,10 +608,15 @@ export default class Element {
           this.contentHeight = this.lines.linesHeight;
         }
       }
+
     } else {
       this.children.forEach(e => e.layoutLine(context));
     }
-    return;
+
+    const lastLine = this.lines.lastLine();
+    if (lastLine.length === 0) {
+      this.lines.pop();
+    }
   }
 
   public layoutLinePosition() {
@@ -1005,14 +1032,14 @@ export default class Element {
     ctx.lineCap = 'butt';
     ctx.translate(x, y);
 
-    const noRadius = (
+    const hasRadius = !(
       topLeft.width === 0 && topLeft.height === 0 &&
       topRight.width === 0 && topRight.height === 0 &&
       bottomRight.width === 0 && bottomRight.height === 0 &&
       bottomLeft.width === 0 && bottomLeft.height === 0
     );
 
-    const noBorder = (
+    const hasBorder = !(
       top.width === 0 &&
       right.width === 0 &&
       bottom.width === 0 &&
@@ -1047,7 +1074,286 @@ export default class Element {
       bottomLeft.width === maxWidth && bottomLeft.height === maxHeight
     );
 
-    if (noRadius && !noBorder) {
+    if (hasRadius) {
+      // ctx.strokeRect(0, 0, width, height);
+      const oneDegree = Math.PI / 180;
+      // 外圆选区
+      {
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (topLeft.width && topLeft.height) { // 圆角
+          ctx.ellipse(
+            topLeft.width, topLeft.height,
+            topLeft.width, topLeft.height, 0,
+            Math.PI, oneDegree * -90,
+          );
+        } else {
+          ctx.moveTo(0, 0);
+        }
+
+        if (topRight.width && topRight.height) {
+          ctx.ellipse(
+            width - topRight.width, topRight.height,
+            topRight.width, topRight.height, 0,
+            oneDegree * -90, 0,
+          );
+        } else {
+          // ctx.lineTo()
+          ctx.lineTo(width, 0);
+        }
+
+        if (bottomRight.width && bottomRight.height) {
+          ctx.ellipse(
+            width - bottomRight.width,
+            height - bottomRight.height,
+            bottomRight.width, bottomRight.height, 0,
+            0, oneDegree * 90,
+          );
+        } else {
+          ctx.lineTo(width, height);
+        }
+
+        if (bottomLeft.width && bottomLeft.height) {
+          ctx.ellipse(
+            bottomLeft.width,
+            height - bottomLeft.height,
+            bottomLeft.width, bottomLeft.height, 0,
+            oneDegree * 90, Math.PI,
+          );
+        } else {
+          ctx.lineTo(0, height);
+        }
+        ctx.closePath();
+        ctx.clip();
+
+        if (typeof continueDraw === 'function') {
+          continueDraw(ctx);
+        }
+      }
+
+      if (sameWidth && sameStyle && sameColor && isCycle) { // 圆形 或 椭圆形 一次画完
+        ctx.save();
+        ctx.translate(top.width / 2, top.width / 2);
+        ctx.lineWidth = top.width;
+        ctx.strokeStyle = top.color;
+        ctx.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.restore();
+      } else { // 圆角矩形 样式不一样的圆形或椭圆形
+
+      }
+
+      if (hasBorder) {
+
+        // 边框
+        {
+          const offset = Math.max(width, height);
+          let xRatio, yRatio;
+          // 上边
+          {
+            ctx.save();
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+
+            xRatio = left.width / (top.width + left.width);
+            yRatio = top.width / (top.width + left.width);
+
+            ctx.lineTo(
+              left.width + xRatio * offset,
+              top.width + yRatio * offset,
+            );
+
+            xRatio = right.width / (top.width + right.width);
+            yRatio = top.width / (top.width + right.width);
+
+            ctx.lineTo(
+              width - right.width - xRatio * offset,
+              top.width + yRatio * offset,
+            );
+
+            ctx.lineTo(width, 0);
+
+            ctx.closePath();
+            ctx.clip();
+            // ctx.stroke();
+
+            ctx.save();
+            ctx.beginPath();
+            const lineWidth = Math.max(left.width, right.width, top.width);
+            ctx.translate(0, lineWidth);
+            ctx.strokeStyle = top.color;
+            ctx.lineWidth = lineWidth * 3;
+            ctx.moveTo(0, 0);
+            ctx.lineTo(width, 0);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore();
+          }
+          // 右边
+          {
+            ctx.save();
+
+            ctx.beginPath();
+            ctx.moveTo(width, 0);
+
+            ctx.lineTo(
+              width - right.width - xRatio * offset,
+              top.width + yRatio * offset,
+            );
+            xRatio = right.width / (bottom.width + right.width);
+            yRatio = bottom.width / (bottom.width + right.width);
+            ctx.lineTo(
+              width - right.width - xRatio * offset,
+              height - bottom.width - yRatio * offset,
+            );
+            ctx.lineTo(width, height);
+            ctx.closePath();
+            // ctx.stroke();
+            ctx.clip();
+
+            ctx.save();
+            ctx.beginPath();
+            const lineWidth = Math.max(top.width, right.width, bottom.width);
+            ctx.translate(-lineWidth, 0);
+            ctx.strokeStyle = right.color;
+            ctx.lineWidth = lineWidth * 3;
+            ctx.moveTo(width, 0);
+            ctx.lineTo(width, height);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore();
+          }
+          // 下边
+          {
+            ctx.save();
+
+            ctx.beginPath();
+            ctx.moveTo(width, height);
+            // ctx.lineTo(width, height);
+            ctx.lineTo(
+              width - right.width - xRatio * offset,
+              height - bottom.width - yRatio * offset,
+            );
+
+            xRatio = left.width / (bottom.width + left.width);
+            yRatio = bottom.width / (bottom.width + left.width);
+
+            ctx.lineTo(
+              left.width + xRatio * offset,
+              height - bottom.width - yRatio * offset,
+            );
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            // ctx.stroke();
+            ctx.clip();
+
+            ctx.save();
+            ctx.beginPath();
+            const lineWidth = Math.max(left.width, right.width, bottom.width);
+            ctx.translate(0, -lineWidth);
+            ctx.strokeStyle = bottom.color;
+            ctx.lineWidth = lineWidth * 3;
+            ctx.moveTo(0, height);
+            ctx.lineTo(width, height);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore();
+          }
+          // 左边
+          {
+            ctx.save();
+
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            ctx.lineTo(
+              left.width + xRatio * offset,
+              height - bottom.width - yRatio * offset,
+            );
+            xRatio = left.width / (top.width + left.width);
+            yRatio = top.width / (top.width + left.width);
+            ctx.lineTo(
+              left.width + xRatio * offset,
+              top.width + yRatio * offset,
+            );
+            ctx.lineTo(0, 0);
+            ctx.closePath();
+            // ctx.stroke();
+            ctx.clip();
+
+            ctx.save();
+            ctx.beginPath();
+            const lineWidth = Math.max(top.width, left.width, bottom.width);
+            ctx.translate(lineWidth, 0);
+            ctx.strokeStyle = left.color;
+            ctx.lineWidth = lineWidth * 3;
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, height);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore();
+          }
+        }
+
+        // 内圆选区
+        {
+          ctx.save();
+          ctx.beginPath();
+          if (topLeft.width - left.width > 0 && topLeft.height - top.width > 0) { // 圆角
+            ctx.ellipse(
+              topLeft.width, topLeft.height,
+              topLeft.width - left.width, topLeft.height - top.width, 0,
+              Math.PI, oneDegree * -90,
+            );
+          } else {
+            ctx.moveTo(left.width, top.width);
+          }
+
+          if (topRight.width - right.width > 0 && topRight.height - top.width > 0) {
+            ctx.ellipse(
+              width - topRight.width, topRight.height,
+              topRight.width - right.width, topRight.height - top.width, 0,
+              oneDegree * -90, 0,
+            );
+          } else {
+            ctx.lineTo(width - right.width, top.width);
+          }
+
+          if (bottomRight.width - right.width > 0 && bottomRight.height - bottom.width > 0) {
+            ctx.ellipse(
+              width - bottomRight.width,
+              height - bottomRight.height,
+              bottomRight.width - right.width, bottomRight.height - bottom.width, 0,
+              0, oneDegree * 90,
+            );
+          } else {
+            ctx.lineTo(width - right.width, height - bottom.width);
+          }
+
+          if (bottomLeft.width - left.width > 0 && bottomLeft.height - bottom.width > 0) {
+            ctx.ellipse(
+              bottomLeft.width,
+              height - bottomLeft.height,
+              bottomLeft.width - left.width, bottomLeft.height - bottom.width, 0,
+              oneDegree * 90, Math.PI,
+            );
+          } else {
+            ctx.lineTo(left.width, height - bottom.width);
+          }
+          ctx.closePath();
+
+          ctx.globalCompositeOperation = 'destination-out';
+          // ctx.fillStyle = 'rgba(0,0,0,.5)';
+          ctx.fillStyle = 'rgba(0,0,0,1)';
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+    } else {
       if (typeof continueDraw === 'function') {
         ctx.save();
         ctx.rect(0, 0, width, height);
@@ -1056,360 +1362,119 @@ export default class Element {
         ctx.restore();
       }
 
-      // 矩形
-      if (sameWidth && sameStyle && sameColor) {
-        // 一次画完
-        ctx.beginPath();
-        ctx.lineWidth = top.width;
-        ctx.strokeStyle = top.color;
-        ctx.strokeRect(top.width / 2, top.width / 2, width - left.width, height - top.width);
-      } else {
-        // 上边
-        {
-          ctx.save();
-
+      if (hasBorder) {
+        if (sameWidth && sameStyle && sameColor) {
+          // 一次画完
           ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.lineTo(width, 0);
-          ctx.lineTo(width - right.width, top.width);
-          ctx.lineTo(left.width, top.width);
-          ctx.closePath();
-          ctx.clip();
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.translate(0, top.width / 2);
-          ctx.strokeStyle = top.color;
-          ctx.lineWidth = top.width;
-          ctx.moveTo(0, 0);
-          ctx.lineTo(width, 0);
-          ctx.stroke();
-          ctx.restore();
-
-          ctx.restore();
-        }
-
-        // 右边
-        {
-          ctx.save();
-
-          ctx.beginPath();
-          ctx.moveTo(width, 0);
-          ctx.lineTo(width, height);
-          ctx.lineTo(width - right.width, height - bottom.width);
-          ctx.lineTo(width - right.width, top.width);
-          ctx.closePath();
-          // ctx.stroke();
-          ctx.clip();
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.translate(-right.width / 2, 0);
-          ctx.strokeStyle = right.color;
-          ctx.lineWidth = right.width;
-          ctx.moveTo(width, 0);
-          ctx.lineTo(width, height);
-          ctx.stroke();
-          ctx.restore();
-
-          ctx.restore();
-        }
-
-        // 下边
-        {
-          ctx.save();
-
-          ctx.beginPath();
-          ctx.moveTo(width - right.width, height - bottom.width);
-          ctx.lineTo(width, height);
-          ctx.lineTo(0, height);
-          ctx.lineTo(left.width, height - bottom.width);
-          ctx.closePath();
-          // ctx.stroke();
-          ctx.clip();
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.translate(0, -bottom.width / 2);
-          ctx.strokeStyle = bottom.color;
-          ctx.lineWidth = bottom.width;
-          ctx.moveTo(0, height);
-          ctx.lineTo(width, height);
-          ctx.stroke();
-          ctx.restore();
-
-          ctx.restore();
-        }
-
-        // 左边
-        {
-          ctx.save();
-
-          ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.lineTo(left.width, top.width);
-          ctx.lineTo(left.width, height - bottom.width);
-          ctx.lineTo(0, height);
-          ctx.closePath();
-          // ctx.stroke();
-          ctx.clip();
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.translate(left.width / 2, 0);
-          ctx.strokeStyle = left.color;
-          ctx.lineWidth = left.width;
-          ctx.moveTo(0, 0);
-          ctx.lineTo(0, height);
-          ctx.stroke();
-          ctx.restore();
-
-          ctx.restore();
-        }
-      }
-    } else if (!noBorder && !noRadius && isCycle) {
-      const halfLineWidth = top.width / 2;
-      if (maxHeight === maxWidth) { // 正圆
-        if (sameColor && sameStyle && sameWidth) { // 样式完全一致 直接一次画完
           ctx.lineWidth = top.width;
           ctx.strokeStyle = top.color;
-          ctx.beginPath();
-          ctx.arc(
-            width / 2,
-            height / 2,
-            width / 2 - halfLineWidth, 0, 2 * Math.PI,
-          );
-          ctx.stroke();
+          ctx.strokeRect(top.width / 2, top.width / 2, width - left.width, height - top.width);
         } else {
-          if (sameWidth) {
-            // 左上角
-            const halfSize = width / 2 - halfLineWidth;
-            ctx.lineWidth = top.width;
-            const oneDegree = Math.PI / 180;
-            // 上弧
+          // 上边
+          {
+            ctx.save();
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(width, 0);
+            ctx.lineTo(width - right.width, top.width);
+            ctx.lineTo(left.width, top.width);
+            ctx.closePath();
+            ctx.clip();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.translate(0, top.width / 2);
             ctx.strokeStyle = top.color;
-            ctx.beginPath();
-            ctx.arc(
-              halfSize + halfLineWidth, halfSize + halfLineWidth,
-              halfSize,
-              oneDegree * 225, oneDegree * 315,
-            );
+            ctx.lineWidth = top.width;
+            ctx.moveTo(0, 0);
+            ctx.lineTo(width, 0);
             ctx.stroke();
+            ctx.restore();
 
-            // 右弧
+            ctx.restore();
+          }
+
+          // 右边
+          {
+            ctx.save();
+
+            ctx.beginPath();
+            ctx.moveTo(width, 0);
+            ctx.lineTo(width, height);
+            ctx.lineTo(width - right.width, height - bottom.width);
+            ctx.lineTo(width - right.width, top.width);
+            ctx.closePath();
+            // ctx.stroke();
+            ctx.clip();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.translate(-right.width / 2, 0);
             ctx.strokeStyle = right.color;
-            ctx.beginPath();
-            ctx.arc(
-              halfSize + halfLineWidth, halfSize + halfLineWidth,
-              halfSize,
-              oneDegree * -45, oneDegree * 45,
-            );
+            ctx.lineWidth = right.width;
+            ctx.moveTo(width, 0);
+            ctx.lineTo(width, height);
             ctx.stroke();
+            ctx.restore();
 
-            // 下弧
+            ctx.restore();
+          }
+
+          // 下边
+          {
+            ctx.save();
+
+            ctx.beginPath();
+            ctx.moveTo(width - right.width, height - bottom.width);
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.lineTo(left.width, height - bottom.width);
+            ctx.closePath();
+            // ctx.stroke();
+            ctx.clip();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.translate(0, -bottom.width / 2);
             ctx.strokeStyle = bottom.color;
-            ctx.beginPath();
-            ctx.arc(
-              halfSize + halfLineWidth, halfSize + halfLineWidth,
-              halfSize,
-              oneDegree * 45, oneDegree * 135,
-            );
+            ctx.lineWidth = bottom.width;
+            ctx.moveTo(0, height);
+            ctx.lineTo(width, height);
             ctx.stroke();
+            ctx.restore();
 
-            // 左弧
+            ctx.restore();
+          }
+
+          // 左边
+          {
+            ctx.save();
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(left.width, top.width);
+            ctx.lineTo(left.width, height - bottom.width);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            // ctx.stroke();
+            ctx.clip();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.translate(left.width / 2, 0);
             ctx.strokeStyle = left.color;
-            ctx.beginPath();
-            ctx.arc(
-              halfSize + halfLineWidth, halfSize + halfLineWidth,
-              halfSize,
-              oneDegree * 135, oneDegree * 225,
-            );
-
+            ctx.lineWidth = left.width;
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, height);
             ctx.stroke();
+            ctx.restore();
 
-          } else {
-            // TODO 线条宽度不一致 需要重新画
+            ctx.restore();
           }
         }
-
-        if (typeof continueDraw === 'function') {
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(
-            width / 2,
-            height / 2,
-            width / 2 - halfLineWidth, 0, 2 * Math.PI,
-          );
-          ctx.clip();
-          continueDraw(ctx);
-          ctx.restore();
-        }
-      } else { //  椭圆
-        // TODO 椭圆支持分线段画图
-        ctx.beginPath();
-        ellipse(ctx, width / 2, height / 2, width - top.width, height - top.width);
-
-        if (typeof continueDraw === 'function') {
-          ctx.save();
-          ctx.clip();
-          continueDraw(ctx);
-          ctx.restore();
-        }
-
-        ctx.lineWidth = top.width;
-        ctx.strokeStyle = top.color;
-        ctx.stroke();
-      }
-    } else if (!noBorder && !noRadius) {
-      // 圆角矩形
-      if (sameWidth) {
-        ctx.save()
-        ctx.translate(top.width / 2, top.width / 2);
-        // 上边框
-        {
-          ctx.strokeStyle = top.color;
-          ctx.lineWidth = top.width;
-          {
-            ctx.beginPath();
-            const [p1, p2, p3] = cutCurveEndPath([
-              [0, topLeft.height],
-              [0, 0],
-              [topLeft.width, 0],
-            ], 0.5);
-            ctx.moveTo(...p1);
-            ctx.quadraticCurveTo(...p2, ...p3);
-          }
-
-          {
-            const [p1, p2, p3] = cutCurveStartPath([
-              [width - topRight.width - right.width, 0],
-              [width - right.width, 0],
-              [width - right.width, topRight.height],
-            ], 0.5);
-            ctx.lineTo(...p1);
-            ctx.quadraticCurveTo(...p2, ...p3);
-            ctx.stroke();
-          }
-        }
-
-        // 右边框
-        {
-          ctx.strokeStyle = right.color;
-          ctx.lineWidth = right.width;
-          {
-            ctx.beginPath();
-            const [p1, p2, p3] = cutCurveEndPath([
-              [width - topRight.width - right.width, 0],
-              [width - right.width, 0],
-              [width - right.width, topRight.height],
-            ], 0.5);
-            ctx.moveTo(...p1);
-            ctx.quadraticCurveTo(...p2, ...p3);
-          }
-
-          {
-            const [p1, p2, p3] = cutCurveStartPath([
-              [width - right.width, height - bottomRight.height - bottom.width],
-              [width - right.width, height - bottom.width],
-              [width - right.width - bottomRight.width, height - bottom.width],
-            ], 0.5);
-            ctx.lineTo(...p1);
-            ctx.quadraticCurveTo(...p2, ...p3);
-            ctx.stroke();
-          }
-        }
-
-        // 下边框
-        {
-          ctx.strokeStyle = bottom.color;
-          ctx.lineWidth = bottom.width;
-          {
-            ctx.beginPath();
-            const [p1, p2, p3] = cutCurveEndPath([
-              [width - right.width, height - bottomRight.height - bottom.width],
-              [width - right.width, height - bottom.width],
-              [width - right.width - bottomRight.width, height - bottom.width],
-            ], 0.5);
-            ctx.moveTo(...p1);
-            ctx.quadraticCurveTo(...p2, ...p3);
-          }
-
-          {
-            const [p1, p2, p3] = cutCurveStartPath([
-              [bottomLeft.width, height - bottom.width],
-              [0, height - bottom.width],
-              [0, height - bottomLeft.height - bottom.width],
-            ], 0.5);
-            ctx.lineTo(...p1);
-            ctx.quadraticCurveTo(...p2, ...p3);
-            ctx.stroke();
-          }
-        }
-
-        // 左边框
-        {
-          ctx.strokeStyle = left.color;
-          ctx.lineWidth = left.width;
-          {
-            ctx.beginPath();
-            const [p1, p2, p3] = cutCurveEndPath([
-              [bottomLeft.width, height - bottom.width],
-              [0, height - bottom.width],
-              [0, height - bottomLeft.height - bottom.width],
-            ], 0.5);
-            ctx.moveTo(...p1);
-            ctx.quadraticCurveTo(...p2, ...p3);
-          }
-
-          {
-            const [p1, p2, p3] = cutCurveStartPath([
-              [0, topLeft.height],
-              [0, 0],
-              [topLeft.width, 0],
-            ], 0.5);
-            ctx.lineTo(...p1);
-            ctx.quadraticCurveTo(...p2, ...p3);
-            ctx.stroke();
-          }
-        }
-
-        ctx.restore();
-      } else {
-        // TODO 处理 宽度不一致
-      }
-
-      // 外切圆角矩形 顺时针绘制
-      const roundPath = new Path2D();
-      // 上边 + 右上角
-      roundPath.moveTo(topLeft.width, 0);
-      roundPath.lineTo(width - topRight.width, 0);
-      roundPath.quadraticCurveTo(width, 0, width, topRight.height);
-
-      // 右边 + 右下角
-      roundPath.lineTo(width, height - bottomRight.height);
-      roundPath.quadraticCurveTo(width, height, width - bottomRight.width, height);
-
-      // 下边 + 左下角
-      roundPath.lineTo(bottomLeft.width, height)
-      roundPath.quadraticCurveTo(0, height, 0, height - bottomLeft.height);
-
-      // 左边 + 左上角
-      roundPath.lineTo(0, topLeft.height);
-      roundPath.quadraticCurveTo(0, 0, topLeft.width, 0);
-      roundPath.closePath();
-
-      if (typeof continueDraw === 'function') {
-        ctx.save();
-        ctx.clip();
-        continueDraw(ctx);
-        ctx.restore();
-      }
-    } else {
-      if (typeof continueDraw === 'function') {
-        continueDraw(ctx);
       }
     }
-
     ctx.restore();
   }
 

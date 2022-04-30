@@ -145,9 +145,26 @@ export default `<div
   <div style="text-align: left;">8</div>
 </div>`
 
-export const html3 = `<div style="width: 500px; background-color: #f00"><div style="margin: 0 auto; width: 10px">123456</div></div>
-`
-export const html2 = `<div style='border-radius: 24px; background-color: #fff'>
+export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid #f00;padding-left: 100px; padding-top: 100px">
+<div style="
+      width: 100px;
+      height: 100px;
+      border: 10px solid #f00;
+      border-radius: 1px;
+      /*border-top-color: #f00;*/
+      /*border-top-width: 10px;*/
+      /*border-right-color: #00f;*/
+      /*border-right-width: 20px;*/
+      /*border-bottom-color: #000;*/
+      /*border-bottom-width: 20px;*/
+      /*border-left-color: #ff0;*/
+      /*border-left-width: 20px;*/
+      /*border-radius: 10px;*/
+      text-align: center; 
+      background: #00a113
+      "></div>
+</div>`
+export const html2 = `<div style='border-radius: 24px; background-color: rgba(0,0,0,.3)'>
   <div className='head' style='height: 362px; position: relative'>
     <img src='http://127.0.0.1:8080/image/post-4.14-bg.png' style='width: 100%;position: absolute;left:0;top:0;'>
     <img src='http://127.0.0.1:8080/image/post-4.14-logo.png' style='width:66px;height:58px;position: absolute;left:50px;top:60px;' />

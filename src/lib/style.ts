@@ -25,7 +25,7 @@ import {
   REG_COLOR,
   REG_EM,
   REG_PCT,
-  REG_PX,
+  REG_PX, REG_RADIUS_VALUE,
   REG_REM,
   REG_ROUND_AUTO_VALUE,
   REG_TEXT_DECORATION_COLOR,
@@ -809,7 +809,7 @@ export default class Style {
     const baseRadius = `${border}-${radius}`;
 
     const all = this.style[baseRadius];
-    const allIndex = this.styleIndex[baseRadius];
+    const allIndex = this.styleIndex[baseRadius] || 0;
 
     if (all) {
       all.replace(REG_BORDER_RADIUS, (matched, ...args) => {
@@ -864,19 +864,36 @@ export default class Style {
       });
     }
 
-    // TODO 处理圆角优先级样式
-    let key = `${border}-${top}-${left}-${radius}`
-    const topLeftStyle = this.style[key];
-    const topLeftStyleIndex = this.styleIndex[key];
-    key = `${border}-${top}-${right}-${radius}`
-    const topRightStyle = this.style[key];
-    const topRightStyleIndex = this.styleIndex[key];
-    key = `${border}-${bottom}-${right}-${radius}`
-    const bottomRightStyle = this.style[key];
-    const bottomRightStyleIndex = this.styleIndex[key];
-    key = `${border}-${bottom}-${left}-${radius}`
-    const bottomLeftStyle = this.style[key];
-    const bottomLeftStyleIndex = this.styleIndex[key];
+    const topLeftStyle = {
+      target: topLeft,
+      key: `${border}-${top}-${left}-${radius}`,
+    }
+    const topRightStyle = {
+      target: topRight,
+      key: `${border}-${top}-${right}-${radius}`,
+    }
+    const bottomRightStyle = {
+      target: bottomRight,
+      key: `${border}-${bottom}-${right}-${radius}`,
+    }
+    const bottomLeftStyle = {
+      target: bottomLeft,
+      key: `${border}-${bottom}-${left}-${radius}`,
+    };
+
+    ;[topLeftStyle, topRightStyle, bottomRightStyle, bottomLeftStyle].forEach(i => {
+      const idx = this.styleIndex[i.key] || 0;
+      if (idx > allIndex) {
+        const value = this.style[i.key];
+        value.replace(REG_RADIUS_VALUE, (matched, g1, g2) => {
+          i.target.width = i.target.height = g1;
+          if (g2) {
+            i.target.height = g2;
+          }
+          return '';
+        });
+      }
+    });
 
     const {offsetWidth, offsetHeight} = this.element;
     const {margin} = this;

@@ -127,7 +127,9 @@ export const REG_ROUND_AUTO_VALUE = new RegExp(getRound(`auto|${FLOAT_NO_GROUP}`
 
 const ROUND_NUM = getRound(FLOAT_POSITIVE_NO_GROUP);
 export const REG_BORDER_RADIUS = new RegExp(`(?:${ROUND_NUM}(?:\\s*/\\s*${ROUND_NUM})?)`, 'i')
+export const REG_RADIUS_VALUE = new RegExp(`(${FLOAT_POSITIVE_NO_GROUP})(?:\\s+(${FLOAT_POSITIVE_NO_GROUP}))?`, 'i');
 // console.log('REG_BORDER_RADIUS', REG_BORDER_RADIUS);
+// console.log('REG_RADIUS_VALUE', REG_RADIUS_VALUE);
 
 // console.log('REG_ROUND_VALUE',REG_ROUND_VALUE);
 // console.log('REG_ROUND_AUTO_VALUE',REG_ROUND_AUTO_VALUE);

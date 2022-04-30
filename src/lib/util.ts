@@ -172,21 +172,32 @@ export const cutCurveMiddlePath = (path: number[][], t1: number, t2: number): TC
   ];
 }
 
-/**
- * 圆角矩形路径
- * @param ctx
- * @param x 圆心
- * @param y 圆心
- * @param width 宽
- * @param height 高
- */
-export const ellipse = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) => {
-  const k = (width / 0.75) / 2, w = width / 2, h = height / 2;
-  ctx.beginPath();
-  ctx.moveTo(x, y - h);
-  ctx.bezierCurveTo(x + k, y - h, x + k, y + h, x, y + h);
-  ctx.bezierCurveTo(x - k, y + h, x - k, y - h, x, y - h);
-  ctx.closePath();
+export const ellipse = (
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  xDis: number, yDis: number,
+  rotation: number,
+  startAngle: number, endAngle: number
+) => {
+  var kappa = 0.5522848, // 4 * ((√(2) - 1) / 3)
+    ox = xDis * kappa,  // control point offset horizontal
+    oy = yDis * kappa,  // control point offset vertical
+    xe = x + xDis,      // x-end
+    ye = y + yDis;      // y-end
+
+  // ctx.strokeRect(x, y, xDis, yDis);
+
+  ctx.moveTo(x - xDis, y);
+  ctx.bezierCurveTo(x - xDis, y - oy, x - ox, y - yDis, x, y - yDis);
+  ctx.bezierCurveTo(x + ox, y - yDis, xe, y - oy, xe, y);
+  // ctx.moveTo(xe, y);
+  ctx.bezierCurveTo(xe, y + oy, x + ox, ye, x, ye);
+  // ctx.strokeRect(xe, y, 10, 10);
+  // ctx.strokeRect(xe, y + oy, 10, 10);
+  // ctx.strokeRect(x + ox, ye, 10, 10);
+  // ctx.strokeRect(x, ye, 10, 10);
+  ctx.bezierCurveTo(x - ox, ye, x - xDis, y + oy, x - xDis, y);
+  // ctx.closePath();
 }
 
 export const values = (obj: any) => {
