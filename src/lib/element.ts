@@ -1,9 +1,9 @@
-import {BackgroundClip, BackgroundPosition, BackgroundSize, BlockType, DEFAULT_LINE_HEIGHT, NodeType, REG_NUM, REG_PCT, REG_PX, SupportElement, TContinueDraw, TEXT_DECORATION_LINE, TEXT_DECORATION_STYLE} from './constants';
-import Style, {IBackground} from './style';
+import {BackgroundClip, BackgroundPosition, BackgroundSize, BlockType, BORDER_STYLE, NodeType, REG_PCT, REG_PX, SupportElement, TContinueDraw, TEXT_DECORATION_LINE, TEXT_DECORATION_STYLE} from './constants';
+import Style, {IBackground, IBorder} from './style';
 import Line from './line';
 import LineManger from './line-manger';
 import ElementImage from './element-image';
-import {drawRepeatImage, ellipse} from './util';
+import {drawRepeatImage} from './util';
 
 export default class Element {
   public nodeValue = '';
@@ -203,24 +203,19 @@ export default class Element {
   }
 
   public getTextMetrics(context: CanvasRenderingContext2D, text: string) {
+    const {canvasFont, lineHeight} = this.style;
     // TODO letter-spacing 支持
-    context.font = this.style.canvasFont;
+    context.font = canvasFont;
     const textMetrics = context.measureText(text);
     // let fontHeight = textMetrics.fontBoundingBoxAscent + textMetrics.fontBoundingBoxDescent;
-    let fontHeight = NaN;
-    if (isNaN(fontHeight)) {
-      // 兼容不支持测量文字基线的canvas
-      fontHeight = this.style.fontSize;
-    }
-    let lineHeight: string | number = this.style.getInheritStyle('line-height') || DEFAULT_LINE_HEIGHT;
-    if (REG_PX.test(lineHeight)) {
-      lineHeight = parseFloat(lineHeight);
-    } else if (REG_NUM.test(lineHeight)) {
-      lineHeight = parseFloat(lineHeight) * fontHeight;
-    }
+    // let fontHeight = NaN;
+    // if (isNaN(fontHeight)) {
+    //   // 兼容不支持测量文字基线的canvas
+    //   fontHeight = this.style.fontSize;
+    // }
     return {
       width: textMetrics.width,
-      lineHeight: lineHeight as number,
+      lineHeight,
     };
   }
 
@@ -1009,7 +1004,6 @@ export default class Element {
 
   /**
    * 绘制边框
-   * TODO 重新绘制边框
    * @param ctx
    * @param continueDraw
    */
@@ -1074,288 +1068,441 @@ export default class Element {
       bottomLeft.width === maxWidth && bottomLeft.height === maxHeight
     );
 
+    const setBorderStyle = (border: IBorder) => {
+      // TODO 其他类型支持
+      switch (border.style) {
+        case BORDER_STYLE.solid:
+          ctx.setLineDash([]);
+          break;
+        case BORDER_STYLE.dashed:
+          // TODO 优化边角上空缺问题
+          ctx.setLineDash([border.width * 1.5, border.width]);
+          break;
+      }
+    }
+
     if (hasRadius) {
-      // ctx.strokeRect(0, 0, width, height);
       const oneDegree = Math.PI / 180;
-      // 外圆选区
-      {
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        if (topLeft.width && topLeft.height) { // 圆角
-          ctx.ellipse(
-            topLeft.width, topLeft.height,
-            topLeft.width, topLeft.height, 0,
-            Math.PI, oneDegree * -90,
-          );
-        } else {
-          ctx.moveTo(0, 0);
-        }
-
-        if (topRight.width && topRight.height) {
-          ctx.ellipse(
-            width - topRight.width, topRight.height,
-            topRight.width, topRight.height, 0,
-            oneDegree * -90, 0,
-          );
-        } else {
-          // ctx.lineTo()
-          ctx.lineTo(width, 0);
-        }
-
-        if (bottomRight.width && bottomRight.height) {
-          ctx.ellipse(
-            width - bottomRight.width,
-            height - bottomRight.height,
-            bottomRight.width, bottomRight.height, 0,
-            0, oneDegree * 90,
-          );
-        } else {
-          ctx.lineTo(width, height);
-        }
-
-        if (bottomLeft.width && bottomLeft.height) {
-          ctx.ellipse(
-            bottomLeft.width,
-            height - bottomLeft.height,
-            bottomLeft.width, bottomLeft.height, 0,
-            oneDegree * 90, Math.PI,
-          );
-        } else {
-          ctx.lineTo(0, height);
-        }
-        ctx.closePath();
-        ctx.clip();
-
+      if (sameWidth && sameStyle && sameColor && isCycle) { // 样式完全一样的 圆形\椭圆形 一次画完
+        // 外圆选区
         if (typeof continueDraw === 'function') {
-          continueDraw(ctx);
-        }
-      }
-
-      if (sameWidth && sameStyle && sameColor && isCycle) { // 圆形 或 椭圆形 一次画完
-        ctx.save();
-        ctx.translate(top.width / 2, top.width / 2);
-        ctx.lineWidth = top.width;
-        ctx.strokeStyle = top.color;
-        ctx.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, 2 * Math.PI);
-        ctx.stroke();
-        ctx.restore();
-      } else { // 圆角矩形 样式不一样的圆形或椭圆形
-
-      }
-
-      if (hasBorder) {
-
-        // 边框
-        {
-          const offset = Math.max(width, height);
-          let xRatio, yRatio;
-          // 上边
-          {
-            ctx.save();
-
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-
-            xRatio = left.width / (top.width + left.width);
-            yRatio = top.width / (top.width + left.width);
-
-            ctx.lineTo(
-              left.width + xRatio * offset,
-              top.width + yRatio * offset,
-            );
-
-            xRatio = right.width / (top.width + right.width);
-            yRatio = top.width / (top.width + right.width);
-
-            ctx.lineTo(
-              width - right.width - xRatio * offset,
-              top.width + yRatio * offset,
-            );
-
-            ctx.lineTo(width, 0);
-
-            ctx.closePath();
-            ctx.clip();
-            // ctx.stroke();
-
-            ctx.save();
-            ctx.beginPath();
-            const lineWidth = Math.max(left.width, right.width, top.width);
-            ctx.translate(0, lineWidth);
-            ctx.strokeStyle = top.color;
-            ctx.lineWidth = lineWidth * 3;
-            ctx.moveTo(0, 0);
-            ctx.lineTo(width, 0);
-            ctx.stroke();
-            ctx.restore();
-
-            ctx.restore();
-          }
-          // 右边
-          {
-            ctx.save();
-
-            ctx.beginPath();
-            ctx.moveTo(width, 0);
-
-            ctx.lineTo(
-              width - right.width - xRatio * offset,
-              top.width + yRatio * offset,
-            );
-            xRatio = right.width / (bottom.width + right.width);
-            yRatio = bottom.width / (bottom.width + right.width);
-            ctx.lineTo(
-              width - right.width - xRatio * offset,
-              height - bottom.width - yRatio * offset,
-            );
-            ctx.lineTo(width, height);
-            ctx.closePath();
-            // ctx.stroke();
-            ctx.clip();
-
-            ctx.save();
-            ctx.beginPath();
-            const lineWidth = Math.max(top.width, right.width, bottom.width);
-            ctx.translate(-lineWidth, 0);
-            ctx.strokeStyle = right.color;
-            ctx.lineWidth = lineWidth * 3;
-            ctx.moveTo(width, 0);
-            ctx.lineTo(width, height);
-            ctx.stroke();
-            ctx.restore();
-
-            ctx.restore();
-          }
-          // 下边
-          {
-            ctx.save();
-
-            ctx.beginPath();
-            ctx.moveTo(width, height);
-            // ctx.lineTo(width, height);
-            ctx.lineTo(
-              width - right.width - xRatio * offset,
-              height - bottom.width - yRatio * offset,
-            );
-
-            xRatio = left.width / (bottom.width + left.width);
-            yRatio = bottom.width / (bottom.width + left.width);
-
-            ctx.lineTo(
-              left.width + xRatio * offset,
-              height - bottom.width - yRatio * offset,
-            );
-            ctx.lineTo(0, height);
-            ctx.closePath();
-            // ctx.stroke();
-            ctx.clip();
-
-            ctx.save();
-            ctx.beginPath();
-            const lineWidth = Math.max(left.width, right.width, bottom.width);
-            ctx.translate(0, -lineWidth);
-            ctx.strokeStyle = bottom.color;
-            ctx.lineWidth = lineWidth * 3;
-            ctx.moveTo(0, height);
-            ctx.lineTo(width, height);
-            ctx.stroke();
-            ctx.restore();
-
-            ctx.restore();
-          }
-          // 左边
-          {
-            ctx.save();
-
-            ctx.beginPath();
-            ctx.moveTo(0, height);
-            ctx.lineTo(
-              left.width + xRatio * offset,
-              height - bottom.width - yRatio * offset,
-            );
-            xRatio = left.width / (top.width + left.width);
-            yRatio = top.width / (top.width + left.width);
-            ctx.lineTo(
-              left.width + xRatio * offset,
-              top.width + yRatio * offset,
-            );
-            ctx.lineTo(0, 0);
-            ctx.closePath();
-            // ctx.stroke();
-            ctx.clip();
-
-            ctx.save();
-            ctx.beginPath();
-            const lineWidth = Math.max(top.width, left.width, bottom.width);
-            ctx.translate(lineWidth, 0);
-            ctx.strokeStyle = left.color;
-            ctx.lineWidth = lineWidth * 3;
-            ctx.moveTo(0, 0);
-            ctx.lineTo(0, height);
-            ctx.stroke();
-            ctx.restore();
-
-            ctx.restore();
-          }
-        }
-
-        // 内圆选区
-        {
           ctx.save();
           ctx.beginPath();
-          if (topLeft.width - left.width > 0 && topLeft.height - top.width > 0) { // 圆角
+          ctx.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, 2 * Math.PI);
+          ctx.clip();
+          continueDraw(ctx);
+          ctx.restore();
+        }
+
+        if (hasBorder) {
+          ctx.save();
+          ctx.beginPath();
+          // ctx.translate(top.width / 2, top.width / 2);
+          ctx.lineWidth = top.width;
+          ctx.strokeStyle = top.color;
+          setBorderStyle(top);
+          ctx.ellipse(
+            width / 2, height / 2,
+            width / 2 - top.width / 2, height / 2 - top.width / 2,
+            0,
+            0, 2 * Math.PI,
+          );
+          ctx.stroke();
+          ctx.restore();
+        }
+      } else { // 样式不一样的 圆角矩形\圆形\椭圆形
+        // 外圆选区
+        {
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          if (topLeft.width && topLeft.height) { // 圆角
             ctx.ellipse(
               topLeft.width, topLeft.height,
-              topLeft.width - left.width, topLeft.height - top.width, 0,
+              topLeft.width, topLeft.height, 0,
               Math.PI, oneDegree * -90,
             );
           } else {
-            ctx.moveTo(left.width, top.width);
+            ctx.moveTo(0, 0);
           }
 
-          if (topRight.width - right.width > 0 && topRight.height - top.width > 0) {
+          if (topRight.width && topRight.height) {
             ctx.ellipse(
               width - topRight.width, topRight.height,
-              topRight.width - right.width, topRight.height - top.width, 0,
+              topRight.width, topRight.height, 0,
               oneDegree * -90, 0,
             );
           } else {
-            ctx.lineTo(width - right.width, top.width);
+            // ctx.lineTo()
+            ctx.lineTo(width, 0);
           }
 
-          if (bottomRight.width - right.width > 0 && bottomRight.height - bottom.width > 0) {
+          if (bottomRight.width && bottomRight.height) {
             ctx.ellipse(
               width - bottomRight.width,
               height - bottomRight.height,
-              bottomRight.width - right.width, bottomRight.height - bottom.width, 0,
+              bottomRight.width, bottomRight.height, 0,
               0, oneDegree * 90,
             );
           } else {
-            ctx.lineTo(width - right.width, height - bottom.width);
+            ctx.lineTo(width, height);
           }
 
-          if (bottomLeft.width - left.width > 0 && bottomLeft.height - bottom.width > 0) {
+          if (bottomLeft.width && bottomLeft.height) {
             ctx.ellipse(
               bottomLeft.width,
               height - bottomLeft.height,
-              bottomLeft.width - left.width, bottomLeft.height - bottom.width, 0,
+              bottomLeft.width, bottomLeft.height, 0,
               oneDegree * 90, Math.PI,
             );
           } else {
-            ctx.lineTo(left.width, height - bottom.width);
+            ctx.lineTo(0, height);
           }
           ctx.closePath();
+          // ctx.stroke();
+          ctx.clip();
+        }
 
-          ctx.globalCompositeOperation = 'destination-out';
-          // ctx.fillStyle = 'rgba(0,0,0,.5)';
-          ctx.fillStyle = 'rgba(0,0,0,1)';
-          ctx.fill();
+        if (hasBorder) {
+          // 边框
+          // TODO 极限情况下 选区可能交叉 产生溢出
+          {
+            let offset = 0;
+            if (width - left.width - right.width > height - top.width - bottom.width) {
+              offset = width - left.width - right.width;
+            } else {
+              offset = height - top.width - bottom.width;
+            }
+            let xRatio, yRatio;
+            // 简单粗暴解决相邻边框衔接处可能缺失
+            const scale = 2;
+
+            // 上边
+            {
+              ctx.save();
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(0, 0);
+
+              xRatio = left.width / (top.width + left.width);
+              yRatio = top.width / (top.width + left.width);
+
+              ctx.lineTo(
+                left.width + xRatio * offset,
+                top.width + yRatio * offset,
+              );
+
+              xRatio = right.width / (top.width + right.width);
+              yRatio = top.width / (top.width + right.width);
+
+              ctx.lineTo(
+                width - right.width - xRatio * offset,
+                top.width + yRatio * offset,
+              );
+
+              ctx.lineTo(width, 0);
+
+              ctx.closePath();
+              ctx.clip();
+              // ctx.stroke();
+
+              ctx.beginPath();
+              if (topLeft.width && topLeft.height) { // 圆角
+                ctx.ellipse(
+                  topLeft.width, topLeft.height,
+                  topLeft.width - top.width / 2, topLeft.height - top.width / 2, 0,
+                  Math.PI, oneDegree * -90,
+                );
+
+              } else {
+                ctx.moveTo(0, 0);
+              }
+
+              if (topRight.width && topRight.height) {
+                ctx.ellipse(
+                  width - topRight.width, topRight.height,
+                  topRight.width - top.width / 2, topRight.height - top.width / 2, 0,
+                  oneDegree * -90, 0,
+                );
+              } else {
+                // ctx.lineTo()
+                ctx.lineTo(width, 0);
+              }
+
+              ctx.strokeStyle = top.color;
+              ctx.lineWidth = top.width * scale;
+              setBorderStyle(top);
+              ctx.stroke();
+
+              // ctx.save();
+              // ctx.beginPath();
+              // const lineWidth = Math.max(left.width, right.width, top.width);
+              // ctx.translate(0, lineWidth);
+              // ctx.strokeStyle = top.color;
+              // ctx.lineWidth = lineWidth * 3;
+              // setBorderStyle(top);
+              // ctx.moveTo(0, 0);
+              // ctx.lineTo(width, 0);
+              // ctx.stroke();
+              // ctx.restore();
+
+              ctx.restore();
+            }
+            // 右边
+            {
+              ctx.save();
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(width, 0);
+
+              ctx.lineTo(
+                width - right.width - xRatio * offset,
+                top.width + yRatio * offset,
+              );
+              xRatio = right.width / (bottom.width + right.width);
+              yRatio = bottom.width / (bottom.width + right.width);
+              ctx.lineTo(
+                width - right.width - xRatio * offset,
+                height - bottom.width - yRatio * offset,
+              );
+              ctx.lineTo(width, height);
+              ctx.closePath();
+              // ctx.stroke();
+              ctx.clip();
+
+              ctx.beginPath();
+              if (topRight.width && topRight.height) {
+                ctx.ellipse(
+                  width - topRight.width, topRight.height,
+                  topRight.width - right.width / 2, topRight.height - right.width / 2, 0,
+                  oneDegree * -90, 0,
+                );
+              } else {
+                // ctx.lineTo()
+                ctx.lineTo(width, 0);
+              }
+
+              if (bottomRight.width && bottomRight.height) {
+                ctx.ellipse(
+                  width - bottomRight.width, height - bottomRight.height,
+                  bottomRight.width - right.width / 2, bottomRight.height - right.width / 2, 0,
+                  0, oneDegree * 90,
+                );
+              } else {
+                ctx.lineTo(width, height);
+              }
+
+              ctx.strokeStyle = right.color;
+              ctx.lineWidth = right.width * scale;
+              setBorderStyle(right);
+              ctx.stroke();
+
+              // ctx.save();
+              // ctx.beginPath();
+              // const lineWidth = Math.max(top.width, right.width, bottom.width);
+              // ctx.translate(-lineWidth, 0);
+              // ctx.strokeStyle = right.color;
+              // ctx.lineWidth = lineWidth * 3;
+              // setBorderStyle(right);
+              // ctx.moveTo(width, 0);
+              // ctx.lineTo(width, height);
+              // ctx.stroke();
+              // ctx.restore();
+
+              ctx.restore();
+            }
+            // 下边
+            {
+              ctx.save();
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(width, height);
+              // ctx.lineTo(width, height);
+              ctx.lineTo(
+                width - right.width - xRatio * offset,
+                height - bottom.width - yRatio * offset,
+              );
+
+              xRatio = left.width / (bottom.width + left.width);
+              yRatio = bottom.width / (bottom.width + left.width);
+
+              ctx.lineTo(
+                left.width + xRatio * offset,
+                height - bottom.width - yRatio * offset,
+              );
+              ctx.lineTo(0, height);
+              ctx.closePath();
+              // ctx.stroke();
+              ctx.clip();
+
+              ctx.beginPath();
+              if (bottomRight.width && bottomRight.height) {
+                ctx.ellipse(
+                  width - bottomRight.width, height - bottomRight.height,
+                  bottomRight.width - bottom.width / 2, bottomRight.height - bottom.width / 2, 0,
+                  0, oneDegree * 90,
+                );
+              } else {
+                ctx.lineTo(width, height);
+              }
+
+              if (bottomLeft.width && bottomLeft.height) {
+                ctx.ellipse(
+                  bottomLeft.width, height - bottomLeft.height,
+                  bottomLeft.width - bottom.width / 2, bottomLeft.height - bottom.width / 2, 0,
+                  oneDegree * 90, Math.PI,
+                );
+              } else {
+                ctx.lineTo(0, height);
+              }
+
+              ctx.strokeStyle = bottom.color;
+              ctx.lineWidth = bottom.width * scale;
+              setBorderStyle(bottom);
+              ctx.stroke();
+
+              // ctx.save();
+              // ctx.beginPath();
+              // const lineWidth = Math.max(left.width, right.width, bottom.width);
+              // ctx.translate(0, -lineWidth);
+              // ctx.strokeStyle = bottom.color;
+              // ctx.lineWidth = lineWidth * 3;
+              // setBorderStyle(bottom);
+              // ctx.moveTo(0, height);
+              // ctx.lineTo(width, height);
+              // ctx.stroke();
+              // ctx.restore();
+
+              ctx.restore();
+            }
+            // 左边
+            {
+              ctx.save();
+
+              ctx.beginPath();
+              ctx.moveTo(0, height);
+              ctx.lineTo(
+                left.width + xRatio * offset,
+                height - bottom.width - yRatio * offset,
+              );
+              xRatio = left.width / (top.width + left.width);
+              yRatio = top.width / (top.width + left.width);
+              ctx.lineTo(
+                left.width + xRatio * offset,
+                top.width + yRatio * offset,
+              );
+              ctx.lineTo(0, 0);
+              ctx.closePath();
+              // ctx.stroke();
+              ctx.clip();
+
+              ctx.beginPath();
+              if (bottomLeft.width && bottomLeft.height) {
+                ctx.ellipse(
+                  bottomLeft.width, height - bottomLeft.height,
+                  bottomLeft.width - left.width / 2, bottomLeft.height - left.width / 2, 0,
+                  oneDegree * 90, Math.PI,
+                );
+              } else {
+                ctx.lineTo(0, height);
+              }
+
+              if (topLeft.width && topLeft.height) { // 圆角
+                ctx.ellipse(
+                  topLeft.width, topLeft.height,
+                  topLeft.width - left.width / 2, topLeft.height - left.width / 2, 0,
+                  Math.PI, oneDegree * -90,
+                );
+              } else {
+                ctx.lineTo(0, 0);
+              }
+              ctx.strokeStyle = left.color;
+              ctx.lineWidth = left.width * scale;
+              setBorderStyle(left);
+              ctx.stroke();
+
+              // ctx.save();
+              // ctx.beginPath();
+              // const lineWidth = Math.max(top.width, left.width, bottom.width);
+              // ctx.translate(lineWidth, 0);
+              // ctx.strokeStyle = left.color;
+              // ctx.lineWidth = lineWidth * 3;
+              // setBorderStyle(left);
+              // ctx.moveTo(0, 0);
+              // ctx.lineTo(0, height);
+              // ctx.stroke();
+              // ctx.restore();
+
+              ctx.restore();
+            }
+          }
+
+          // 内圆选区
+          {
+            ctx.save();
+            ctx.beginPath();
+            if (topLeft.width - left.width > 0 && topLeft.height - top.width > 0) { // 圆角
+              ctx.ellipse(
+                topLeft.width, topLeft.height,
+                topLeft.width - left.width, topLeft.height - top.width, 0,
+                Math.PI, oneDegree * -90,
+              );
+            } else {
+              ctx.moveTo(left.width, top.width);
+            }
+
+            if (topRight.width - right.width > 0 && topRight.height - top.width > 0) {
+              ctx.ellipse(
+                width - topRight.width, topRight.height,
+                topRight.width - right.width, topRight.height - top.width, 0,
+                oneDegree * -90, 0,
+              );
+            } else {
+              ctx.lineTo(width - right.width, top.width);
+            }
+
+            if (bottomRight.width - right.width > 0 && bottomRight.height - bottom.width > 0) {
+              ctx.ellipse(
+                width - bottomRight.width,
+                height - bottomRight.height,
+                bottomRight.width - right.width, bottomRight.height - bottom.width, 0,
+                0, oneDegree * 90,
+              );
+            } else {
+              ctx.lineTo(width - right.width, height - bottom.width);
+            }
+
+            if (bottomLeft.width - left.width > 0 && bottomLeft.height - bottom.width > 0) {
+              ctx.ellipse(
+                bottomLeft.width,
+                height - bottomLeft.height,
+                bottomLeft.width - left.width, bottomLeft.height - bottom.width, 0,
+                oneDegree * 90, Math.PI,
+              );
+            } else {
+              ctx.lineTo(left.width, height - bottom.width);
+            }
+            ctx.closePath();
+
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = '#000';
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
+        if (typeof continueDraw === 'function') {
+          ctx.save();
+          // TODO 小程序 不支持该模式 会导致边框丢失
+          //  可以通过 background-clip: padding-box 解决
+          ctx.globalCompositeOperation = 'destination-over';
+          continueDraw(ctx);
           ctx.restore();
         }
       }
     } else {
       if (typeof continueDraw === 'function') {
         ctx.save();
+        ctx.beginPath();
         ctx.rect(0, 0, width, height);
         ctx.clip();
         continueDraw(ctx);
@@ -1368,6 +1515,7 @@ export default class Element {
           ctx.beginPath();
           ctx.lineWidth = top.width;
           ctx.strokeStyle = top.color;
+          setBorderStyle(top);
           ctx.strokeRect(top.width / 2, top.width / 2, width - left.width, height - top.width);
         } else {
           // 上边
@@ -1387,6 +1535,7 @@ export default class Element {
             ctx.translate(0, top.width / 2);
             ctx.strokeStyle = top.color;
             ctx.lineWidth = top.width;
+            setBorderStyle(top);
             ctx.moveTo(0, 0);
             ctx.lineTo(width, 0);
             ctx.stroke();
@@ -1413,6 +1562,7 @@ export default class Element {
             ctx.translate(-right.width / 2, 0);
             ctx.strokeStyle = right.color;
             ctx.lineWidth = right.width;
+            setBorderStyle(right);
             ctx.moveTo(width, 0);
             ctx.lineTo(width, height);
             ctx.stroke();
@@ -1439,6 +1589,7 @@ export default class Element {
             ctx.translate(0, -bottom.width / 2);
             ctx.strokeStyle = bottom.color;
             ctx.lineWidth = bottom.width;
+            setBorderStyle(bottom);
             ctx.moveTo(0, height);
             ctx.lineTo(width, height);
             ctx.stroke();
@@ -1465,6 +1616,7 @@ export default class Element {
             ctx.translate(left.width / 2, 0);
             ctx.strokeStyle = left.color;
             ctx.lineWidth = left.width;
+            setBorderStyle(left);
             ctx.moveTo(0, 0);
             ctx.lineTo(0, height);
             ctx.stroke();
@@ -1485,11 +1637,11 @@ export default class Element {
   public drawText(context: CanvasRenderingContext2D) {
     context.save();
     const {offsetLeft, offsetTop} = this;
-    const {color, verticalAlign} = this.style;
+    const {color, verticalAlign, lineHeight, fontSize} = this.style;
     context.font = this.style.canvasFont;
     context.textBaseline = verticalAlign as any;
     context.fillStyle = color;
-    context.fillText(this.displayText, offsetLeft, offsetTop);
+    context.fillText(this.displayText, offsetLeft, offsetTop + (lineHeight - fontSize) / 2);
     context.restore();
   }
 
@@ -1575,9 +1727,11 @@ export default class Element {
         this.drawText(context);
         this.drawTextDecoration(context);
       }
-    } else if (this.blockType === BlockType.inlineBlock || this.blockType === BlockType.block) {
-      // context.strokeStyle = '#00a113';
-      // context.strokeRect(offsetLeft, offsetTop, this.offsetWidth, this.offsetHeight);
+    }
+
+    if (0) {
+      context.strokeStyle = '#00a113';
+      context.strokeRect(offsetLeft, offsetTop, this.offsetWidth, this.offsetHeight);
     }
 
     if (this.nodeName === SupportElement.img) {

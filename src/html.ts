@@ -145,23 +145,26 @@ export default `<div
   <div style="text-align: left;">8</div>
 </div>`
 
-export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid #f00;padding-left: 100px; padding-top: 100px">
+export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid #f00;padding-top: 20px; padding-left: 20px">
 <div style="
-      width: 100px;
-      height: 100px;
-      border: 10px solid #f00;
-      border-radius: 1px;
+      width: 200px;
+      height: 200px;
+      /*border: 10px solid #f00;*/
+      /*border-bottom: 30px solid #f00;*/
+      /*border-right: 20px dashed #00f;*/
+      /*border-radius: 100%;*/
       /*border-top-color: #f00;*/
       /*border-top-width: 10px;*/
       /*border-right-color: #00f;*/
       /*border-right-width: 20px;*/
       /*border-bottom-color: #000;*/
-      /*border-bottom-width: 20px;*/
+      /*border-bottom-width: 30px;*/
       /*border-left-color: #ff0;*/
-      /*border-left-width: 20px;*/
+      /*border-left-width: 10px;*/
+      line-height: 50px;
       /*border-radius: 10px;*/
-      text-align: center; 
-      background: #00a113
+      /*text-align: center; */
+      background: rgba(0,161,19,0.5);
       "></div>
 </div>`
 export const html2 = `<div style='border-radius: 24px; background-color: rgba(0,0,0,.3)'>
@@ -362,7 +365,7 @@ font-size: 20px;
 color: #6A6A77;
 margin: 3px 10px 0;
 border-bottom: 8px solid #69d17d;
-font-weight: 800;'>4.2</span>
+font-weight: 800;'>4.2456789</span>
     <span style='
 font-family: PingFangSC-Heavy;
 font-size: 20px;

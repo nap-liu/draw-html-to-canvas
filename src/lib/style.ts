@@ -5,10 +5,10 @@ import {
   BackgroundPosition,
   BackgroundRepeat,
   BackgroundSize,
-  BlockType,
+  BlockType, BORDER_STYLE,
   DEFAULT_COLOR,
   DEFAULT_FONT_FAMILY,
-  DEFAULT_FONT_SIZE,
+  DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT,
   DEFAULT_VERTICAL_ALIGN,
   NodeType,
   REG_BG_ATTACHMENT,
@@ -23,7 +23,7 @@ import {
   REG_BORDER_STYLE,
   REG_BORDER_WIDTH,
   REG_COLOR,
-  REG_EM,
+  REG_EM, REG_NUM,
   REG_PCT,
   REG_PX, REG_RADIUS_VALUE,
   REG_REM,
@@ -49,7 +49,7 @@ interface IRound<T = any> {
 
 export interface IBorder {
   width: number;
-  style: string;
+  style: BORDER_STYLE;
   color: string;
 
   [x: string]: any;
@@ -664,7 +664,7 @@ export default class Style {
   }
 
   public get border(): IRound<IBorder> {
-    const parseBorder = (border: string) => {
+    const parseBorder = (border: string): IBorder => {
       const item = {width: 0, style: '', color: '', image: ''};
       `${border || ''}`.replace(REG_BORDER, (matched, width, style, color) => {
         item.width = this.transformUnitToPx(width);
@@ -672,7 +672,7 @@ export default class Style {
         item.color = color;
         return '';
       });
-      return item;
+      return item as IBorder;
     };
 
     const parseWidth = (width: string) => {
@@ -683,8 +683,8 @@ export default class Style {
       return 0;
     };
 
-    const parseStyle = (style: string) => {
-      return REG_BORDER_STYLE.test(style) ? style : '';
+    const parseStyle = (style: string): BORDER_STYLE => {
+      return (REG_BORDER_STYLE.test(style) ? style : '') as BORDER_STYLE;
     }
 
     const parseColor = (color: string) => {
@@ -899,8 +899,8 @@ export default class Style {
     const {margin} = this;
     const contentWidth = offsetWidth - margin.left - margin.right;
     const contentHeight = offsetHeight - margin.top - margin.bottom;
-    const maxWidth = contentWidth / 2;
-    const maxHeight = contentHeight / 2;
+    const maxWidth = contentWidth > 0 ? contentWidth / 2 : 0;
+    const maxHeight = contentWidth > 0 ? contentHeight / 2 : 0;
     ;[topLeft, topRight, bottomRight, bottomLeft].forEach(item => {
 
       // TODO
@@ -939,6 +939,16 @@ export default class Style {
 
   public get verticalAlign() {
     return this.getInheritStyle('vertical-align', true) || DEFAULT_VERTICAL_ALIGN;
+  }
+
+  public get lineHeight(): number {
+    let lineHeight: string | number = this.getInheritStyle(`${styleKeywords.line}-${styleKeywords.height}`, true) || DEFAULT_LINE_HEIGHT;
+    if (REG_PX.test(lineHeight)) {
+      lineHeight = parseFloat(lineHeight);
+    } else if (REG_NUM.test(lineHeight)) {
+      lineHeight = parseFloat(lineHeight) * this.fontSize;
+    }
+    return lineHeight as number;
   }
 
   /**

@@ -134,13 +134,28 @@ export const REG_RADIUS_VALUE = new RegExp(`(${FLOAT_POSITIVE_NO_GROUP})(?:\\s+(
 // console.log('REG_ROUND_VALUE',REG_ROUND_VALUE);
 // console.log('REG_ROUND_AUTO_VALUE',REG_ROUND_AUTO_VALUE);
 
-const BORDER_STYLE = '(none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset)';
+export enum BORDER_STYLE {
+  none = 'none',
+  hidden = 'hidden',
+  dotted = 'dotted',
+  dashed = 'dashed',
+  solid = 'solid',
+  double = 'double',
+  ridge = 'ridge',
+  inset = 'inset',
+  outset = 'outset',
+}
+
+const REG_STR_BORDER_STYLE = `(${values(BORDER_STYLE).join('|')})`;
 const BORDER_WIDTH = `((?:thin|medium|thick)|(?:${FLOAT_POSITIVE_NO_GROUP}))`
 
 export const REG_BORDER_WIDTH = new RegExp(BORDER_WIDTH, 'i');
-export const REG_BORDER_STYLE = new RegExp(BORDER_STYLE, 'i');
+export const REG_BORDER_STYLE = new RegExp(REG_STR_BORDER_STYLE, 'i');
 export const REG_BORDER_COLOR = REG_COLOR;
-export const REG_BORDER = new RegExp(`${BORDER_WIDTH}\\s+${BORDER_STYLE}\\s+(${COLOR})`, 'i')
+export const REG_BORDER = new RegExp(`${BORDER_WIDTH}\\s+${REG_STR_BORDER_STYLE}\\s+(${COLOR})`, 'i')
+
+console.log('REG_BORDER',REG_BORDER)
+console.log('REG_BORDER_STYLE', REG_BORDER_STYLE);
 
 export enum TEXT_DECORATION_LINE {
   none = 'none',
