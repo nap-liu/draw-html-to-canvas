@@ -50,6 +50,7 @@ export default class Element {
   public clone() {
     const e = new Element();
     Object.assign(e, this);
+    e.shadow = this;
     return e;
   }
 
@@ -378,10 +379,30 @@ export default class Element {
       // 重置行
       this.lines = new LineManger(this);
       let line = this.lines.newLine(this.contentWidth);
+
+      const clearFloat = () => {
+        this.lines.newLine(line.width); // 前一个元素布局高度
+        this.lines.pop();
+        const lastLine = this.lines.lastLine();
+        if (lastLine.overLeftHeight || lastLine.overRightHeight) {
+          const newLine = this.lines.newLine(lastLine.width);
+          const height = Math.max(lastLine.overLeftHeight, lastLine.overRightHeight);
+          const e = new Element()
+          e.nodeName = '#placholder';
+          e.nodeValue = '';
+          e.contentHeight = height;
+          newLine.push(e);
+        }
+      }
+
       const recursion = (element: Element) => {
+        if (element.nodeType === NodeType.COMMENT_NODE) {
+          return
+        }
         element.lineElement = this;
         element.line = line;
         const childBlockType = element.blockType;
+        const {clear, isOverflow} = element.style;
         if (element.nodeType === NodeType.TEXT_NODE) {
           // TODO 浮动元素换行后 后续的文字可以使用剩余宽度
           let textMetrics = element.textMetric;
@@ -424,15 +445,8 @@ export default class Element {
                     continue;
                   }
                 } else if (lineText === '') {
-                  if (line.length === 0) {
-                    // TODO 宽度不够 强制换行
-                    textMetrics = element.getTextMetrics(context, text);
-                    pushElement(text, textMetrics.width);
-                    break;
-                  } else {
-                    line = this.lines.newLine(line.width);
-                    lineText = text;
-                  }
+                  line = this.lines.newLine(line.width);
+                  lineText = text;
                   continue;
                 }
                 textMetrics = element.getTextMetrics(context, lineText);
@@ -498,9 +512,11 @@ export default class Element {
             }
           }
         } else {
+          // TODO clear 支持区分左右浮动清除
           // inline-block\block嵌套 递归布局
-          if (childBlockType === BlockType.inlineBlock) {
+          if (childBlockType === BlockType.inlineBlock || clear) {
             // inline block 是行内元素 自动换行排列 所以不需要继承上一行的float
+            // clear 样式强制不继承
             element.line = null;
           } else {
             // block 是块元素 需要换行 但是文字需要排除溢出的float宽度 所以需要继承上一行的float
@@ -510,6 +526,29 @@ export default class Element {
           // TODO img 标签优化
           element.layoutLine(context);
 
+          if (clear) {
+            clearFloat();
+          }
+
+          // 强制闭合float元素
+          if (childBlockType === BlockType.inlineBlock || isOverflow) {
+            element.lines.newLine(line.width); // 计算子布局overflow高度
+            element.lines.pop();
+            const lastLine = element.lines.lastLine();
+
+            // 强制闭合子元素浮动
+            if (lastLine && (lastLine.overLeftHeight || lastLine.overRightHeight)) {
+              const newLine = element.lines.newLine(line.width);
+              // 空行插入占位元素 填充剩余高度
+              const height = Math.max(lastLine.overLeftHeight, lastLine.overRightHeight);
+              const e = new Element()
+              e.nodeName = '#placholder';
+              e.nodeValue = '';
+              e.contentHeight = height;
+              newLine.push(e);
+            }
+          }
+
           if (childBlockType === BlockType.inlineBlock) {
             // 计算真正的inline-block占用宽度
 
@@ -517,9 +556,8 @@ export default class Element {
 
             } else {
               // TODO 宽度可能不准确 因为如果是手写是百分比宽度的话 则会出现异常
-              // TODO 块元素宽度应该不包含换行宽度
               if (!element.style.width) {
-                element.contentWidth = Math.max(...element.lines.map(i => i.usedWidth));
+                element.contentWidth = Math.max(...element.lines.map(i => i.realWidth));
               }
 
               // TODO 高度可能不准确 因为如果是手写是百分比高度的话 则会出现异常
@@ -551,6 +589,30 @@ export default class Element {
               }
             }
           } else if (childBlockType === BlockType.block) {
+            const childNewLine = element.lines.newLine(line.width);
+            element.lines.pop();
+            const lastLine = element.lines.lastLine();
+            // 子元素浮动超出文字布局 当前元素需要继承超出的float元素
+            if (lastLine && (lastLine.overLeftHeight || lastLine.overRightHeight)) {
+              // 文字需要自动闭合 回溯到父级 需要恢复原始float高度
+              // 父级的兄弟节点需要继续保持继承的float
+              childNewLine.holdLefts = childNewLine.holdLefts.map(i => {
+                while (i.shadow) {
+                  i = i.shadow
+                }
+                return i.clone();
+              })
+              childNewLine.holdRights = childNewLine.holdRights.map(i => {
+                while (i.shadow) {
+                  i = i.shadow
+                }
+                return i.clone();
+              })
+              const newLine = this.lines.newLine(line.width);
+              Object.assign(newLine, childNewLine);
+              line = newLine;
+            }
+
             if (line.length) {
               if (line.length === 1 && line.last.nodeName === SupportElement.br) {
                 // 弹出没用的换行符
@@ -571,34 +633,6 @@ export default class Element {
               }
             }
           }
-
-          // TODO BFC 闭合逻辑错误
-          //  应该是
-          //  inline-block
-          //  overflow: 非 visible
-          //  clear
-          //  闭合
-          const childNewLine = element.lines.newLine(line.width);
-          element.lines.pop();
-          const lastLine = element.lines.lastLine();
-
-          // 子元素浮动超出文字布局 当前元素需要继承超出的float元素
-          if (lastLine && (lastLine.overLeftHeight || lastLine.overRightHeight)) {
-            const newLine = this.lines.newLine(line.width);
-            if (childBlockType === BlockType.block) {
-              Object.assign(newLine, childNewLine);
-              line = newLine;
-            } else if (childBlockType === BlockType.inlineBlock) {
-              // 空行插入占位元素 填充剩余高度
-              const height = Math.max(lastLine.overLeftHeight, lastLine.overRightHeight);
-              const e = new Element()
-              e.nodeName = '#placholder';
-              e.nodeValue = '';
-              e.contentHeight = height;
-              newLine.push(e);
-            }
-            // console.log('last overflow', element.nodeValue, lastLine, newLine);
-          }
         }
       }
 
@@ -612,13 +646,11 @@ export default class Element {
           this.contentHeight = this.lines.linesHeight;
         }
       }
-
-    } else {
-      this.children.forEach(e => e.layoutLine(context));
     }
 
+    // TODO 其他布局支持
     const lastLine = this.lines.lastLine();
-    if (lastLine.length === 0) {
+    if (lastLine && lastLine.length === 0) {
       this.lines.pop();
     }
   }
@@ -676,6 +708,7 @@ export default class Element {
         // 文字和行内块 不一样高时 需要向文字添加高度
         // TODO 支持 vertical-align
         const textTopHolder = height - el.offsetHeight;
+        // const textTopHolder = 0;
         el.left = floatLeft + left + offset;
         el.top = top + textTopHolder;
         left += el.offsetWidth;
@@ -1734,6 +1767,7 @@ export default class Element {
         if (index > 0) {
           background.color = '';
         }
+        // TODO 行元素被拆分了以后 会画出多重背景
         this.drawBackground(context, background);
       });
     });
@@ -1746,7 +1780,7 @@ export default class Element {
       }
     }
 
-    if (0) {
+    if (1) {
       context.strokeStyle = '#00a113';
       context.strokeRect(offsetLeft, offsetTop, this.offsetWidth, this.offsetHeight);
     }

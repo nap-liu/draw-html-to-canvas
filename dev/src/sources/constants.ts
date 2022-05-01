@@ -42,6 +42,10 @@ export const styleKeywords = {
   float: '',
   align: '',
   center: '',
+  clear: '',
+  overflow: '',
+  hidden: '',
+  visible: '',
 }
 
 Object.keys(styleKeywords).forEach(i => {

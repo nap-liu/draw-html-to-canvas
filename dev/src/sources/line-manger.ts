@@ -32,15 +32,20 @@ export default class LineManger extends Array<Line> {
     }
 
     if (prev) {
+      if (prev.length === 1 && prev.last.nodeName === '#breakholder') {
+        // 只有一行的占位符 直接使用
+        return prev;
+      }
       if (prev.length === 0) {
         // 上一行没有内容的话 则 向当前行插入一个换行元素
         const br = new Element();
-        br.nodeName = SupportElement.br;
+        br.nodeName = '#breakholder';
         br.nodeType = NodeType.ELEMENT_NODE;
         br.contentHeight = this.element.root ? this.element.root.textMetric.lineHeight : this.element.textMetric.lineHeight;
-        line.append(br);
+        prev.append(br);
       }
       const {floats, normalHeight} = prev;
+      // const normalHeight = this.element.style.lineHeight;
       // 上一行的overflow
       let idx = floats.left.slice().reverse().findIndex(i => i.offsetHeight > normalHeight);
       if (idx > -1) {
@@ -75,6 +80,7 @@ export default class LineManger extends Array<Line> {
           }
         }, 0);
 
+        // TODO 因为精度导致的float后元素多出空白行问题
         // 继承上一行的overflow元素 和 元素宽度
         if (lastOverflowIndex !== -1) {
           // 继承左浮动元素
@@ -82,6 +88,7 @@ export default class LineManger extends Array<Line> {
             const clone = i.clone();
             line.holdLeftWidth += i.offsetWidth;
             clone.contentHeight -= normalHeight;
+            clone.contentHeight = Math.ceil(clone.contentHeight);
             return clone;
           });
         }
@@ -102,6 +109,7 @@ export default class LineManger extends Array<Line> {
             const clone = i.clone();
             line.holdRightWidth += i.offsetWidth;
             clone.contentHeight -= normalHeight;
+            clone.contentHeight = Math.ceil(clone.contentHeight);
             return clone;
           });
         }

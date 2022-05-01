@@ -139,4 +139,12 @@ export default class Line extends Array<Element> {
   get height() {
     return this.normalHeight;
   }
+
+  /**
+   * 内容元素宽度 + float占据宽度综合 不包含绝对定位元素宽度
+   * this.useWidth + floatWidth
+   */
+  get realWidth() {
+    return this.usedWidth + this.holdLeftWidth + this.holdRightWidth;
+  }
 }

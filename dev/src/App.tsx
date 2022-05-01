@@ -11,7 +11,7 @@ const html = defaultHtml;
 export default function App() {
   const div = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [scale, setScale] = useState(3);
+  const [scale, setScale] = useState(1);
   useLayoutEffect(() => {
     console.time('Render.fromHTML(html)');
     const render = Render.fromHTML(html);
@@ -25,6 +25,7 @@ export default function App() {
         context.clearRect(0, 0, render.rootNode.offsetWidth, render.rootNode.offsetHeight);
         console.time('render.layout(context)');
         render.rootNode.style.set('width', `${width}px`);
+        // render.rootNode.style.set('width', `434px`);
         render.layout(context);
         console.timeEnd('render.layout(context)');
         console.time('render.draw(context)');
@@ -68,7 +69,9 @@ export default function App() {
       <div ref={div} dangerouslySetInnerHTML={{__html: html}} />
       <canvas
         ref={canvas}
-        style={{width: '100%', height: '100%'}}
+        // width={434}
+        // height={500}
+        style={{border: '1px solid #f00', width: '100%', height: '100%'}}
       />
     </>
   );

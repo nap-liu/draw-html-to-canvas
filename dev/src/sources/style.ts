@@ -1067,9 +1067,14 @@ export default class Style {
     return false;
   }
 
-  // public get isOverflow() {
-  // return this.style['overflow'] === 'hidden' || this.style['overflow']
-  // }
+  public get clear() {
+    return this.style[styleKeywords.clear];
+  }
+
+  public get isOverflow() {
+    const overflow = this.style[styleKeywords.overflow];
+    return (overflow === styleKeywords.hidden || overflow === styleKeywords.auto);
+  }
 
   public get isHidden() {
     return this.style[styleKeywords.display] === styleKeywords.none;
