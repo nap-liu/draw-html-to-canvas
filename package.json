@@ -4,10 +4,10 @@
   "description": "根据html+css规范绘制 网页到canvas",
   "main": "dist/index.js",
   "directories": {
-    "test": "test"
+    "test": "dev"
   },
   "scripts": {
-    "dev": "cd test && npm i && npm start",
+    "dev": "cd dev && npm i && npm start",
     "build": "rollup -c rollup.config.js"
   },
   "keywords": [
