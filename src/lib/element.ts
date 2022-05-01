@@ -1011,8 +1011,8 @@ export default class Element {
   public drawBorder(ctx: CanvasRenderingContext2D, continueDraw?: TContinueDraw) {
     ctx.save();
 
-    const {border, radius, margin} = this.style;
-    const {offsetLeft, offsetTop, offsetWidth, offsetHeight} = this;
+    const {border, radius, margin, padding} = this.style;
+    const {offsetLeft, offsetTop, contentHeight, contentWidth} = this;
 
     const {top, right, bottom, left} = border;
     const {topLeft, topRight, bottomRight, bottomLeft, maxWidth, maxHeight} = radius;
@@ -1021,8 +1021,8 @@ export default class Element {
     const x = offsetLeft + margin.left;
     const y = offsetTop + margin.top;
 
-    const width = offsetWidth - margin.left - margin.right;
-    const height = offsetHeight - margin.top - margin.bottom;
+    const width = contentWidth + padding.left + padding.right + border.left.width + border.right.width;
+    const height = contentHeight + padding.top + padding.bottom + border.top.width + border.bottom.width;
 
     ctx.lineCap = 'butt';
     ctx.translate(x, y);

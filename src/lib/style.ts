@@ -5,10 +5,12 @@ import {
   BackgroundPosition,
   BackgroundRepeat,
   BackgroundSize,
-  BlockType, BORDER_STYLE,
+  BlockType,
+  BORDER_STYLE,
   DEFAULT_COLOR,
   DEFAULT_FONT_FAMILY,
-  DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT,
+  DEFAULT_FONT_SIZE,
+  DEFAULT_LINE_HEIGHT,
   DEFAULT_VERTICAL_ALIGN,
   NodeType,
   REG_BG_ATTACHMENT,
@@ -23,16 +25,19 @@ import {
   REG_BORDER_STYLE,
   REG_BORDER_WIDTH,
   REG_COLOR,
-  REG_EM, REG_NUM,
+  REG_EM,
+  REG_NUM,
   REG_PCT,
-  REG_PX, REG_RADIUS_VALUE,
+  REG_PX,
+  REG_RADIUS_VALUE,
   REG_REM,
   REG_ROUND_AUTO_VALUE,
   REG_TEXT_DECORATION_COLOR,
   REG_TEXT_DECORATION_LINE,
   REG_TEXT_DECORATION_STYLE,
   REG_TEXT_DECORATION_THICKNESS,
-  REG_URL, styleKeywords,
+  REG_URL,
+  styleKeywords,
   TEXT_DECORATION_LINE,
   TEXT_DECORATION_STYLE,
 } from './constants';
@@ -655,7 +660,24 @@ export default class Style {
     return this.style[styleKeywords.height];
   }
 
-  public get padding() {
+  public get padding(): IRound<number> {
+    const defaultPadding = () => ({
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    })
+    let element: Element | null = this.element;
+    if (element.nodeType === NodeType.TEXT_NODE) {
+      element = element.parentNode
+      if (element && element.blockType === BlockType.inline) {
+        const padding = element.style.padding;
+        padding.left = padding.right = 0;
+        return padding;
+      } else {
+        return defaultPadding();
+      }
+    }
     return this.getRoundStyle(styleKeywords.padding);
   }
 
@@ -664,6 +686,24 @@ export default class Style {
   }
 
   public get border(): IRound<IBorder> {
+    const defaultBorder = () => ({
+      top: {width: 0, style: BORDER_STYLE.none, color: '', image: ''},
+      right: {width: 0, style: BORDER_STYLE.none, color: '', image: ''},
+      bottom: {width: 0, style: BORDER_STYLE.none, color: '', image: ''},
+      left: {width: 0, style: BORDER_STYLE.none, color: '', image: ''},
+    })
+
+    let element: Element | null = this.element;
+    if (element.nodeType === NodeType.TEXT_NODE) {
+      element = element.parentNode
+      // 边框继承规则文本只继承inline父元素的背景
+      if (element && element.blockType === BlockType.inline) {
+        return element.style.border;
+      } else {
+        return defaultBorder();
+      }
+    }
+
     const parseBorder = (border: string): IBorder => {
       const item = {width: 0, style: '', color: '', image: ''};
       `${border || ''}`.replace(REG_BORDER, (matched, width, style, color) => {
@@ -799,7 +839,24 @@ export default class Style {
     }
   }
 
-  public get radius() {
+  public get radius(): IRadius<number> {
+    const defaultRadius = () => ({
+      topLeft: {width: 0, height: 0},
+      topRight: {width: 0, height: 0},
+      bottomRight: {width: 0, height: 0},
+      bottomLeft: {width: 0, height: 0},
+    })
+
+    let element: Element | null = this.element;
+    if (element.nodeType === NodeType.TEXT_NODE) {
+      element = element.parentNode
+      // TODO radius 继承会导致圆角错误
+      if (element && element.blockType === BlockType.inline) {
+        return element.style.radius;
+      } else {
+        return defaultRadius();
+      }
+    }
     const topLeft: ISize<number | string> = {width: 0, height: 0};
     const topRight: ISize<number | string> = {width: 0, height: 0};
     const bottomRight: ISize<number | string> = {width: 0, height: 0};

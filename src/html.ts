@@ -363,9 +363,9 @@ font-weight: 800;'>维度</span>
 font-family: SFProText-Heavy;
 font-size: 20px;
 color: #6A6A77;
-margin: 3px 10px 0;
+margin: 3px 10px 0px;
 border-bottom: 8px solid #69d17d;
-font-weight: 800;'>4.2456789</span>
+font-weight: 800;'>4.2</span>
     <span style='
 font-family: PingFangSC-Heavy;
 font-size: 20px;

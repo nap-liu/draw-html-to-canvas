@@ -3,8 +3,8 @@ import defaultHtml, {html2, html3} from './html';
 import Render from './lib';
 import debounce from './debounce';
 
-const html = defaultHtml;
-// const html = html2;
+// const html = defaultHtml;
+const html = html2;
 // const html = html3;
 
 
