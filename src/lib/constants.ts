@@ -154,8 +154,8 @@ export const REG_BORDER_STYLE = new RegExp(REG_STR_BORDER_STYLE, 'i');
 export const REG_BORDER_COLOR = REG_COLOR;
 export const REG_BORDER = new RegExp(`${BORDER_WIDTH}\\s+${REG_STR_BORDER_STYLE}\\s+(${COLOR})`, 'i')
 
-console.log('REG_BORDER',REG_BORDER)
-console.log('REG_BORDER_STYLE', REG_BORDER_STYLE);
+// console.log('REG_BORDER', REG_BORDER)
+// console.log('REG_BORDER_STYLE', REG_BORDER_STYLE);
 
 export enum TEXT_DECORATION_LINE {
   none = 'none',
@@ -212,6 +212,12 @@ export enum BackgroundAttachment {
   scroll = 'scroll',
   fixed = 'fixed',
   local = 'local',
+}
+
+export enum TextAlign {
+  left = 'left',
+  center = 'center',
+  right = 'right',
 }
 
 export type TContinueDraw = (ctx: CanvasRenderingContext2D) => void;

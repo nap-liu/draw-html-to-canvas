@@ -39,7 +39,7 @@ import {
   REG_URL,
   styleKeywords,
   TEXT_DECORATION_LINE,
-  TEXT_DECORATION_STYLE,
+  TEXT_DECORATION_STYLE, TextAlign,
 } from './constants';
 import ElementImage from './element-image';
 
@@ -996,6 +996,10 @@ export default class Style {
 
   public get verticalAlign() {
     return this.getInheritStyle('vertical-align', true) || DEFAULT_VERTICAL_ALIGN;
+  }
+
+  public get textAlign(){
+    return this.getInheritStyle(`${styleKeywords.text}-${styleKeywords.align}`) || TextAlign.left;
   }
 
   public get lineHeight(): number {

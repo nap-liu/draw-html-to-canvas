@@ -1,4 +1,4 @@
-import {BackgroundClip, BackgroundPosition, BackgroundSize, BlockType, BORDER_STYLE, NodeType, REG_PCT, REG_PX, SupportElement, TContinueDraw, TEXT_DECORATION_LINE, TEXT_DECORATION_STYLE} from './constants';
+import {BackgroundClip, BackgroundPosition, BackgroundSize, BlockType, BORDER_STYLE, NodeType, REG_PCT, REG_PX, styleKeywords, SupportElement, TContinueDraw, TEXT_DECORATION_LINE, TEXT_DECORATION_STYLE, TextAlign} from './constants';
 import Style, {IBackground, IBorder} from './style';
 import Line from './line';
 import LineManger from './line-manger';
@@ -472,7 +472,7 @@ export default class Element {
                   lastLine.push(half);
                 }
                 half.line = lastLine;
-                // TODO 元素闭合有问题
+                // TODO 元素闭合有问题？？？？？
                 line = lastLine;
                 return half;
               }
@@ -615,8 +615,7 @@ export default class Element {
   }
 
   public layoutLinePosition() {
-    const {margin, border, padding} = this.style;
-    const textAlign = this.style.getInheritStyle('text-align') || 'left';
+    const {margin, border, padding, textAlign} = this.style;
     const blockType = this.blockType;
     let contentOffsetTop = 0;
     let contentOffsetLeft = 0;
@@ -658,9 +657,9 @@ export default class Element {
         const restWidth = this.contentWidth - line.usedWidth - line.holdLeftWidth - line.holdRightWidth;
         if (el.blockType !== BlockType.block) {
           // block元素独占一行 只有非block元素才需要重新计算坐标
-          if (textAlign === 'center') {
+          if (textAlign === TextAlign.center) {
             offset = restWidth / 2;
-          } else if (textAlign === 'right') {
+          } else if (textAlign === TextAlign.right) {
             offset = restWidth;
           }
         }
@@ -681,9 +680,9 @@ export default class Element {
           el.left -= line.holdLeftWidth;
 
           // margin: 0 auto; 移动盒子位置
-          const originMargin = el.style.getOriginRoundStyle('margin');
+          const originMargin = el.style.getOriginRoundStyle(styleKeywords.margin);
           // @ts-ignore
-          if (originMargin.left === 'auto' && originMargin.right === 'auto') {
+          if (originMargin.left === styleKeywords.auto && originMargin.right === styleKeywords.auto) {
             if (el.line) {
               el.left += el.line.restWidth / 2;
             }
@@ -1076,7 +1075,6 @@ export default class Element {
           ctx.setLineDash([]);
           break;
         case BORDER_STYLE.dashed:
-          // TODO 优化边角上空缺问题
           ctx.setLineDash([border.width * 1.5, border.width]);
           break;
       }
