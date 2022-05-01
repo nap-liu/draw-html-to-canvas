@@ -38,6 +38,15 @@ export default class Element {
   public line: Line | null = null;
   public lineElement: Element | null = null;
 
+  // public blockType: BlockType;
+  // public displayText: string;
+
+  public updateCache() {
+    // this.blockType = this._blockType;
+    // this.displayText = this._displayText;
+    this.style.updateCache();
+  }
+
   public clone() {
     const e = new Element();
     Object.assign(e, this);
@@ -1709,6 +1718,10 @@ export default class Element {
     context.restore();
   }
 
+  /**
+   * 绘图主入口
+   * @param context
+   */
   public draw(context: CanvasRenderingContext2D) {
     const {background: backgroundList} = this.style;
     const {

@@ -18,9 +18,9 @@ export default class Render {
     this.elements = elements;
   }
 
-  async loadSource() {
+  loadSource() {
     // TODO 优化图片资源加载逻辑
-    await Promise.all(this.elements.map(async element => {
+    return Promise.all(this.elements.map(element => {
       const background = element.style.background;
       return Promise.all(background.filter(i => i.image).map(back => {
         const el = new ElementImage();
@@ -29,11 +29,13 @@ export default class Render {
           element.style.imageMap[back.image] = el;
         });
       }))
-    }));
-    return Promise.all(this.elements.filter(i => i.nodeName === SupportElement.img).map((img: any) => (img as ElementImage).load()));
+    })).then(() => {
+      return Promise.all(this.elements.filter(i => i.nodeName === SupportElement.img).map((img: any) => (img as ElementImage).load()));
+    });
   }
 
   layout(context: CanvasRenderingContext2D) {
+    this.elements.forEach(i => i.updateCache());
     return this.rootNode.layout(context);
   }
 

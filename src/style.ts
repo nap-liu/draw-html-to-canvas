@@ -108,12 +108,47 @@ export default class Style {
   private styleIndex: { [x: string]: number } = {};
   private index = 0;
   private element: Element;
+  private cachedValue: any = {};
+  private static cachedFunction: { [x: string]: Function } = {};
+
+  [x: string]: any;
 
   public imageMap: { [x: string]: ElementImage } = {};
 
   public constructor(element: Element) {
     this.element = element;
   }
+
+  public updateCache = () => {
+    // TODO cache缓存错误
+    return;
+    const proto = Object.getPrototypeOf(this);
+    const descriptors = Object.getOwnPropertyDescriptors(proto);
+
+    const fns = Object.keys(Style.cachedFunction)
+    if (fns.length) {
+      fns.forEach(key => {
+        this.cachedValue[key] = Style.cachedFunction[key].call(this);
+      });
+    } else {
+      Object.keys(descriptors).forEach((key) => {
+        const descriptor = descriptors[key];
+        const {get} = descriptor;
+        if (typeof get === 'function') {
+          Style.cachedFunction[key] = get;
+          Object.defineProperty(proto, key, {
+            ...descriptor,
+            get() {
+              if (!this.cachedValue[key]) {
+                this.cachedValue[key] = get.call(this);
+              }
+              return this.cachedValue[key];
+            },
+          })
+        }
+      });
+    }
+  };
 
   public getImage = (url: string) => {
     return this.imageMap[url];
@@ -249,6 +284,7 @@ export default class Style {
   public set(key: string, value: any) {
     this.style[key] = value;
     this.styleIndex[key] = ++this.index;
+    this.updateCache();
     return this;
   }
 
@@ -998,7 +1034,7 @@ export default class Style {
     return this.getInheritStyle('vertical-align', true) || DEFAULT_VERTICAL_ALIGN;
   }
 
-  public get textAlign(){
+  public get textAlign() {
     return this.getInheritStyle(`${styleKeywords.text}-${styleKeywords.align}`) || TextAlign.left;
   }
 
