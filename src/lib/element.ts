@@ -831,8 +831,9 @@ export default class Element {
    */
   public drawBackground(context: CanvasRenderingContext2D, background: IBackground<string>) {
     context.save();
-    const {border, padding, fontSize} = this.style;
+    const {border, padding, fontSize, lineHeight} = this.style;
     const {contentWidth, contentHeight} = this;
+    const lineHeightOffset = (lineHeight - fontSize) / 2;
 
     const isInline = this.blockType === BlockType.inline;
 
@@ -861,7 +862,7 @@ export default class Element {
       if (isInline) {
         const result = {
           x,
-          y: y - padding.top,
+          y: y - padding.top + lineHeightOffset,
           width,
           height: fontSize + padding.top + padding.bottom,
         }
@@ -1641,7 +1642,8 @@ export default class Element {
     context.font = this.style.canvasFont;
     context.textBaseline = verticalAlign as any;
     context.fillStyle = color;
-    context.fillText(this.displayText, offsetLeft, offsetTop + (lineHeight - fontSize) / 2);
+    const offset = (lineHeight - fontSize) / 2;
+    context.fillText(this.displayText, offsetLeft, offsetTop + offset);
     context.restore();
   }
 
@@ -1651,7 +1653,8 @@ export default class Element {
   public drawTextDecoration(context: CanvasRenderingContext2D) {
     context.save();
     const {offsetLeft, offsetTop, offsetWidth} = this;
-    const {textDecoration, fontSize} = this.style;
+    const {textDecoration, fontSize, lineHeight} = this.style;
+    const lineHeightOffset = (lineHeight - fontSize) / 2;
 
     textDecoration.forEach(decoration => {
       context.beginPath();
@@ -1659,7 +1662,7 @@ export default class Element {
       context.strokeStyle = decoration.color;
       context.lineWidth = decoration.thickness;
 
-      let offset = decoration.thickness / 2;
+      let offset = 0;
 
       switch (decoration.style) {
         case TEXT_DECORATION_STYLE.solid:
@@ -1678,10 +1681,13 @@ export default class Element {
 
       switch (decoration.line) {
         case TEXT_DECORATION_LINE.lineThrough:
-          offset += fontSize / 2;
+          offset = fontSize / 2 + lineHeightOffset;
           break;
         case TEXT_DECORATION_LINE.underline:
-          offset += fontSize;
+          offset = fontSize + lineHeightOffset + decoration.thickness / 2;
+          break;
+        case TEXT_DECORATION_LINE.overline:
+          offset = -decoration.thickness / 2 + lineHeightOffset;
           break;
       }
 

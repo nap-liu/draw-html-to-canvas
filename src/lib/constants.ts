@@ -175,7 +175,7 @@ export enum TEXT_DECORATION_STYLE {
 export const REG_TEXT_DECORATION_STYLE = new RegExp(`${values(TEXT_DECORATION_STYLE).join('|')}`, 'i');
 export const REG_TEXT_DECORATION_LINE = new RegExp(`${values(TEXT_DECORATION_LINE).join('|')}`, 'ig');
 export const REG_TEXT_DECORATION_COLOR = REG_COLOR;
-export const REG_TEXT_DECORATION_THICKNESS = new RegExp(FLOAT_POSITIVE_NO_GROUP, 'i');
+export const REG_TEXT_DECORATION_THICKNESS = new RegExp(FLOAT_POSITIVE_NO_GROUP.slice(0, -1), 'i');
 
 // console.log(REG_BORDER);
 

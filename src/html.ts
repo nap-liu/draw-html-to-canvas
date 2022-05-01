@@ -7,7 +7,7 @@ export default `<div
      /*font-size: 20px;*/
      /*color: #fff;*/
      font-style: italic;
-     /*line-height: 1;*/
+     /*line-height: 30px;*/
     /*font-family: 'PingFang SC';*/
     /*background: url('img_2.png') 10px 20px / 100px auto no-repeat,*/
    /*#f00 url('img.png') center / 100px auto repeat-y;*/
@@ -24,7 +24,7 @@ export default `<div
       <div style="display: inline-block;">
         <div style="">
           <div style="display: inline; ">
-            <span style="background: #BC8F8F; text-decoration:  line-through double #00f; padding: 0 10px">
+            <span style="background: #BC8F8F; text-decoration: line-through #f00 1px; padding: 0 10px">
               setsocketopt函数 设置socket工作参数
             </span>
             <span style="background: #4169E1; padding: 0 100px;">
