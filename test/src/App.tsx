@@ -1,6 +1,6 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import defaultHtml, {html2, html3} from './html';
-import Render from '../../src';
+// import Render from './lib';
 import debounce from './debounce';
 
 const html = defaultHtml;
