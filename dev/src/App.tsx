@@ -14,7 +14,9 @@ export default function App() {
   const [scale, setScale] = useState(2);
   useLayoutEffect(() => {
     console.time('Render.fromHTML(html)');
-    const render = Render.fromHTML(html);
+    const render = Render.fromHTML(html, {
+      debug: false
+    });
     console.timeEnd('Render.fromHTML(html)');
     let context: CanvasRenderingContext2D;
     const onResize: any = debounce(() => {

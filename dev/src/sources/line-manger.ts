@@ -45,6 +45,7 @@ export default class LineManger extends Array<Line> {
         br.line = prev;
         br.lineElement = this.element;
         prev.append(br);
+        // return prev;
       }
       const {floats, normalHeight} = prev;
       // const normalHeight = this.element.style.lineHeight;

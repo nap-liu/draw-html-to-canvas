@@ -2,20 +2,25 @@ import parse from './parser';
 import {SupportElement, SupportElementType} from './constants';
 import ElementImage from './element-image';
 
+export interface IOption {
+  debug: boolean;
+}
+
 export default class Render {
-  static fromHTML(html: string) {
-    return new Render(html);
+  static fromHTML(html: string, option: IOption) {
+    return new Render(html, option);
   }
 
   rawHTML: string;
   rootNode: SupportElementType;
   elements: SupportElementType[];
 
-  constructor(html: string) {
+  constructor(html: string, option: IOption) {
     this.rawHTML = html;
     const {elements, rootNode} = parse(html);
     this.rootNode = rootNode;
     this.elements = elements;
+    this.rootNode.debug = option.debug;
   }
 
   loadSource() {

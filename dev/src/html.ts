@@ -1,4 +1,5 @@
-export default `<div
+export default `
+<div
   style="
   font-style: italic;
   /*overflow: auto;*/
@@ -26,7 +27,7 @@ export default `<div
     float 67<br>
     float 68
   </div>
-  <span style="background: rgba(255, 0, 255, .5);display: inline">
+  <span style="background: rgba(255, 0, 255, .5);display: block;">
     错误代码1 EADDRINUSE<br>
     错误代码2 EADDRINUSE<br>
     错误代码3 EADDRINUSE<br>
@@ -34,48 +35,36 @@ export default `<div
     错误代码5 EADDRINUSE
   </span>
 </div>
-<div style="background: rgba(1,139,139,0.5); color: #fff;">
-  111111111<br>
+
+<div style="background: rgba(1,139,139,0.5);color: #fff;">
   111111111
   <div style="">inner block</div>
-  111111111<br>
-  111111111<br>
-  222222222
+  <span>222222222</span>
 </div>
-`
-const t= `<div style="background: rgba(2,139,139,0.5); color: #eee;">
+
+<div style="background: rgba(2,139,139,0.5); color: #eee;">
   flow flow flow<br>
-  333333333<br>
-  333333333<br>
   333333333<br>
   333333333
 </div>
 <div style="background: rgba(3,139,139,0.5); color: #fff;">
   888888888<br>
-  888888888<br>
-  888888888<br>
-  888888888<br>
-  888888888<br>
-  888888888<br>
-  888888888<br>
-  888888888<br>
   888888888
 </div>
 <div style="background: rgba(3,139,139,0.5); color: #fff;">
-  555555555<br>
-  555555555<br>
-  555555555<br>
-  555555555<br>
   555555555<br>
   555555555
 </div>
 <div style="background: rgba(3,139,139,0.5); color: #fff;">
   444444444<br>
-  444444444<br>
-  444444444<br>
-  444444444<br>
   444444444
-</div>`
+</div>
+
+`
+
+const t = `
+
+`
 
 export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid #f00;padding-top: 20px; padding-left: 20px">
 <div style="

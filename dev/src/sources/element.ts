@@ -38,6 +38,8 @@ export default class Element {
   public line: Line | null = null;
   public lineElement: Element | null = null;
 
+  public debug = false;
+
   // public blockType: BlockType;
   // public displayText: string;
 
@@ -380,6 +382,23 @@ export default class Element {
       this.lines = new LineManger(this);
       let line = this.lines.newLine(this.contentWidth);
 
+      /**
+       * 向指定行插入占位元素
+       * @param height
+       * @param line
+       * @param element
+       */
+      const insertPlaceholder = (height: number, line: Line, element: Element) => {
+        const e = new Element()
+        e.nodeName = '#placholder';
+        e.nodeValue = '';
+        e.contentHeight = height;
+        e.lineElement = element;
+        e.line = line;
+        line.push(e);
+        return e;
+      };
+
       const recursion = (element: Element) => {
         if (element.nodeType === NodeType.COMMENT_NODE) {
           return
@@ -426,7 +445,9 @@ export default class Element {
                     pushElement(text, textMetrics.width);
                     break;
                   } else {
+                    // 修复块元素后空白行问题
                     line = this.lines.newLine(line.width);
+                    lineText = text;
                     continue;
                   }
                 } else if (lineText === '') {
@@ -507,6 +528,7 @@ export default class Element {
             element.line = line;
             let lastLine = this.lines.lastLine();
             if (lastLine && lastLine.last) {
+              // 取嵌套子元素最后的一行
               let el = lastLine.last;
               while (el) {
                 if (el.lines.length) {
@@ -525,17 +547,38 @@ export default class Element {
                 if (clear) {
                   const clearLine = this.lines.newLine(line.width);
                   const height = Math.max(prevLastLine.overLeftHeight, prevLastLine.overRightHeight);
-                  const e = new Element()
-                  e.nodeName = '#placholder';
-                  e.nodeValue = '';
-                  e.contentHeight = height;
-                  e.lineElement = this;
-                  e.line = clearLine;
-                  clearLine.push(e);
+                  insertPlaceholder(height, clearLine, this);
+                  // const e = new Element()
+                  // e.nodeName = '#placholder';
+                  // e.nodeValue = '';
+                  // e.contentHeight = height;
+                  // e.lineElement = this;
+                  // e.line = clearLine;
+                  // clearLine.push(e);
                   line = clearLine;
                   element.line = null;
                 } else {
                   element.line = prevLastLine;
+                }
+              } else if (clear) {
+                this.lines.newLine(line.width);
+                this.lines.pop();
+                const lastLine = this.lines.lastLine();
+                // 子元素浮动超出文字布局 当前元素需要继承超出的float元素
+                if (lastLine && (lastLine.overLeftHeight || lastLine.overRightHeight)) {
+                  // block 是块元素 需要换行 但是文字需要排除溢出的float宽度 所以需要继承上一行的float
+                  const clearLine = this.lines.newLine(line.width);
+                  const height = Math.max(lastLine.overLeftHeight, lastLine.overRightHeight);
+                  insertPlaceholder(height, clearLine, this);
+                  // const e = new Element()
+                  // e.nodeName = '#placholder';
+                  // e.nodeValue = '';
+                  // e.contentHeight = height;
+                  // e.lineElement = this;
+                  // e.line = clearLine;
+                  // clearLine.push(e);
+                  line = clearLine;
+                  element.line = null;
                 }
               }
             }
@@ -555,13 +598,14 @@ export default class Element {
               const newLine = element.lines.newLine(line.width);
               // 空行插入占位元素 填充剩余高度
               const height = Math.max(lastLine.overLeftHeight, lastLine.overRightHeight);
-              const e = new Element()
-              e.nodeName = '#placholder';
-              e.nodeValue = '';
-              e.contentHeight = height;
-              e.lineElement = element;
-              e.line = newLine;
-              newLine.push(e);
+              insertPlaceholder(height, newLine, element);
+              // const e = new Element()
+              // e.nodeName = '#placholder';
+              // e.nodeValue = '';
+              // e.contentHeight = height;
+              // e.lineElement = element;
+              // e.line = newLine;
+              // newLine.push(e);
             }
           }
 
@@ -1761,7 +1805,7 @@ export default class Element {
       }
     }
 
-    if (1) {
+    if (this.debug || (this.root && this.root.debug)) {
       const {offsetWidth, offsetHeight} = this;
       if (offsetWidth) {
         context.save();
