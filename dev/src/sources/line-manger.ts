@@ -1,6 +1,6 @@
 import Line from './line';
 import Element from './element';
-import {NodeType, SupportElement} from './constants';
+import {NodeType} from './constants';
 
 /**
  * 布局行管理
@@ -88,7 +88,6 @@ export default class LineManger extends Array<Line> {
             const clone = i.clone();
             line.holdLeftWidth += i.offsetWidth;
             clone.contentHeight -= normalHeight;
-            clone.contentHeight = Math.ceil(clone.contentHeight);
             return clone;
           });
         }
@@ -109,7 +108,6 @@ export default class LineManger extends Array<Line> {
             const clone = i.clone();
             line.holdRightWidth += i.offsetWidth;
             clone.contentHeight -= normalHeight;
-            clone.contentHeight = Math.ceil(clone.contentHeight);
             return clone;
           });
         }

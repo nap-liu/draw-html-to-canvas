@@ -11,7 +11,7 @@ const html = defaultHtml;
 export default function App() {
   const div = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(2);
   useLayoutEffect(() => {
     console.time('Render.fromHTML(html)');
     const render = Render.fromHTML(html);

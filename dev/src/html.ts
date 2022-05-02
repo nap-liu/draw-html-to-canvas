@@ -2,10 +2,11 @@ export default `<div
   style="
   font-style: italic;
   /*overflow: auto;*/
+  /*color: #fff;*/
   "
   id="renderTemplate"
 >
-  <div style="float: left; background: rgba(0,255,0,0.5);">
+  <div style="float: left;">
     float 61
     <br>
     float 62
@@ -33,15 +34,16 @@ export default `<div
     错误代码5 EADDRINUSE
   </span>
 </div>
-<div>
-  111111111<br>
-  222222222<br>
-  333333333<br>
-  444444444<br>
-  555555555<br>
-  666666666<br>
-  777777777<br>
-  888888888<br>
+<div style="background: rgba(0,139,139,0.5);
+">
+  111111111
+  222222222
+  333333333
+  444444444
+  555555555
+  666666666
+  777777777
+  888888888
   999999999
 </div>
 `

@@ -5,8 +5,8 @@
  */
 import {BackgroundRepeat, TContinueDraw, TCurvePath} from './constants';
 
-export const randomColor = (start = 0, end = 255) => {
-  return `rgb(${start + parseInt(Math.random() * end as any as string)},${start + parseInt(Math.random() * end as any as string)},${start + parseInt(Math.random() * end as any as string)})`;
+export const randomColor = (start = 0, end = 255, a = 1) => {
+  return `rgba(${start + parseInt(Math.random() * end as any as string)},${start + parseInt(Math.random() * end as any as string)},${start + parseInt(Math.random() * end as any as string)}, ${a})`;
 };
 
 /**

@@ -3,7 +3,7 @@ import Style, {IBackground, IBorder} from './style';
 import Line from './line';
 import LineManger from './line-manger';
 import ElementImage from './element-image';
-import {drawRepeatImage} from './util';
+import {drawRepeatImage, randomColor} from './util';
 
 export default class Element {
   public nodeValue = '';
@@ -551,7 +551,6 @@ export default class Element {
 
           if (childBlockType === BlockType.inlineBlock) {
             // 计算真正的inline-block占用宽度
-
             if (element.nodeName === SupportElement.img) {
 
             } else {
@@ -612,18 +611,11 @@ export default class Element {
               Object.assign(newLine, childNewLine);
               line = newLine;
             }
-
             if (line.length) {
-              if (line.length === 1 && line.last.nodeName === SupportElement.br) {
-                // 弹出没用的换行符
-                line.pop();
-              } else {
-                line = this.lines.newLine(line.width);
-              }
+              line = this.lines.newLine(line.width);
             }
             line.push(element);
             element.line = line;
-            line = this.lines.newLine(line.width);
             // TODO 高度可能不准确 因为如果是手写是百分比高度的话 则会出现异常
             if (element.nodeName === SupportElement.img) {
 
@@ -649,10 +641,6 @@ export default class Element {
     }
 
     // TODO 其他布局支持
-    const lastLine = this.lines.lastLine();
-    if (lastLine && lastLine.length === 0) {
-      this.lines.pop();
-    }
   }
 
   public layoutLinePosition() {
@@ -1780,9 +1768,25 @@ export default class Element {
       }
     }
 
-    if (1) {
-      context.strokeStyle = '#00a113';
-      context.strokeRect(offsetLeft, offsetTop, this.offsetWidth, this.offsetHeight);
+    if (0) {
+      const {offsetWidth, offsetHeight} = this;
+      if (offsetWidth) {
+        context.save();
+        context.strokeStyle = backgroundList[0]?.color;
+        context.strokeRect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
+        context.fillStyle = backgroundList[0]?.color;
+        context.textBaseline = 'top';
+        context.font = '14px sans-serif';
+        const text = `${(offsetWidth).toFixed(0)}x${(offsetHeight)}`;
+        const textMetrics = context.measureText(text);
+        const x = offsetLeft + offsetWidth - textMetrics.width;
+        const y = offsetTop;
+        context.fillRect(x, y, textMetrics.width, 14);
+        context.fillStyle = this.style.color;
+        context.fillText(text, x, y);
+        context.restore();
+      }
+
     }
 
     if (this.nodeName === SupportElement.img) {
