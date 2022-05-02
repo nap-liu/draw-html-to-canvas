@@ -380,21 +380,6 @@ export default class Element {
       this.lines = new LineManger(this);
       let line = this.lines.newLine(this.contentWidth);
 
-      const clearFloat = () => {
-        this.lines.newLine(line.width); // 前一个元素布局高度
-        this.lines.pop();
-        const lastLine = this.lines.lastLine();
-        if (lastLine.overLeftHeight || lastLine.overRightHeight) {
-          const newLine = this.lines.newLine(lastLine.width);
-          const height = Math.max(lastLine.overLeftHeight, lastLine.overRightHeight);
-          const e = new Element()
-          e.nodeName = '#placholder';
-          e.nodeValue = '';
-          e.contentHeight = height;
-          newLine.push(e);
-        }
-      }
-
       const recursion = (element: Element) => {
         if (element.nodeType === NodeType.COMMENT_NODE) {
           return
@@ -514,21 +499,50 @@ export default class Element {
         } else {
           // TODO clear 支持区分左右浮动清除
           // inline-block\block嵌套 递归布局
-          if (childBlockType === BlockType.inlineBlock || clear) {
+          if (childBlockType === BlockType.inlineBlock) {
             // inline block 是行内元素 自动换行排列 所以不需要继承上一行的float
             // clear 样式强制不继承
             element.line = null;
           } else {
-            // block 是块元素 需要换行 但是文字需要排除溢出的float宽度 所以需要继承上一行的float
             element.line = line;
+            let lastLine = this.lines.lastLine();
+            if (lastLine && lastLine.last) {
+              let el = lastLine.last;
+              while (el) {
+                if (el.lines.length) {
+                  el = el.lines.lastLine().last;
+                } else {
+                  lastLine = el.line as Line;
+                  break;
+                }
+              }
+              el.lineElement!.lines.newLine(lastLine.width);
+              el.lineElement!.lines.pop();
+              const prevLastLine = el.lineElement!.lines.lastLine();
+              // 子元素浮动超出文字布局 当前元素需要继承超出的float元素
+              if (prevLastLine && (prevLastLine.overLeftHeight || prevLastLine.overRightHeight)) {
+                // block 是块元素 需要换行 但是文字需要排除溢出的float宽度 所以需要继承上一行的float
+                if (clear) {
+                  const clearLine = this.lines.newLine(line.width);
+                  const height = Math.max(prevLastLine.overLeftHeight, prevLastLine.overRightHeight);
+                  const e = new Element()
+                  e.nodeName = '#placholder';
+                  e.nodeValue = '';
+                  e.contentHeight = height;
+                  e.lineElement = this;
+                  e.line = clearLine;
+                  clearLine.push(e);
+                  line = clearLine;
+                  element.line = null;
+                } else {
+                  element.line = prevLastLine;
+                }
+              }
+            }
           }
 
           // TODO img 标签优化
           element.layoutLine(context);
-
-          if (clear) {
-            clearFloat();
-          }
 
           // 强制闭合float元素
           if (childBlockType === BlockType.inlineBlock || isOverflow) {
@@ -545,6 +559,8 @@ export default class Element {
               e.nodeName = '#placholder';
               e.nodeValue = '';
               e.contentHeight = height;
+              e.lineElement = element;
+              e.line = newLine;
               newLine.push(e);
             }
           }
@@ -588,29 +604,6 @@ export default class Element {
               }
             }
           } else if (childBlockType === BlockType.block) {
-            const childNewLine = element.lines.newLine(line.width);
-            element.lines.pop();
-            const lastLine = element.lines.lastLine();
-            // 子元素浮动超出文字布局 当前元素需要继承超出的float元素
-            if (lastLine && (lastLine.overLeftHeight || lastLine.overRightHeight)) {
-              // 文字需要自动闭合 回溯到父级 需要恢复原始float高度
-              // 父级的兄弟节点需要继续保持继承的float
-              childNewLine.holdLefts = childNewLine.holdLefts.map(i => {
-                while (i.shadow) {
-                  i = i.shadow
-                }
-                return i.clone();
-              })
-              childNewLine.holdRights = childNewLine.holdRights.map(i => {
-                while (i.shadow) {
-                  i = i.shadow
-                }
-                return i.clone();
-              })
-              const newLine = this.lines.newLine(line.width);
-              Object.assign(newLine, childNewLine);
-              line = newLine;
-            }
             if (line.length) {
               line = this.lines.newLine(line.width);
             }
@@ -1768,7 +1761,7 @@ export default class Element {
       }
     }
 
-    if (0) {
+    if (1) {
       const {offsetWidth, offsetHeight} = this;
       if (offsetWidth) {
         context.save();

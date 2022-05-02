@@ -25,6 +25,7 @@ export default function App() {
         context.clearRect(0, 0, render.rootNode.offsetWidth, render.rootNode.offsetHeight);
         console.time('render.layout(context)');
         render.rootNode.style.set('width', `${width}px`);
+        // render.rootNode.style.set('overflow', `hidden`);
         // render.rootNode.style.set('width', `434px`);
         render.layout(context);
         console.timeEnd('render.layout(context)');

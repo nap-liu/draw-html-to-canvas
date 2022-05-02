@@ -6,11 +6,11 @@ export default `<div
   "
   id="renderTemplate"
 >
-  <div style="float: left;">
+  <div style="float: left;background: rgba(255,0,0,0.5)">
     float 61
     <br>
     float 62
-    <span style="background: rgba(255,0,0,0.5)">
+    <span style="">
       setsocketopt函数11111
       <br>
       setsocketopt函数22222
@@ -26,7 +26,7 @@ export default `<div
     float 67<br>
     float 68
   </div>
-  <span style="background: rgba(255, 0, 255, .5);">
+  <span style="background: rgba(255, 0, 255, .5);display: inline">
     错误代码1 EADDRINUSE<br>
     错误代码2 EADDRINUSE<br>
     错误代码3 EADDRINUSE<br>
@@ -34,19 +34,48 @@ export default `<div
     错误代码5 EADDRINUSE
   </span>
 </div>
-<div style="background: rgba(0,139,139,0.5);
-">
+<div style="background: rgba(1,139,139,0.5); color: #fff;">
+  111111111<br>
   111111111
+  <div style="">inner block</div>
+  111111111<br>
+  111111111<br>
   222222222
-  333333333
-  444444444
-  555555555
-  666666666
-  777777777
-  888888888
-  999999999
 </div>
 `
+const t= `<div style="background: rgba(2,139,139,0.5); color: #eee;">
+  flow flow flow<br>
+  333333333<br>
+  333333333<br>
+  333333333<br>
+  333333333
+</div>
+<div style="background: rgba(3,139,139,0.5); color: #fff;">
+  888888888<br>
+  888888888<br>
+  888888888<br>
+  888888888<br>
+  888888888<br>
+  888888888<br>
+  888888888<br>
+  888888888<br>
+  888888888
+</div>
+<div style="background: rgba(3,139,139,0.5); color: #fff;">
+  555555555<br>
+  555555555<br>
+  555555555<br>
+  555555555<br>
+  555555555<br>
+  555555555
+</div>
+<div style="background: rgba(3,139,139,0.5); color: #fff;">
+  444444444<br>
+  444444444<br>
+  444444444<br>
+  444444444<br>
+  444444444
+</div>`
 
 export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid #f00;padding-top: 20px; padding-left: 20px">
 <div style="

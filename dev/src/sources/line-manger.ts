@@ -42,6 +42,8 @@ export default class LineManger extends Array<Line> {
         br.nodeName = '#breakholder';
         br.nodeType = NodeType.ELEMENT_NODE;
         br.contentHeight = this.element.root ? this.element.root.textMetric.lineHeight : this.element.textMetric.lineHeight;
+        br.line = prev;
+        br.lineElement = this.element;
         prev.append(br);
       }
       const {floats, normalHeight} = prev;
