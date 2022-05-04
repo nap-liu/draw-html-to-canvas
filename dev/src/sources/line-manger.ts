@@ -14,6 +14,23 @@ export default class LineManger extends Array<Line> {
     this.element = element;
   }
 
+  public lastInheritLine() {
+    let lastLine = this[this.length - 1];
+    if (lastLine) {
+      let lastElement = lastLine.last;
+      while (lastElement) {
+        if (lastElement.lines.length) {
+          lastElement = lastElement.lines[lastElement.lines.length - 1].last;
+        } else {
+          // @ts-ignore
+          lastLine = lastElement.line;
+          break;
+        }
+      }
+    }
+    return lastLine;
+  }
+
   public lastLine() {
     return this[this.length - 1];
   }
@@ -37,7 +54,7 @@ export default class LineManger extends Array<Line> {
         return prev;
       }
       if (prev.length === 0) {
-        // 上一行没有内容的话 则 向当前行插入一个换行元素
+        // 上一行没有内容的话 则 向上一行插入一个换行元素
         const br = new Element();
         br.nodeName = '#breakholder';
         br.nodeType = NodeType.ELEMENT_NODE;
@@ -48,18 +65,17 @@ export default class LineManger extends Array<Line> {
         // return prev;
       }
       const {floats, normalHeight} = prev;
-      // const normalHeight = this.element.style.lineHeight;
       // 上一行的overflow
       let idx = floats.left.slice().reverse().findIndex(i => i.offsetHeight > normalHeight);
       if (idx > -1) {
         const left = floats.left.slice(0, floats.left.length - idx);
-        prev.holdLefts.push(...left);
+        prev.holdLefts = Array.from(new Set([...prev.holdLefts, ...left]));
       }
 
       idx = floats.right.slice().reverse().findIndex(i => i.offsetHeight > normalHeight);
       if (idx > -1) {
         const right = floats.right.slice(0, floats.right.length - idx);
-        prev.holdRights.push(...right);
+        prev.holdRights = Array.from(new Set([...prev.holdRights, ...right]));
       }
 
       let maxOverflow = Math.max(...prev.holdLefts.map(i => i.offsetHeight));
@@ -117,6 +133,7 @@ export default class LineManger extends Array<Line> {
       }
     }
     this.push(line);
+    line.lines = this;
     return line;
   }
 

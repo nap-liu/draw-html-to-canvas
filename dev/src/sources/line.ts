@@ -1,5 +1,6 @@
 import Element from './element';
 import {NodeType} from './constants';
+import LineManger from './line-manger';
 
 export default class Line extends Array<Element> {
   // 可用总宽度
@@ -18,6 +19,9 @@ export default class Line extends Array<Element> {
   // 当前行右浮动overflow的高度
   overRightHeight = 0;
 
+  // @ts-ignore
+  lines: LineManger;
+
   append(element: Element) {
     if (this.restWidth >= element.offsetWidth) {
       this.push(element);
@@ -33,6 +37,9 @@ export default class Line extends Array<Element> {
       }
       return true;
     })
+    if (this.length === 1 && this[0].nodeName === '#breakholder') {
+      this.pop();
+    }
     return super.push(...elements);
   }
 

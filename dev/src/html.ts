@@ -1,21 +1,25 @@
 export default `
 <div
   style="
-  font-style: italic;
+  /*font-style: italic;*/
   /*overflow: auto;*/
   /*color: #fff;*/
+  /*display: inline-block;*/
   "
   id="renderTemplate"
 >
+<!--  <div>333</div>-->
   <div style="float: left;background: rgba(255,0,0,0.5)">
     float 61
     <br>
     float 62
-    <span style="">
-      setsocketopt函数11111
-      <br>
-      setsocketopt函数22222
-      <br>
+    <span style="float: right">
+      setsocketopt函数11111<br>
+      setsocketopt函数22222<br>
+      setsocketopt函数33333<br>
+      setsocketopt函数33333<br>
+      setsocketopt函数33333<br>
+      setsocketopt函数33333<br>
       setsocketopt函数33333
     </span>
     <br>
@@ -27,42 +31,34 @@ export default `
     float 67<br>
     float 68
   </div>
-  <span style="background: rgba(255, 0, 255, .5);display: block;">
-    错误代码1 EADDRINUSE<br>
-    错误代码2 EADDRINUSE<br>
-    错误代码3 EADDRINUSE<br>
-    错误代码4 EADDRINUSE<br>
-    错误代码5 EADDRINUSE
-  </span>
+  <span>before</span>
+  <div style="background: rgba(1,139,139,0.5); color: #fff;">
+    <span>aaaaaa</span><br>
+    <span>aaaaaa</span><br>
+    <span>aaaaaa</span><br>
+    <span>aaaaaa</span><br>
+    <span>aaaaaa</span>
+  </div>
+  <span>after</span>
 </div>
 
-<div style="background: rgba(1,139,139,0.5);color: #fff;">
-  111111111
-  <div style="">inner block</div>
-  <span>222222222</span>
+<div style="background: rgba(1,139,139,0.5);float: right; color: #fff;">
+  <span>con float1</span><br>
+  <span>con float2</span>
 </div>
+<div style="text-align: center">after float1</div>
+<div style="">after float2</div>
+`
 
+const t = `
+<div style="">after float1</div>
 <div style="background: rgba(2,139,139,0.5); color: #eee;">
   flow flow flow<br>
   333333333<br>
   333333333
 </div>
-<div style="background: rgba(3,139,139,0.5); color: #fff;">
-  888888888<br>
-  888888888
-</div>
-<div style="background: rgba(3,139,139,0.5); color: #fff;">
-  555555555<br>
-  555555555
-</div>
-<div style="background: rgba(3,139,139,0.5); color: #fff;">
-  444444444<br>
-  444444444
-</div>
+  
 
-`
-
-const t = `
 
 `
 
@@ -115,8 +111,8 @@ font-weight: 500;'>
     <div>却非廉价之物。</div>
     </div>
   </div>
-  <div className='icon' style='position: relative;'>
-    <img style='width: 124px; height: 148px; margin: -64px auto 0; display: block' src='http://127.0.0.1:8080/image/post-4.14-day.png' />
+  <div className='icon' style='position: relative; margin-top: -64px'>
+    <img style='width: 124px; height: 148px; margin: 0 auto 0; display: block' src='http://127.0.0.1:8080/image/post-4.14-day.png' />
     <div class='count' style='
 font-family: SFProText-Heavy;
 position: absolute;

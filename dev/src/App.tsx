@@ -7,7 +7,6 @@ const html = defaultHtml;
 // const html = html2;
 // const html = html3;
 
-
 export default function App() {
   const div = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -15,7 +14,7 @@ export default function App() {
   useLayoutEffect(() => {
     console.time('Render.fromHTML(html)');
     const render = Render.fromHTML(html, {
-      debug: false
+      debug: false,
     });
     console.timeEnd('Render.fromHTML(html)');
     let context: CanvasRenderingContext2D;
@@ -32,8 +31,10 @@ export default function App() {
         render.layout(context);
         console.timeEnd('render.layout(context)');
         console.time('render.draw(context)');
-        canvas.current!.height = render.rootNode.offsetHeight * scale;
-        canvas.current!.width = width * scale;
+        const {offsetWidth, offsetHeight} = render.rootNode;
+        canvas.current!.height = offsetHeight * scale;
+        canvas.current!.width = offsetWidth * scale;
+        console.log('offsetWidth', offsetWidth, 'offsetHeight', offsetHeight);
         context.scale(scale, scale);
         render.draw(context);
         console.timeEnd('render.draw(context)');
@@ -72,8 +73,8 @@ export default function App() {
       <div ref={div} dangerouslySetInnerHTML={{__html: html}} />
       <canvas
         ref={canvas}
-        // width={434}
-        // height={500}
+        // width={1000}
+        // height={2000}
         style={{border: '1px solid #f00', width: '100%', height: '100%'}}
       />
     </>

@@ -57,7 +57,7 @@ export const DEFAULT_FONT_FAMILY = 'sans-serif';
 export const DEFAULT_FONT_SIZE = '16px';
 export const DEFAULT_COLOR = '#000';
 export const DEFAULT_VERTICAL_ALIGN = styleKeywords.top;
-export const DEFAULT_LINE_HEIGHT = '1';
+export const DEFAULT_LINE_HEIGHT = '1.2';
 
 export enum NodeType {
   ELEMENT_NODE = 1, //	一个 元素 节点，例如 <p> 和 <div>。

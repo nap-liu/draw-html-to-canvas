@@ -3,7 +3,7 @@ import Style, {IBackground, IBorder} from './style';
 import Line from './line';
 import LineManger from './line-manger';
 import ElementImage from './element-image';
-import {drawRepeatImage, randomColor} from './util';
+import {drawRepeatImage} from './util';
 
 export default class Element {
   public nodeValue = '';
@@ -399,6 +399,21 @@ export default class Element {
         return e;
       };
 
+      /**
+       * 向指定元素行插入空行 计算overflow
+       * @param element
+       */
+      const insertEmptyLine = (element: Element) => {
+        const line = element.lines.newLine(0);
+        const e = new Element()
+        e.nodeName = '#empty';
+        e.nodeValue = '';
+        e.lineElement = element;
+        e.line = line;
+        line.push(e);
+        return e;
+      };
+
       const recursion = (element: Element) => {
         if (element.nodeType === NodeType.COMMENT_NODE) {
           return
@@ -406,7 +421,7 @@ export default class Element {
         element.lineElement = this;
         element.line = line;
         const childBlockType = element.blockType;
-        const {clear, isOverflow} = element.style;
+        const {clear, isOverflow, isFloat} = element.style;
         if (element.nodeType === NodeType.TEXT_NODE) {
           // TODO 浮动元素换行后 后续的文字可以使用剩余宽度
           let textMetrics = element.textMetric;
@@ -519,67 +534,42 @@ export default class Element {
           }
         } else {
           // TODO clear 支持区分左右浮动清除
-          // inline-block\block嵌套 递归布局
+
           if (childBlockType === BlockType.inlineBlock) {
-            // inline block 是行内元素 自动换行排列 所以不需要继承上一行的float
-            // clear 样式强制不继承
+            // 行元素继承float占位 但是坐标不重新计算
             element.line = null;
-          } else {
-            element.line = line;
-            let lastLine = this.lines.lastLine();
-            if (lastLine && lastLine.last) {
-              // 取嵌套子元素最后的一行
-              let el = lastLine.last;
-              while (el) {
-                if (el.lines.length) {
-                  el = el.lines.lastLine().last;
-                } else {
-                  lastLine = el.line as Line;
-                  break;
-                }
+            let lastInheritLine = this.lines.lastInheritLine();
+            if (lastInheritLine && (lastInheritLine.holdLefts.length || lastInheritLine.holdRights.length)) {
+              if (clear) {
+                // 向当前元素前添加占位元素 高度等于overflow的高度
+                lastInheritLine.lines.newLine(0);
+                lastInheritLine.lines.pop();
+                const clearLine = this.lines.newLine(0);
+                const lastOverflow = lastInheritLine.lines.lastLine();
+                const height = Math.max(lastOverflow.overLeftHeight, lastOverflow.overRightHeight);
+                insertPlaceholder(height, clearLine, this);
+              } else {
+                const newLine = this.lines.newLine(line.width);
+                Object.assign(newLine, lastInheritLine);
+                line = newLine;
               }
-              el.lineElement!.lines.newLine(lastLine.width);
-              el.lineElement!.lines.pop();
-              const prevLastLine = el.lineElement!.lines.lastLine();
-              // 子元素浮动超出文字布局 当前元素需要继承超出的float元素
-              if (prevLastLine && (prevLastLine.overLeftHeight || prevLastLine.overRightHeight)) {
-                // block 是块元素 需要换行 但是文字需要排除溢出的float宽度 所以需要继承上一行的float
-                if (clear) {
-                  const clearLine = this.lines.newLine(line.width);
-                  const height = Math.max(prevLastLine.overLeftHeight, prevLastLine.overRightHeight);
-                  insertPlaceholder(height, clearLine, this);
-                  // const e = new Element()
-                  // e.nodeName = '#placholder';
-                  // e.nodeValue = '';
-                  // e.contentHeight = height;
-                  // e.lineElement = this;
-                  // e.line = clearLine;
-                  // clearLine.push(e);
-                  line = clearLine;
-                  element.line = null;
-                } else {
-                  element.line = prevLastLine;
-                }
-              } else if (clear) {
-                this.lines.newLine(line.width);
-                this.lines.pop();
-                const lastLine = this.lines.lastLine();
-                // 子元素浮动超出文字布局 当前元素需要继承超出的float元素
-                if (lastLine && (lastLine.overLeftHeight || lastLine.overRightHeight)) {
-                  // block 是块元素 需要换行 但是文字需要排除溢出的float宽度 所以需要继承上一行的float
-                  const clearLine = this.lines.newLine(line.width);
-                  const height = Math.max(lastLine.overLeftHeight, lastLine.overRightHeight);
-                  insertPlaceholder(height, clearLine, this);
-                  // const e = new Element()
-                  // e.nodeName = '#placholder';
-                  // e.nodeValue = '';
-                  // e.contentHeight = height;
-                  // e.lineElement = this;
-                  // e.line = clearLine;
-                  // clearLine.push(e);
-                  line = clearLine;
-                  element.line = null;
-                }
+            }
+          } else {
+            let lastInheritLine = this.lines.lastInheritLine();
+            if (lastInheritLine && (lastInheritLine.holdLefts.length || lastInheritLine.holdRights.length)) {
+              if (clear) {
+                // 向当前元素前添加占位元素 高度等于overflow的高度
+                lastInheritLine.lines.newLine(0);
+                lastInheritLine.lines.pop();
+                const clearLine = this.lines.newLine(0);
+                const lastOverflow = lastInheritLine.lines.lastLine();
+                const height = Math.max(lastOverflow.overLeftHeight, lastOverflow.overRightHeight);
+                insertPlaceholder(height, clearLine, this);
+                element.line = null;
+                line = clearLine;
+              } else {
+                // 块元素继承float 并且坐标重计算
+                element.line = lastInheritLine;
               }
             }
           }
@@ -599,13 +589,6 @@ export default class Element {
               // 空行插入占位元素 填充剩余高度
               const height = Math.max(lastLine.overLeftHeight, lastLine.overRightHeight);
               insertPlaceholder(height, newLine, element);
-              // const e = new Element()
-              // e.nodeName = '#placholder';
-              // e.nodeValue = '';
-              // e.contentHeight = height;
-              // e.lineElement = element;
-              // e.line = newLine;
-              // newLine.push(e);
             }
           }
 
@@ -648,6 +631,8 @@ export default class Element {
               }
             }
           } else if (childBlockType === BlockType.block) {
+            // 计算出最后的float overflow
+            insertEmptyLine(element);
             if (line.length) {
               line = this.lines.newLine(line.width);
             }
@@ -678,6 +663,10 @@ export default class Element {
     }
 
     // TODO 其他布局支持
+    const lastLine = this.lines.lastLine();
+    if (lastLine && lastLine.length === 0) {
+      this.lines.pop();
+    }
   }
 
   public layoutLinePosition() {
@@ -1809,9 +1798,9 @@ export default class Element {
       const {offsetWidth, offsetHeight} = this;
       if (offsetWidth) {
         context.save();
-        context.strokeStyle = backgroundList[0]?.color;
+        context.strokeStyle = backgroundList[0]?.color || '#333';
         context.strokeRect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
-        context.fillStyle = backgroundList[0]?.color;
+        context.fillStyle = backgroundList[0]?.color || '#ccc';
         context.textBaseline = 'top';
         context.font = '14px sans-serif';
         const text = `${(offsetWidth).toFixed(0)}x${(offsetHeight)}`;
@@ -1819,7 +1808,7 @@ export default class Element {
         const x = offsetLeft + offsetWidth - textMetrics.width;
         const y = offsetTop;
         context.fillRect(x, y, textMetrics.width, 14);
-        context.fillStyle = this.style.color;
+        context.fillStyle = this.style.color || '#fff';
         context.fillText(text, x, y);
         context.restore();
       }
