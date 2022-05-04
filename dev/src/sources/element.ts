@@ -1,9 +1,9 @@
-import {BackgroundClip, BackgroundPosition, BackgroundSize, BlockType, BORDER_STYLE, NodeType, REG_PCT, REG_PX, styleKeywords, SupportElement, TContinueDraw, TEXT_DECORATION_LINE, TEXT_DECORATION_STYLE, TextAlign} from './constants';
+import {BackgroundClip, BackgroundPosition, BackgroundSize, BlockType, BORDER_STYLE, GradientType, NodeType, REG_PCT, REG_PX, styleKeywords, SupportElement, TContinueDraw, TEXT_DECORATION_LINE, TEXT_DECORATION_STYLE, TextAlign} from './constants';
 import Style, {IBackground, IBorder} from './style';
 import Line from './line';
 import LineManger from './line-manger';
 import ElementImage from './element-image';
-import {drawRepeatImage} from './util';
+import {createLinearGradient, drawRepeatImage} from './util';
 
 export default class Element {
   public nodeValue = '';
@@ -453,22 +453,30 @@ export default class Element {
               }
 
               // TODO 单词组合不允许拆分换行
+              // TODO 优化文字宽度不够自动换行逻辑
               while (text.length) {
                 if (line.restWidth <= 0) {
-                  if (line.width <= 0) { // 新行没有宽 强制放置
+                  if (line.length === 0) {
                     textMetrics = element.getTextMetrics(context, text);
+                    pushElement(text, textMetrics.width);
+                    // console.log('强制换行1')
+                    break;
+                  } else {
+                    line = this.lines.newLine(line.width);
+                    lineText = text;
+                    // console.log('剩余宽度 继续拆分')
+                  }
+                } else if (lineText === '') {
+                  if (line.length === 0) {
+                    textMetrics = element.getTextMetrics(context, text);
+                    // console.log('强制换行2', line.restWidth, line, text);
                     pushElement(text, textMetrics.width);
                     break;
                   } else {
-                    // 修复块元素后空白行问题
                     line = this.lines.newLine(line.width);
                     lineText = text;
                     continue;
                   }
-                } else if (lineText === '') {
-                  line = this.lines.newLine(line.width);
-                  lineText = text;
-                  continue;
                 }
                 textMetrics = element.getTextMetrics(context, lineText);
                 const textWidth = textMetrics.width;
@@ -622,7 +630,8 @@ export default class Element {
                 while (!line.append(element)) {
                   line = this.lines.newLine(line.width);
                   // 强制换行 避免死循环
-                  if (element.offsetWidth > line.width) {
+                  if (line.length === 0) {
+                    // console.log('强制换行3', line);
                     line.push(element);
                     break;
                   }
@@ -886,8 +895,8 @@ export default class Element {
    */
   public drawBackground(context: CanvasRenderingContext2D, background: IBackground<string>) {
     context.save();
-    const {border, padding, fontSize, lineHeight} = this.style;
-    const {contentWidth, contentHeight} = this;
+    const {margin, border, padding, fontSize, lineHeight} = this.style;
+    const {contentWidth, contentHeight, offsetLeft, offsetTop} = this;
     const lineHeightOffset = (lineHeight - fontSize) / 2;
 
     const isInline = this.blockType === BlockType.inline;
@@ -941,104 +950,128 @@ export default class Element {
 
     const clipBox = getClipBox(background.clip);
     if (background.color) {
+      // debugger;
       context.fillStyle = background.color;
       context.fillRect(clipBox.x, clipBox.y, clipBox.width, clipBox.height);
     }
 
-    if (background.image) {
+    if (background.image || background.gradient) {
       const img = this.style.getImage(background.image);
-      if (img && img.source) {
-        let originBox = clipBox;
-        if (background.origin !== background.clip) {
-          originBox = getClipBox(background.origin);
-        }
+      let originBox = clipBox;
+      if (background.origin !== background.clip) {
+        originBox = getClipBox(background.origin);
+      }
 
-        let left = 0;
-        let top = 0;
-        let width = 0;
-        let height = 0;
+      let left = 0;
+      let top = 0;
+      let width = 0;
+      let height = 0;
 
-        if (background.size.width === BackgroundSize.contain || background.size.width === BackgroundSize.cover) {
-          // 等比例缩放 contain 完整放下
-          // 等比例缩放 cover 超出裁剪
-          if (
-            (background.size.width === BackgroundSize.contain && img.imageWidth > img.imageHeight) ||
-            (background.size.width === BackgroundSize.cover && img.imageWidth < img.imageHeight)
-          ) {
-            const ratio = clipBox.width / img.imageWidth;
-            width = img.imageWidth * ratio;
-            height = img.imageHeight * ratio;
-          } else {
-            const ratio = clipBox.height / img.imageHeight;
-            width = img.imageWidth * ratio;
-            height = img.imageHeight * ratio;
-          }
+      let originWidth = 0;
+      let originHeight = 0;
+      if (background.image) {
+        originWidth = img.imageWidth;
+        originHeight = img.imageHeight;
+      } else {
+        originWidth = clipBox.width;
+        originHeight = clipBox.height
+      }
+
+      if (background.size.width === BackgroundSize.contain || background.size.width === BackgroundSize.cover) {
+        // 等比例缩放 contain 完整放下
+        // 等比例缩放 cover 超出裁剪
+        if (
+          (background.size.width === BackgroundSize.contain && originWidth > originHeight) ||
+          (background.size.width === BackgroundSize.cover && originWidth < originHeight)
+        ) {
+          const ratio = clipBox.width / originWidth;
+          width = originWidth * ratio;
+          height = originHeight * ratio;
         } else {
-          if (REG_PX.test(background.size.width)) {
-            width = this.style.transformUnitToPx(background.size.width);
-          } else if (REG_PCT.test(background.size.width)) {
-            width = this.style.transformUnitToPx(
-              background.size.width,
-              clipBox.width,
-            );
-          }
-
-          if (REG_PX.test(background.size.height)) {
-            height = this.style.transformUnitToPx(background.size.height);
-          } else if (REG_PCT.test(background.size.height)) {
-            height = this.style.transformUnitToPx(
-              background.size.height,
-              clipBox.height,
-            );
-          }
-
-          if (background.size.width === BackgroundSize.auto) {
-            // 等比例缩放
-            const ratio = height / img.imageHeight;
-            width = height ? img.imageWidth * ratio : img.imageWidth;
-          }
-
-          if (background.size.height === BackgroundSize.auto) {
-            // 等比例缩放
-            const ratio = width / img.imageWidth;
-            height = width ? img.imageHeight * ratio : img.imageHeight;
-          }
+          const ratio = clipBox.height / originHeight;
+          width = originWidth * ratio;
+          height = originHeight * ratio;
         }
-
-        if (REG_PX.test(background.position.leftOffset as string)) {
-          left = this.style.transformUnitToPx(background.position.leftOffset as string);
-        } else if (REG_PCT.test(background.position.leftOffset as string)) {
-          left = this.style.transformUnitToPx(
-            background.position.leftOffset as string,
-            clipBox.width - width,
+      } else {
+        if (REG_PX.test(background.size.width)) {
+          width = this.style.transformUnitToPx(background.size.width);
+        } else if (REG_PCT.test(background.size.width)) {
+          width = this.style.transformUnitToPx(
+            background.size.width,
+            clipBox.width,
           );
         }
 
-        if (background.position.left === BackgroundPosition.left) {
-          left += originBox.x;
-        } else if (background.position.left === BackgroundPosition.right) {
-          left = clipBox.width - width - left + originBox.x;
-        } else if (background.position.left === BackgroundPosition.center) {
-          left += clipBox.width / 2 - width / 2;
-        }
-
-        if (REG_PX.test(background.position.topOffset as string)) {
-          top = this.style.transformUnitToPx(background.position.topOffset as string);
-        } else if (REG_PCT.test(background.position.topOffset as string)) {
-          top = this.style.transformUnitToPx(
-            background.position.topOffset as string,
-            clipBox.height - height,
+        if (REG_PX.test(background.size.height)) {
+          height = this.style.transformUnitToPx(background.size.height);
+        } else if (REG_PCT.test(background.size.height)) {
+          height = this.style.transformUnitToPx(
+            background.size.height,
+            clipBox.height,
           );
         }
 
-        if (background.position.top === BackgroundPosition.top) {
-          top += originBox.y
-        } else if (background.position.top === BackgroundPosition.bottom) {
-          top = clipBox.height - height - top + originBox.y;
-        } else if (background.position.top === BackgroundPosition.center) {
-          top += clipBox.height / 2 - height / 2;
+        if (background.size.width === BackgroundSize.auto) {
+          // 等比例缩放
+          const ratio = height / originHeight;
+          width = height ? originWidth * ratio : originWidth;
         }
 
+        if (background.size.height === BackgroundSize.auto) {
+          // 等比例缩放
+          const ratio = width / originWidth;
+          height = width ? originHeight * ratio : originHeight;
+        }
+      }
+
+      if (REG_PX.test(background.position.leftOffset as string)) {
+        left = this.style.transformUnitToPx(background.position.leftOffset as string);
+      } else if (REG_PCT.test(background.position.leftOffset as string)) {
+        left = this.style.transformUnitToPx(
+          background.position.leftOffset as string,
+          clipBox.width - width,
+        );
+      }
+
+      if (background.position.left === BackgroundPosition.left) {
+        left += originBox.x;
+      } else if (background.position.left === BackgroundPosition.right) {
+        left = clipBox.width - width - left + originBox.x;
+      } else if (background.position.left === BackgroundPosition.center) {
+        left += clipBox.width / 2 - width / 2;
+      }
+
+      if (REG_PX.test(background.position.topOffset as string)) {
+        top = this.style.transformUnitToPx(background.position.topOffset as string);
+      } else if (REG_PCT.test(background.position.topOffset as string)) {
+        top = this.style.transformUnitToPx(
+          background.position.topOffset as string,
+          clipBox.height - height,
+        );
+      }
+
+      if (background.position.top === BackgroundPosition.top) {
+        top += originBox.y
+      } else if (background.position.top === BackgroundPosition.bottom) {
+        top = clipBox.height - height - top + originBox.y;
+      } else if (background.position.top === BackgroundPosition.center) {
+        top += clipBox.height / 2 - height / 2;
+      }
+
+      // TODO 修改repeat函数 支持渐变
+      if (background.gradient) {
+        let target: CanvasGradient;
+        switch (background.gradient.type) {
+          case GradientType.linearGradient:
+            target = createLinearGradient(
+              context,
+              offsetTop + margin.left, offsetLeft + margin.top,
+              clipBox.width, clipBox.height,
+              background.gradient,
+            );
+            break;
+        }
+      } else if (img && img.source) {
         drawRepeatImage(
           context,
           img.source,
@@ -1053,6 +1086,7 @@ export default class Element {
           background.repeat,
         )
       }
+
     }
 
     context.restore();
@@ -1781,7 +1815,6 @@ export default class Element {
         if (index > 0) {
           background.color = '';
         }
-        // TODO 行元素被拆分了以后 会画出多重背景
         this.drawBackground(context, background);
       });
     });
@@ -1812,7 +1845,6 @@ export default class Element {
         context.fillText(text, x, y);
         context.restore();
       }
-
     }
 
     if (this.nodeName === SupportElement.img) {
@@ -1823,7 +1855,6 @@ export default class Element {
     }
 
     if (this.shadow && this.shadow.shadows.indexOf(this) > 0) {
-      // console.log('inline shadow 跳过重复渲染')
       return;
     }
     this.lines.forEach(line => {

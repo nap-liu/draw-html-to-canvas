@@ -1,11 +1,12 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
-import defaultHtml, {html2, html3} from './html';
+import defaultHtml, {html2, html3, html4} from './html';
 import Render from './sources';
 import debounce from './debounce';
 
-const html = defaultHtml;
+// const html = defaultHtml;
 // const html = html2;
-// const html = html3;
+const html = html3;
+// const html = html4;
 
 export default function App() {
   const div = useRef<HTMLDivElement>(null);
@@ -41,7 +42,7 @@ export default function App() {
         context.restore();
         console.log(render);
       }
-    }, 300);
+    }, 100);
 
     ;(async () => {
       if (div.current && canvas.current) {
@@ -75,7 +76,7 @@ export default function App() {
         ref={canvas}
         // width={1000}
         // height={2000}
-        style={{border: '1px solid #f00', width: '100%', height: '100%'}}
+        style={{width: '100%', height: '100%'}}
       />
     </>
   );

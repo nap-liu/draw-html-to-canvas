@@ -97,7 +97,7 @@ export enum SupportElement {
   span = 'span',
 }
 
-const COLOR = `rgba\\(\\s*(?:\\d{1,3}\\s*,\\s*){3}\\s*(?:\\d|\\.\\d+|\\d\\.\\d+)\\s*\\)|rgb\\(\\s*(?:\\d{1,3}\\s*,\\s*){3}\\s*\\)|(?:#[a-z0-9]{6})|(?:#[a-z0-9]{3})`
+const COLOR = `rgba\\(\\s*(?:\\d{1,3}\\s*,\\s*){3}\\s*(?:\\d|\\.\\d+|\\d\\.\\d+)\\s*\\)|rgb\\(\\s*(?:\\d{1,3}\\s*,\\s*){3}\\s*\\)|(?:#[a-z0-9]{6})|(?:#[a-z0-9]{3})|transparent|currentColor`
 export const REG_COLOR = new RegExp(COLOR, 'i');
 export const REG_PX = /px$/i;
 export const REG_PCT = /%$/;
@@ -181,7 +181,19 @@ export const REG_TEXT_DECORATION_LINE = new RegExp(`${values(TEXT_DECORATION_LIN
 export const REG_TEXT_DECORATION_COLOR = REG_COLOR;
 export const REG_TEXT_DECORATION_THICKNESS = new RegExp(FLOAT_POSITIVE_NO_GROUP.slice(0, -1), 'i');
 
-// console.log(REG_BORDER);
+export const REG_GRADIENT_TYPE = /((?:repeating-)?(?:linear|radial)-gradient)/i;
+export const REG_GRADIENT_DIRECTION = /((?:repeating-)?(?:linear|radial)-gradient)\s*\(\s*((?:to\s+(top|bottom)\s+(left|right)|to\s+(left|right)\s+(top|bottom)|to\s+(top|bottom)|to\s+(left|right)|(-?\d+(?:\.?\d+)?(?:deg)?)))?/i;
+export const REG_GRADIENT_COLOR_SIZE = new RegExp(`(${COLOR})(\\s+${FLOAT_NO_GROUP})?`, 'gi')
+console.log('REG_GRADIENT_TYPE', REG_GRADIENT_TYPE);
+console.log('REG_GRADIENT_DIRECTION', REG_GRADIENT_DIRECTION);
+console.log('REG_GRADIENT_COLOR_SIZE', REG_GRADIENT_COLOR_SIZE);
+
+export enum GradientType {
+  repeatingLinearGradient = 'repeating-linear-gradient',
+  repeatingRadialGradient = 'repeating-radial-gradient',
+  linearGradient = 'linear-gradient',
+  radialGradient = 'radial-gradient',
+}
 
 export type SupportElementType = Element | ElementImage;
 

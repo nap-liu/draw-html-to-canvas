@@ -3,7 +3,8 @@
  * @param start
  * @param end
  */
-import {BackgroundRepeat, TContinueDraw, TCurvePath} from './constants';
+import {BackgroundRepeat, REG_PCT, REG_PX, TContinueDraw, TCurvePath} from './constants';
+import {IGradient} from './style';
 
 export const randomColor = (start = 0, end = 255, a = 1) => {
   return `rgba(${start + parseInt(Math.random() * end as any as string)},${start + parseInt(Math.random() * end as any as string)},${start + parseInt(Math.random() * end as any as string)}, ${a})`;
@@ -177,7 +178,7 @@ export const ellipse = (
   x: number, y: number,
   xDis: number, yDis: number,
   rotation: number,
-  startAngle: number, endAngle: number
+  startAngle: number, endAngle: number,
 ) => {
   var kappa = 0.5522848, // 4 * ((√(2) - 1) / 3)
     ox = xDis * kappa,  // control point offset horizontal
@@ -203,3 +204,38 @@ export const ellipse = (
 export const values = (obj: any) => {
   return Object.values ? Object.values(obj) : Object.keys(obj).map(i => obj[i]);
 }
+
+/**
+ * 创建线性渐变
+ * @param ctx
+ * @param x
+ * @param y
+ * @param width
+ * @param height
+ * @param gradient
+ */
+export const createLinearGradient = (
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  width: number, height: number,
+  gradient: IGradient,
+): CanvasGradient => {
+  console.log(x, y, width, height);
+  const g = ctx.createLinearGradient(x, y, x + width, y + height);
+  gradient.list.forEach((item, index) => {
+    let stop: string | number = item.stop;
+    if (REG_PX.test(stop)) {
+      stop = parseFloat(stop) / width;
+      stop = stop > 1 ? 1 : stop;
+    } else if (REG_PCT.test(stop)) {
+      stop = parseFloat(stop) / 100;
+    } else if (index === 0) {
+      stop = 0;
+    } else if (index === gradient.list.length - 1) {
+      stop = 1;
+    }
+    console.log('stop', stop, item.color);
+    g.addColorStop(stop as any, item.color);
+  })
+  return g;
+};

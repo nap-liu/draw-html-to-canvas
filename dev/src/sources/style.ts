@@ -11,7 +11,7 @@ import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
   DEFAULT_LINE_HEIGHT,
-  DEFAULT_VERTICAL_ALIGN,
+  DEFAULT_VERTICAL_ALIGN, GradientType,
   NodeType,
   REG_BG_ATTACHMENT,
   REG_BG_CLIP,
@@ -25,7 +25,7 @@ import {
   REG_BORDER_STYLE,
   REG_BORDER_WIDTH,
   REG_COLOR,
-  REG_EM,
+  REG_EM, REG_GRADIENT_COLOR_SIZE, REG_GRADIENT_DIRECTION, REG_GRADIENT_TYPE,
   REG_NUM,
   REG_PCT,
   REG_PX,
@@ -63,6 +63,7 @@ export interface IBorder {
 export interface IBackground<T = string | number> {
   color: string;
   image: string;
+  gradient?: IGradient;
   position: {
     left: T;
     leftOffset: T;
@@ -77,6 +78,17 @@ export interface IBackground<T = string | number> {
   attachment: BackgroundAttachment;
   origin: BackgroundClip;
   clip: BackgroundClip;
+}
+
+export interface IGradientColor {
+  color: string;
+  stop: string;
+}
+
+export interface IGradient {
+  type: GradientType;
+  angle: number;
+  list: IGradientColor[];
 }
 
 export interface ITextDecoration {
@@ -400,7 +412,7 @@ export default class Style {
       return [];
     }
 
-    const all = element.style.style[styleKeywords.background];
+    let all = element.style.style[styleKeywords.background];
     const allIdx = element.style.styleIndex[styleKeywords.background] || 0;
 
     const image = this.style[`${styleKeywords.background}-${styleKeywords.image}`];
@@ -425,15 +437,149 @@ export default class Style {
     const originIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.origin}`] || 0;
 
     const colors: string[] = [];
+    let gradients: IGradient[] = [];
+
+    const parseGradient = (all: string) => {
+      const list = all.split(REG_GRADIENT_TYPE);
+      const gradients: IGradient[] = [];
+      let merged = list.reduce<string[]>((total, current) => {
+        if (REG_GRADIENT_TYPE.test(current)) {
+          total.push(current);
+        } else if (total.length) {
+          total[total.length - 1] += current;
+        }
+        return total;
+      }, []);
+      merged.forEach(gradient => {
+        const stack: string[] = [];
+        let idx = 0;
+        let matched;
+        let reg = /\(|\)/g;
+        do {
+          matched = reg.exec(gradient);
+          if (matched) {
+            if (matched[0] === '(') {
+              stack.push(matched[0]);
+            } else {
+              stack.pop();
+              if (stack.length === 0) {
+                idx = matched.index;
+                break;
+              }
+            }
+          } else {
+            throw new Error(`gradient error [${gradient}]`);
+          }
+        } while (matched)
+
+        const full = gradient.slice(0, idx + 1);
+
+        // @ts-ignore
+        let gradientObject: IGradient = {};
+        full.replace(REG_GRADIENT_DIRECTION, (_, ...args) => {
+          let [
+            type,
+            hasDirection,
+            toVertical, toHorizontal,
+            toHorizontal1, toVertical1,
+            toVertical2,
+            toHorizontal2,
+            angle,
+          ] = args;
+
+          /*
+          * The values
+          * to top, to bottom, to left, and to right are
+          * equivalent to the angles 0deg, 180deg, 270deg, and 90deg,
+          * respectively. The other values are translated into an angle.
+          * */
+
+          if (hasDirection) {
+            if (toVertical || toHorizontal2) {
+              if (toHorizontal2) {
+                toVertical = toVertical1;
+                toHorizontal = toHorizontal1;
+              }
+              if (toVertical === styleKeywords.top) {
+                if (toHorizontal === styleKeywords.left) {
+                  angle = -45;
+                } else {
+                  angle = 45;
+                }
+              } else {
+                if (toHorizontal === styleKeywords.left) {
+                  angle = 225;
+                } else {
+                  angle = -225;
+                }
+              }
+            } else if (toVertical2) {
+              if (toVertical2 === styleKeywords.top) {
+                // to top
+                angle = 0;
+              } else {
+                // to bottom
+                angle = 180;
+              }
+            } else if (toHorizontal2) {
+              if (toHorizontal2 === styleKeywords.left) {
+                // to left
+                angle = 270;
+              } else {
+                // to right
+                angle = 90;
+              }
+            } else if (angle) {
+              // @ts-ignore
+              angle = parseFloat(angle);
+            }
+          } else {
+            // 默认是180 十二点方向是0度
+            angle = 180;
+          }
+
+          gradientObject = {
+            type: type as GradientType,
+            angle,
+            list: [],
+          };
+          return '';
+        }).replace(REG_GRADIENT_COLOR_SIZE, (_, color, stop) => {
+          gradientObject.list.push({
+            color,
+            stop,
+          })
+          return '';
+        });
+        all = all.replace(full, '');
+        gradients.push(gradientObject);
+        return full;
+      });
+      return {
+        restStyle: all,
+        gradients,
+      }
+    }
+
+    if (REG_GRADIENT_TYPE.test(all)) {
+      const parsed = parseGradient(all);
+      gradients = parsed.gradients;
+      all = parsed.restStyle;
+    }
 
     // 优先处理color
-    const list = `${all}`.replace(REG_COLOR, (matched) => {
+    let list = `${all}`.replace(REG_COLOR, (matched) => {
       colors.push(matched);
       return '';
     }).split(',');
 
+    // 出现多个color 则背景不生效
+    if (colors.length > 1) {
+      list = [];
+    }
+
     const backgrounds = list.map<IBackground<string>>((full, index) => {
-      let color = colors[index] || '';
+      let color = '';
       let image = '';
       const position = {
         left: BackgroundPosition.left,
@@ -448,10 +594,19 @@ export default class Style {
       let repeat = BackgroundRepeat.repeat
       let clip = BackgroundClip.borderBox
       let origin: BackgroundClip = '' as BackgroundClip;
-      let attachment = BackgroundAttachment.scroll
+      let attachment = BackgroundAttachment.scroll;
+      let gradient = gradients[index];
+
+      if (index === list.length - 1) {
+        color = colors[0];
+      }
 
       full.replace(REG_URL, (matched, g1, g2, g3) => {
-        image = g1 || g2 || g3;
+        if (gradient) {
+          throw new Error('渐变和背景图不能一起使用');
+        } else {
+          image = g1 || g2 || g3;
+        }
         return '';
       }).replace(REG_BG_REPEAT, (matched) => {
         repeat = matched as BackgroundRepeat;
@@ -525,6 +680,7 @@ export default class Style {
       return {
         color,
         image,
+        gradient,
         position,
         size,
         repeat,
@@ -629,15 +785,26 @@ export default class Style {
     }
 
     if (imageIdx > allIdx) {
-      image.split(',').forEach((s, index) => {
-        s.replace(REG_URL, (matched, g1, g2, g3) => {
+      // TODO 处理单个属性渐变
+      if (REG_GRADIENT_TYPE.test(image)) {
+        const parsed = parseGradient(image);
+        parsed.gradients.forEach((gradient, index) => {
           if (!backgrounds[index]) {
             backgrounds.push(getDefaultBackground());
           }
-          backgrounds[index].image = g1 || g2 || g3;
-          return '';
+          backgrounds[index].gradient = gradient;
         })
-      })
+      } else {
+        image.split(',').forEach((s, index) => {
+          s.replace(REG_URL, (matched, g1, g2, g3) => {
+            if (!backgrounds[index]) {
+              backgrounds.push(getDefaultBackground());
+            }
+            backgrounds[index].image = g1 || g2 || g3;
+            return '';
+          })
+        })
+      }
     }
 
     if (repeatIdx > allIdx) {
@@ -685,7 +852,7 @@ export default class Style {
     }
 
     // 只保留有效内容
-    return backgrounds.filter(i => i.color || i.image);
+    return backgrounds.filter(i => i.color || i.image || i.gradient);
   }
 
   public get width() {

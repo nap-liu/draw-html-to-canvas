@@ -32,7 +32,7 @@ export default `
     float 68
   </div>
   <span>before</span>
-  <div style="background: rgba(1,139,139,0.5); color: #fff;">
+  <div style="background: rgba(1,139,139,0.5); display: inline-block; color: #fff;">
     <span>aaaaaa</span><br>
     <span>aaaaaa</span><br>
     <span>aaaaaa</span><br>
@@ -42,7 +42,7 @@ export default `
   <span>after</span>
 </div>
 
-<div style="background: rgba(1,139,139,0.5);float: right; color: #fff;">
+<div style="background: rgba(1,139,139,0.5);color: #fff;">
   <span>con float1</span><br>
   <span>con float2</span>
 </div>
@@ -50,17 +50,153 @@ export default `
 <div style="">after float2</div>
 `
 
-const t = `
-<div style="">after float1</div>
-<div style="background: rgba(2,139,139,0.5); color: #eee;">
-  flow flow flow<br>
-  333333333<br>
-  333333333
-</div>
-  
 
-
-`
+export const html4 = `<div
+  style="
+    /*border: 1px solid #000;*/
+    /*display: block;*/
+    /* height: 100%;*/
+     text-align: left;
+     /*font-size: 20px;*/
+     /*color: #fff;*/
+     /*font-style: italic;*/
+     /*line-height: 30px;*/
+    /*font-family: 'PingFang SC';*/
+    /*background: url('img_2.png') 10px 20px / 100px auto no-repeat,*/
+    /*            #f00 url('img.png') center top / 100px auto no-repeat;*/
+   /* background-size: 200px, auto auto;*/
+   /* background-color: #000;*/
+   /*background-image: url(img_1.png), url(logo192.png);*/
+   "
+  id="renderTemplate"
+>
+  <div style="display: inline; ">
+    1
+    <div style="display: inline;">
+      in<br>line
+      <div style="display: inline-block;">
+        <div style="">
+          <div style="display: inline; ">
+            <span style="background: #BC8F8F; text-decoration: line-through #f00 1px; padding: 0 10px">
+              setsocketopt函数 设置socket工作参数
+            </span>
+            <span style="background: #4169E1; padding: 0 100px;">
+              该函数可以设置任意socket的所有可配置参数详细可查看手册
+            </span>
+            <span style="background: #A52A2A">
+              设置socket address重用，如果不设置的话重启的时候会报错
+            </span>
+            <div
+              style="
+                /*height: 300px;*/
+                /*width: 300px;*/
+                float: right;
+                color: #fff;
+                margin: 5px 10px 15px 20px;
+                /*background: #0f0; */
+                position: relative;
+                padding: 5px 10px 15px 20px;
+                /*border: 20px solid rgba(0,128,0,0.5);*/
+                /*border-right-width: 10px;*/
+                /*border-left-color: rgba(184,134,11,0.5);*/
+                /*border-right-color: rgba(65,105,225,0.5);*/
+                /*border-bottom-color: rgba(225,0,0,0.5);*/
+                background: rgba(0,0,0,0.3) url('img.png') left top / 100px auto no-repeat content-box;
+                /*border-left-width: 20px;*/
+                /*border-right-width: 150px;*/
+                /*border-bottom: 1px solid #008000;*/
+                /*border-bottom-width: 10px;*/
+                /*border-radius: 10000px;*/
+                /*border-radius: 100px 200px 50px 250px;*/
+                /*border-radius: 50px 60px 70px 80px / 80px 70px 60px 50px;*/
+                /*border-style: groove;*/
+              "
+            >float 601234789
+              <span style="">
+                setsocketopt123456函数
+              </span>
+            </div>
+            <span style="background: #D2691E;">错误代码1 EADDRINUSE</span>
+            <span style="background: #5F9EA0">提示信息1 Address already in use</span>
+            <div style="background: #ccc;">block
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+            </div>
+            <span style="background: #008B8B">
+              为什么会这样呢？ 是因为TCP的连接断开后 TCP的资源并没有立即释放，而是进入了TIME_WAIT状态，该状态是为了保证TCP的可靠关闭，该状态会持续2分钟
+            </span>
+            <div style="
+              /*background: #0f0;*/
+              float: left;
+              width: 200px;
+              padding: 10px;
+              margin: 10px;
+             "
+            >
+              float 100
+              <br>
+              设置socket address重用,123456
+              <div style="float: right; padding: 10px">float: right</div>
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+              设置socket address重用，如果不设置的话重启的时候会报错
+            </div>
+            <div style="height: 90px; float: left; background: #0f0; position: relative">
+              float 120
+            </div>
+            <span style="background: #D2691E; ">错误代码2 EADDRINUSE</span>
+            <span style="background: #5F9EA0">提示信息2 Address already in use</span>
+            <div style="height: 30px; float: left; background: #0f0">float 30</div>
+            <div style="height: 20px; float: left; background: #0f0">float 20</div>
+            <div style="float: right; background: #f00">float 1</div>
+            <div style="float: right; background: #f00">float 2</div>
+            <div style="float: right; background: #f00">float 3</div>
+            <span style="background: #B8860B">如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息</span>
+            <span>3 inline-block</span>
+            如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息
+            如果服务器异常终止，TCP并不会直接被回收，因为TCP是一个可靠的服务，所以内核会自动维护TCP进入TIME_WAIT状态，向当前连接的客户端继续应答TCP关闭的ACK消息
+          </div>
+        </div>
+        <div style="width: 200px;color: #000; text-align: center; float: left; ">
+          <span style="position: relative; display: inline-block; ">
+            position: 1
+            <br>
+            position: 2222
+            <br>
+            position: 3333333
+            <div
+              style="
+              /*background: rgba(0,0,0,.5);*/
+              /*left: 10px;*/
+              right: 10px;
+              /*top: 10px;*/
+              bottom: 10px;
+              position: absolute;
+              display: inline-block;
+              "
+            >absolute</div>
+          </span>
+        </div>
+        <div style="width: 10%; display: inline-block">
+          5
+        </div>
+      </div>
+    </div>
+    7
+  </div>
+  <div style="text-align: left;">8</div>
+</div>`
 
 export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid #f00;padding-top: 20px; padding-left: 20px">
 <div style="
@@ -81,7 +217,8 @@ export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid
       line-height: 50px;
       /*border-radius: 10px;*/
       /*text-align: center; */
-      background: rgba(0,161,19,0.5);
+      background: linear-gradient(45deg, rgba(255,0,0,.5), #000 25%, transparent 25%, transparent 75%, #000 75%) left top / 100px 100px,
+        linear-gradient(45deg, #000, rgba(255,0,0,.5) 25%, transparent 25%, transparent 75%, rgba(255,0,0,.5) 75%) 50px 50px / 100px 100px;
       "></div>
 </div>`
 export const html2 = `<div style='border-radius: 24px; background-color: rgba(0,0,0,.3)'>
