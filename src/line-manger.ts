@@ -11,6 +11,8 @@ export default class LineManger extends Array<Line> {
 
   constructor(element: Element) {
     super();
+    // 修复原型链丢失
+    Object.setPrototypeOf(this, LineManger.prototype);
     this.element = element;
   }
 

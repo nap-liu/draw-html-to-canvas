@@ -22,6 +22,12 @@ export default class Line extends Array<Element> {
   // @ts-ignore
   lines: LineManger;
 
+  constructor() {
+    super();
+    // 修复原型链丢失
+    Object.setPrototypeOf(this, Line.prototype);
+  }
+
   append(element: Element) {
     if (this.restWidth >= element.offsetWidth) {
       this.push(element);

@@ -23,19 +23,19 @@ export default class Render {
     this.rootNode.debug = option.debug;
   }
 
-  loadSource() {
+  loadSource(canvas?: HTMLCanvasElement) {
     // TODO 优化图片资源加载逻辑
     return Promise.all(this.elements.map(element => {
       const background = element.style.background;
       return Promise.all(background.filter(i => i.image).map(back => {
         const el = new ElementImage();
         el.attrs.src = back.image;
-        return el.load().then(() => {
+        return el.load(canvas).then(() => {
           element.style.imageMap[back.image] = el;
         });
       }))
     })).then(() => {
-      return Promise.all(this.elements.filter(i => i.nodeName === SupportElement.img).map((img: any) => (img as ElementImage).load()));
+      return Promise.all(this.elements.filter(i => i.nodeName === SupportElement.img).map((img: any) => (img as ElementImage).load(canvas)));
     });
   }
 

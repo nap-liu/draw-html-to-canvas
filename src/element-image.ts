@@ -6,6 +6,11 @@ export default class ElementImage extends Element {
   public imageWidth = 0;
   public imageHeight = 0;
 
+  /**
+   * 微信小程序需要传递canvas实例
+   * @param canvas
+   */
+  public load(canvas?: HTMLCanvasElement): Promise<this>;
   public load(): Promise<this> {
     const src = this.attrs.src;
     return new Promise((resolve, reject) => {

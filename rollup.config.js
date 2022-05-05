@@ -22,19 +22,19 @@ export default [
     },
   },
   {
-    input: path.join(__dirname, 'src/index.ts'),
+    input: path.join(__dirname, 'src/adapter/wx.ts'),
     plugins: [typescript()],
     output: {
-      file: 'dist/index.esm.js',
-      format: 'esm',
+      file: 'dist/index.wx.js',
+      format: 'cjs',
     },
   },
   {
-    input: path.join(__dirname, 'src/index.ts'),
+    input: path.join(__dirname, 'src/adapter/wx.ts'),
     plugins: [typescript()],
     output: {
-      file: 'dist/index.esm.min.js',
-      format: 'esm',
+      file: 'dist/index.wx.min.js',
+      format: 'cjs',
       plugins: [terser()],
     },
   },

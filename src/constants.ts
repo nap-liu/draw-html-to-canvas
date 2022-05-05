@@ -184,9 +184,9 @@ export const REG_TEXT_DECORATION_THICKNESS = new RegExp(FLOAT_POSITIVE_NO_GROUP.
 export const REG_GRADIENT_TYPE = /((?:repeating-)?(?:linear|radial)-gradient)/i;
 export const REG_GRADIENT_DIRECTION = /((?:repeating-)?(?:linear|radial)-gradient)\s*\(\s*((?:to\s+(top|bottom)\s+(left|right)|to\s+(left|right)\s+(top|bottom)|to\s+(top|bottom)|to\s+(left|right)|(-?\d+(?:\.?\d+)?(?:deg)?)))?/i;
 export const REG_GRADIENT_COLOR_SIZE = new RegExp(`(${COLOR})(\\s+${FLOAT_NO_GROUP})?`, 'gi')
-console.log('REG_GRADIENT_TYPE', REG_GRADIENT_TYPE);
-console.log('REG_GRADIENT_DIRECTION', REG_GRADIENT_DIRECTION);
-console.log('REG_GRADIENT_COLOR_SIZE', REG_GRADIENT_COLOR_SIZE);
+// console.log('REG_GRADIENT_TYPE', REG_GRADIENT_TYPE);
+// console.log('REG_GRADIENT_DIRECTION', REG_GRADIENT_DIRECTION);
+// console.log('REG_GRADIENT_COLOR_SIZE', REG_GRADIENT_COLOR_SIZE);
 
 export enum GradientType {
   repeatingLinearGradient = 'repeating-linear-gradient',
