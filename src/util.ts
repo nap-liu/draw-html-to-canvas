@@ -435,8 +435,6 @@ export const ellipse = (
       end += startCount * 360;
     }
   } else if (end < 0) {
-    // 0 -50
-    // 310 + 360 = 670  |  360 - 50 = 310
     const endAbs = Math.abs(end);
     const endRestAngle = endAbs % 360;
     const endCount = Math.ceil(endAbs / 360);
