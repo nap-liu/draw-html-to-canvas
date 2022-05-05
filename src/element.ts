@@ -524,7 +524,6 @@ export default class Element {
                   lastLine.push(half);
                 }
                 half.line = lastLine;
-                // TODO 元素闭合有问题？？？？？
                 line = lastLine;
                 return half;
               }
@@ -1058,7 +1057,6 @@ export default class Element {
         top += clipBox.height / 2 - height / 2;
       }
 
-      // TODO 修改repeat函数 支持渐变
       if (background.gradient) {
         let target: CanvasGradient;
         switch (background.gradient.type) {

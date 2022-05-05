@@ -2,15 +2,16 @@
 
 使用html+css语法绘制图片到canvas上
 
+## 采用float布局系统
+block 独占一行  
+inline-block 行内布局超长自动换行  
+inline 行内布局超长自动换行  
+内置了常见的标签识别  
+
 ## 支持标签
 
-block 独占一行 
-inline-block 行内布局超长自动换行
-inline 行内布局超长自动换行
-内置了常见的标签识别
-
 |标签支持|默认布局|默认行为|
-| - | - | - |
+|----|----|----|
 |div|block|无|
 |img|inline-block|img元素会自动加载图片|
 |span|inline|无|
@@ -18,7 +19,7 @@ inline 行内布局超长自动换行
 ## 支持样式
 
 |样式属性|有效值|特性|
-|-|-|-|
+|----|----|----|
 |display|block\inline-block\inline|
 |float|left\right|
 |clear|任意值都是both|
@@ -35,7 +36,7 @@ inline 行内布局超长自动换行
 |border|全功能|
 |border-style|只支持 solid\dashed|
 |border-radius|全功能|
-|background|全功能 简写、全写、支持线性渐变|
+|background|全功能 支持多重背景 简写、全写、支持线性渐变|
 |font-style|绝对值|
 |font-variant|绝对值|
 |font-weight|绝对值|
@@ -49,3 +50,10 @@ inline 行内布局超长自动换行
 |text-decoration-line|underline\overline\line-through|
 |line-height|固定值、倍数|
 |text-align|全功能|
+
+## TODO
+
+
+## demo
+
+
