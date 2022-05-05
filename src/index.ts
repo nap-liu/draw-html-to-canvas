@@ -15,7 +15,7 @@ export default class Render {
   rootNode: SupportElementType;
   elements: SupportElementType[];
 
-  constructor(html: string, option: IOption) {
+  constructor(html: string, option: IOption = {debug: false}) {
     this.rawHTML = html;
     const {elements, rootNode} = parse(html);
     this.rootNode = rootNode;

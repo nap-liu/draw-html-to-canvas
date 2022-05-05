@@ -17,9 +17,15 @@ export default class ElementImage extends Element {
       if (src) {
         const img = new Image();
         img.onerror = (e) => {
+          if (this.root.debug) {
+            console.log('image loaded error', img, e);
+          }
           reject(e)
         };
         img.onload = () => {
+          if (this.root.debug) {
+            console.log('image loaded success', img);
+          }
           this.imageWidth = img.naturalWidth;
           this.imageHeight = img.naturalHeight;
           this.source = img;
