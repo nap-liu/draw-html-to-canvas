@@ -482,8 +482,7 @@ export default class Style {
             hasDirection,
             toVertical, toHorizontal,
             toHorizontal1, toVertical1,
-            toVertical2,
-            toHorizontal2,
+            toVertical2, toHorizontal2,
             angle,
           ] = args;
 
@@ -495,8 +494,8 @@ export default class Style {
           * */
 
           if (hasDirection) {
-            if (toVertical || toHorizontal2) {
-              if (toHorizontal2) {
+            if (toVertical || toHorizontal1) {
+              if (toHorizontal1) {
                 toVertical = toVertical1;
                 toHorizontal = toHorizontal1;
               }

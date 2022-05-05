@@ -3,7 +3,7 @@ import Style, {IBackground, IBorder} from './style';
 import Line from './line';
 import LineManger from './line-manger';
 import ElementImage from './element-image';
-import {createLinearGradient, drawRepeatImage} from './util';
+import {createLinearGradient, drawRepeat, DrawRepeatType, ellipse} from './util';
 
 export default class Element {
   public nodeValue = '';
@@ -895,8 +895,8 @@ export default class Element {
    */
   public drawBackground(context: CanvasRenderingContext2D, background: IBackground<string>) {
     context.save();
-    const {margin, border, padding, fontSize, lineHeight} = this.style;
-    const {contentWidth, contentHeight, offsetLeft, offsetTop} = this;
+    const {border, padding, fontSize, lineHeight} = this.style;
+    const {contentWidth, contentHeight} = this;
     const lineHeightOffset = (lineHeight - fontSize) / 2;
 
     const isInline = this.blockType === BlockType.inline;
@@ -1065,15 +1065,32 @@ export default class Element {
           case GradientType.linearGradient:
             target = createLinearGradient(
               context,
-              offsetTop + margin.left, offsetLeft + margin.top,
-              clipBox.width, clipBox.height,
+              width, height,
               background.gradient,
             );
             break;
         }
+        // @ts-ignore
+        if (target) {
+          drawRepeat(
+            context,
+            DrawRepeatType.gradient,
+            target,
+            width,
+            height,
+            left - clipBox.x,
+            top - clipBox.y,
+            clipBox.x,
+            clipBox.y,
+            clipBox.width,
+            clipBox.height,
+            background.repeat,
+          )
+        }
       } else if (img && img.source) {
-        drawRepeatImage(
+        drawRepeat(
           context,
+          DrawRepeatType.image,
           img.source,
           width,
           height,
@@ -1177,7 +1194,7 @@ export default class Element {
         if (typeof continueDraw === 'function') {
           ctx.save();
           ctx.beginPath();
-          ctx.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, 2 * Math.PI);
+          ellipse(ctx, width / 2, height / 2, width / 2, height / 2, 0, 0, 2 * Math.PI);
           ctx.clip();
           continueDraw(ctx);
           ctx.restore();
@@ -1190,7 +1207,7 @@ export default class Element {
           ctx.lineWidth = top.width;
           ctx.strokeStyle = top.color;
           setBorderStyle(top);
-          ctx.ellipse(
+          ellipse(ctx,
             width / 2, height / 2,
             width / 2 - top.width / 2, height / 2 - top.width / 2,
             0,
@@ -1205,7 +1222,7 @@ export default class Element {
           ctx.lineWidth = 1;
           ctx.beginPath();
           if (topLeft.width && topLeft.height) { // 圆角
-            ctx.ellipse(
+            ellipse(ctx,
               topLeft.width, topLeft.height,
               topLeft.width, topLeft.height, 0,
               Math.PI, oneDegree * -90,
@@ -1215,7 +1232,7 @@ export default class Element {
           }
 
           if (topRight.width && topRight.height) {
-            ctx.ellipse(
+            ellipse(ctx,
               width - topRight.width, topRight.height,
               topRight.width, topRight.height, 0,
               oneDegree * -90, 0,
@@ -1226,7 +1243,7 @@ export default class Element {
           }
 
           if (bottomRight.width && bottomRight.height) {
-            ctx.ellipse(
+            ellipse(ctx,
               width - bottomRight.width,
               height - bottomRight.height,
               bottomRight.width, bottomRight.height, 0,
@@ -1237,7 +1254,7 @@ export default class Element {
           }
 
           if (bottomLeft.width && bottomLeft.height) {
-            ctx.ellipse(
+            ellipse(ctx,
               bottomLeft.width,
               height - bottomLeft.height,
               bottomLeft.width, bottomLeft.height, 0,
@@ -1296,7 +1313,7 @@ export default class Element {
 
               ctx.beginPath();
               if (topLeft.width && topLeft.height) { // 圆角
-                ctx.ellipse(
+                ellipse(ctx,
                   topLeft.width, topLeft.height,
                   topLeft.width - top.width / 2, topLeft.height - top.width / 2, 0,
                   Math.PI, oneDegree * -90,
@@ -1307,7 +1324,7 @@ export default class Element {
               }
 
               if (topRight.width && topRight.height) {
-                ctx.ellipse(
+                ellipse(ctx,
                   width - topRight.width, topRight.height,
                   topRight.width - top.width / 2, topRight.height - top.width / 2, 0,
                   oneDegree * -90, 0,
@@ -1360,7 +1377,7 @@ export default class Element {
 
               ctx.beginPath();
               if (topRight.width && topRight.height) {
-                ctx.ellipse(
+                ellipse(ctx,
                   width - topRight.width, topRight.height,
                   topRight.width - right.width / 2, topRight.height - right.width / 2, 0,
                   oneDegree * -90, 0,
@@ -1371,7 +1388,7 @@ export default class Element {
               }
 
               if (bottomRight.width && bottomRight.height) {
-                ctx.ellipse(
+                ellipse(ctx,
                   width - bottomRight.width, height - bottomRight.height,
                   bottomRight.width - right.width / 2, bottomRight.height - right.width / 2, 0,
                   0, oneDegree * 90,
@@ -1425,7 +1442,7 @@ export default class Element {
 
               ctx.beginPath();
               if (bottomRight.width && bottomRight.height) {
-                ctx.ellipse(
+                ellipse(ctx,
                   width - bottomRight.width, height - bottomRight.height,
                   bottomRight.width - bottom.width / 2, bottomRight.height - bottom.width / 2, 0,
                   0, oneDegree * 90,
@@ -1435,7 +1452,7 @@ export default class Element {
               }
 
               if (bottomLeft.width && bottomLeft.height) {
-                ctx.ellipse(
+                ellipse(ctx,
                   bottomLeft.width, height - bottomLeft.height,
                   bottomLeft.width - bottom.width / 2, bottomLeft.height - bottom.width / 2, 0,
                   oneDegree * 90, Math.PI,
@@ -1486,7 +1503,7 @@ export default class Element {
 
               ctx.beginPath();
               if (bottomLeft.width && bottomLeft.height) {
-                ctx.ellipse(
+                ellipse(ctx,
                   bottomLeft.width, height - bottomLeft.height,
                   bottomLeft.width - left.width / 2, bottomLeft.height - left.width / 2, 0,
                   oneDegree * 90, Math.PI,
@@ -1496,7 +1513,7 @@ export default class Element {
               }
 
               if (topLeft.width && topLeft.height) { // 圆角
-                ctx.ellipse(
+                ellipse(ctx,
                   topLeft.width, topLeft.height,
                   topLeft.width - left.width / 2, topLeft.height - left.width / 2, 0,
                   Math.PI, oneDegree * -90,
@@ -1530,7 +1547,7 @@ export default class Element {
             ctx.save();
             ctx.beginPath();
             if (topLeft.width - left.width > 0 && topLeft.height - top.width > 0) { // 圆角
-              ctx.ellipse(
+              ellipse(ctx,
                 topLeft.width, topLeft.height,
                 topLeft.width - left.width, topLeft.height - top.width, 0,
                 Math.PI, oneDegree * -90,
@@ -1540,7 +1557,7 @@ export default class Element {
             }
 
             if (topRight.width - right.width > 0 && topRight.height - top.width > 0) {
-              ctx.ellipse(
+              ellipse(ctx,
                 width - topRight.width, topRight.height,
                 topRight.width - right.width, topRight.height - top.width, 0,
                 oneDegree * -90, 0,
@@ -1550,7 +1567,7 @@ export default class Element {
             }
 
             if (bottomRight.width - right.width > 0 && bottomRight.height - bottom.width > 0) {
-              ctx.ellipse(
+              ellipse(ctx,
                 width - bottomRight.width,
                 height - bottomRight.height,
                 bottomRight.width - right.width, bottomRight.height - bottom.width, 0,
@@ -1561,7 +1578,7 @@ export default class Element {
             }
 
             if (bottomLeft.width - left.width > 0 && bottomLeft.height - bottom.width > 0) {
-              ctx.ellipse(
+              ellipse(ctx,
                 bottomLeft.width,
                 height - bottomLeft.height,
                 bottomLeft.width - left.width, bottomLeft.height - bottom.width, 0,

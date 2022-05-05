@@ -237,4 +237,5 @@ export enum TextAlign {
 }
 
 export type TContinueDraw = (ctx: CanvasRenderingContext2D) => void;
-export type TCurvePath = [[number, number], [number, number], [number, number]];
+export type TQuadraticCurvePath = [[number, number], [number, number], [number, number]];
+export type TBezierCurvePath = [[number, number], [number, number], [number, number], [number, number]];

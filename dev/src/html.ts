@@ -217,8 +217,15 @@ export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid
       line-height: 50px;
       /*border-radius: 10px;*/
       /*text-align: center; */
-      background: linear-gradient(45deg, rgba(255,0,0,.5), #000 25%, transparent 25%, transparent 75%, #000 75%) left top / 100px 100px,
-        linear-gradient(45deg, #000, rgba(255,0,0,.5) 25%, transparent 25%, transparent 75%, rgba(255,0,0,.5) 75%) 50px 50px / 100px 100px;
+      /*background-image: linear-gradient(45deg, #f00, #fff);*/
+      /*background-clip: border-box;*/
+      /*background-repeat: repeat;*/
+      /*background-size: 50px 50px;*/
+      /*background-position: 50px 10px;*/
+      /*border: 1px solid #f00;*/
+      /*border-radius: 100%;*/
+      background: linear-gradient(45deg, #000, #000 25%, transparent 25%, transparent 75%, #000 75%) left top / 100px 100px,
+        linear-gradient(45deg, #000, #000 25%, transparent 25%, transparent 75%, #000 75%) 50px 50px / 100px 100px;
       "></div>
 </div>`
 export const html2 = `<div style='border-radius: 24px; background-color: rgba(0,0,0,.3)'>
