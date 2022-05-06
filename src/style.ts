@@ -938,14 +938,8 @@ export default class Style {
       return REG_BORDER_COLOR.test(color) ? color : '';
     };
 
-    const base = styleKeywords.border;
-    const baseTop = `${base}-${styleKeywords.top}`;
-    const baseRight = `${base}-${styleKeywords.right}`;
-    const baseBottom = `${base}-${styleKeywords.bottom}`;
-    const baseLeft = `${base}-${styleKeywords.left}`;
-
-    const all = parseBorder(this.style[base]);
-    const allIndex = this.styleIndex[base] || 0;
+    const all = parseBorder(this.style[styleKeywords.border]);
+    const allIndex = this.styleIndex[styleKeywords.border] || 0;
 
     let top = {...all};
     let right = {...all};
@@ -1069,11 +1063,8 @@ export default class Style {
     const bottomRight: ISize<number | string> = {width: 0, height: 0};
     const bottomLeft: ISize<number | string> = {width: 0, height: 0};
 
-    const {border, radius, top, left, right, bottom} = styleKeywords;
-    const baseRadius = `${border}-${radius}`;
-
-    const all = this.style[baseRadius];
-    const allIndex = this.styleIndex[baseRadius] || 0;
+    const all = this.style[styleKeywords.borderRadius];
+    const allIndex = this.styleIndex[styleKeywords.borderRadius] || 0;
 
     if (all) {
       all.replace(REG_BORDER_RADIUS, (matched, ...args) => {
@@ -1240,7 +1231,7 @@ export default class Style {
     while (element) {
       const whiteSpace = element.style.get(styleKeywords.whiteSpace);
       if (whiteSpace) {
-        if (whiteSpace === 'nowrap') { // 强制不换行
+        if (whiteSpace === styleKeywords.nowrap) { // 强制不换行
           return true;
         } else {
           return false;

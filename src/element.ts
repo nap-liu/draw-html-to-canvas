@@ -1917,9 +1917,9 @@ export default class Element {
 
     zIndex.sort((a, b) => a.style.zIndex - b.style.zIndex);
 
-    if (zIndex.length) {
-      console.log('sorted', zIndex);
-    }
+    // if (zIndex.length) {
+    //   console.log('sorted', zIndex);
+    // }
 
     zIndex.forEach(el => {
       el.draw(context);

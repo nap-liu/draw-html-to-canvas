@@ -11,15 +11,15 @@
 export default `
 <div style="">
   <span style="position: relative">
-    <span style="">after float2</span>
+    <span style="position: relative; z-index: 1">after float2</span>
+<!--    <span style="-->
+<!--    position: absolute;-->
+<!--    z-index: 1;-->
+<!--    left: 0; right: 0; bottom: 0; height: 10px;-->
+<!--    background: #f00;" />-->
     <span style="
     position: absolute;
-    z-index: 1;
-    left: 0; right: 0; bottom: 0; height: 10px;
-    background: #f00;" />
-    <span style="
-    position: absolute;
-    z-index: 1;
+    z-index: -1;
     left: 0; right: 0; bottom: 0; height: 10px;
     background: #0f0;" />
   </span>
@@ -234,8 +234,9 @@ export const html4 = `<div
   <div style="text-align: left;">8</div>
 </div>`
 
-export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid #f00;padding-top: 20px; padding-left: 20px">
+export const html3 = `<div style="width: 320px; height: 320px;  text-align: center; border: 1px solid #f00;margin-left: 20px">
 <div style="
+display: inline-block;
       width: 200px;
       height: 200px;
       /*opacity: .5;*/
@@ -261,8 +262,9 @@ export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid
       /*background-position: 50px 10px;*/
       /*border: 1px solid #f00;*/
       /*border-radius: 100%;*/
-      background: linear-gradient(45deg, #000, #000 25%, transparent 25%, transparent 75%, #000 75%) left top / 100px 100px,
-        linear-gradient(45deg, #000, #000 25%, transparent 25%, transparent 75%, #000 75%) 50px 50px / 100px 100px;
+      background: linear-gradient(0deg, #000, #000 25%, transparent 25%, transparent 75%, #000 75%) left top / 100px 100px,
+        linear-gradient(0deg, #000, #000 25%, transparent 25%, transparent 75%, #000 75%) left top / 100px 100px;
+        /*background-position: left top, left top;*/
       "></div>
 </div>`
 export const html2 = `<div style='border-radius: 24px; background-color: rgba(0,0,0,.3)'>

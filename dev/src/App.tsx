@@ -3,9 +3,9 @@ import defaultHtml, {html2, html3, html4} from './html';
 import Render from 'dhtml2canvas';
 import debounce from './debounce';
 
-const html = defaultHtml;
+// const html = defaultHtml;
 // const html = html2;
-// const html = html3;
+const html = html3;
 // const html = html4;
 // const html = `<img src='http://192.168.50.65:8080/image/post-4.12-bg.png'>`
 
