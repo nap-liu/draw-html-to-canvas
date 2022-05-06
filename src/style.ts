@@ -331,14 +331,14 @@ export default class Style {
   }
 
   public get canvasFont() {
-    const fontStyle = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.style}`, true);
-    const fontVariant = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.variant}`, true);
-    const fontWeight = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.weight}`, true);
-    const fontStretch = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.stretch}`, true);
+    const fontStyle = this.getInheritStyle(styleKeywords.fontStyle, true);
+    const fontVariant = this.getInheritStyle(styleKeywords.fontVariant, true);
+    const fontWeight = this.getInheritStyle(styleKeywords.fontWeight, true);
+    const fontStretch = this.getInheritStyle(styleKeywords.fontStretch, true);
     const fontSize = this.fontSize;
     // const lineHeight = this.lineHeight;
     const lineHeight = '';
-    const fontFamily = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.family}`, true) || DEFAULT_FONT_FAMILY;
+    const fontFamily = this.getInheritStyle(styleKeywords.fontFamily, true) || DEFAULT_FONT_FAMILY;
     return [
       fontStyle,
       fontVariant,
@@ -350,7 +350,7 @@ export default class Style {
   }
 
   public get fontSize() {
-    const fontSize = this.getInheritStyle(`${styleKeywords.font}-${styleKeywords.size}`, true) || DEFAULT_FONT_SIZE;
+    const fontSize = this.getInheritStyle(styleKeywords.fontSize, true) || DEFAULT_FONT_SIZE;
     return parseInt(fontSize);
   }
 
@@ -359,7 +359,7 @@ export default class Style {
    */
   public get textDecoration(): ITextDecoration[] {
     // TODO P3 处理优先级
-    let all = this.getInheritStyle(`${styleKeywords.text}-${styleKeywords.decoration}`);
+    let all = this.getInheritStyle(styleKeywords.textDecoration);
 
     const decorations: ITextDecoration[] = [];
     let color = '#000';
@@ -415,26 +415,26 @@ export default class Style {
     let all = element.style.style[styleKeywords.background];
     const allIdx = element.style.styleIndex[styleKeywords.background] || 0;
 
-    const image = this.style[`${styleKeywords.background}-${styleKeywords.image}`];
-    const imageIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.image}`] || 0;
+    const image = this.style[styleKeywords.backgroundImage];
+    const imageIdx = this.styleIndex[styleKeywords.backgroundImage] || 0;
 
-    const color = this.style[`${styleKeywords.background}-${styleKeywords.color}`];
-    const colorIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.color}`] || 0;
+    const color = this.style[styleKeywords.backgroundColor];
+    const colorIdx = this.styleIndex[styleKeywords.backgroundColor] || 0;
 
-    const position = this.style[`${styleKeywords.background}-${styleKeywords.position}`];
-    const positionIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.position}`] || 0;
+    const position = this.style[styleKeywords.backgroundPosition];
+    const positionIdx = this.styleIndex[styleKeywords.backgroundPosition] || 0;
 
-    const size = this.style[`${styleKeywords.background}-${styleKeywords.size}`];
-    const sizeIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.size}`] || 0;
+    const size = this.style[styleKeywords.backgroundSize];
+    const sizeIdx = this.styleIndex[styleKeywords.backgroundSize] || 0;
 
-    const repeat = this.style[`${styleKeywords.background}-${styleKeywords.repeat}`];
-    const repeatIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.repeat}`] || 0;
+    const repeat = this.style[styleKeywords.backgroundRepeat];
+    const repeatIdx = this.styleIndex[styleKeywords.backgroundRepeat] || 0;
 
-    const clip = this.style[`${styleKeywords.background}-${styleKeywords.clip}`];
-    const clipIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.clip}`] || 0;
+    const clip = this.style[styleKeywords.backgroundClip];
+    const clipIdx = this.styleIndex[styleKeywords.backgroundClip] || 0;
 
-    const origin = this.style[`${styleKeywords.background}-${styleKeywords.origin}`];
-    const originIdx = this.styleIndex[`${styleKeywords.background}-${styleKeywords.origin}`] || 0;
+    const origin = this.style[styleKeywords.backgroundOrigin];
+    const originIdx = this.styleIndex[styleKeywords.backgroundOrigin] || 0;
 
     const colors: string[] = [];
     let gradients: IGradient[] = [];
@@ -948,31 +948,31 @@ export default class Style {
     let left = {...all};
 
     const single = [
-      this.style[`${baseTop}`] ? parseBorder(this.style[`${baseTop}`]) : top,
-      this.style[`${baseRight}`] ? parseBorder(this.style[`${baseRight}`]) : right,
-      this.style[`${baseBottom}`] ? parseBorder(this.style[`${baseBottom}`]) : bottom,
-      this.style[`${baseLeft}`] ? parseBorder(this.style[`${baseLeft}`]) : left,
+      this.style[styleKeywords.borderTop] ? parseBorder(this.style[styleKeywords.borderTop]) : top,
+      this.style[styleKeywords.borderRight] ? parseBorder(this.style[styleKeywords.borderRight]) : right,
+      this.style[styleKeywords.borderBottom] ? parseBorder(this.style[styleKeywords.borderBottom]) : bottom,
+      this.style[styleKeywords.borderLeft] ? parseBorder(this.style[styleKeywords.borderLeft]) : left,
     ];
 
     const singleIndex = [
-      this.styleIndex[`${baseTop}`] || 0,
-      this.styleIndex[`${baseRight}`] || 0,
-      this.styleIndex[`${baseBottom}`] || 0,
-      this.styleIndex[`${baseLeft}`] || 0,
+      this.styleIndex[styleKeywords.borderTop] || 0,
+      this.styleIndex[styleKeywords.borderRight] || 0,
+      this.styleIndex[styleKeywords.borderBottom] || 0,
+      this.styleIndex[styleKeywords.borderLeft] || 0,
     ];
 
     const width = [
-      parseWidth(this.style[`${baseTop}-${styleKeywords.width}`]),
-      parseWidth(this.style[`${baseRight}-${styleKeywords.width}`]),
-      parseWidth(this.style[`${baseBottom}-${styleKeywords.width}`]),
-      parseWidth(this.style[`${baseLeft}-${styleKeywords.width}`]),
+      parseWidth(this.style[styleKeywords.borderTopWidth]),
+      parseWidth(this.style[styleKeywords.borderRightWidth]),
+      parseWidth(this.style[styleKeywords.borderBottomWidth]),
+      parseWidth(this.style[styleKeywords.borderLeftWidth]),
     ]
 
     const widthIndex = [
-      this.styleIndex[`${baseTop}-${styleKeywords.width}`] || 0,
-      this.styleIndex[`${baseRight}-${styleKeywords.width}`] || 0,
-      this.styleIndex[`${baseBottom}-${styleKeywords.width}`] || 0,
-      this.styleIndex[`${baseLeft}-${styleKeywords.width}`] || 0,
+      this.styleIndex[styleKeywords.borderTopWidth] || 0,
+      this.styleIndex[styleKeywords.borderRightWidth] || 0,
+      this.styleIndex[styleKeywords.borderBottomWidth] || 0,
+      this.styleIndex[styleKeywords.borderLeftWidth] || 0,
     ]
 
     widthIndex.forEach((i, idx) => {
@@ -982,17 +982,17 @@ export default class Style {
     })
 
     const style = [
-      parseStyle(this.style[`${baseTop}-${styleKeywords.style}`]),
-      parseStyle(this.style[`${baseRight}-${styleKeywords.style}`]),
-      parseStyle(this.style[`${baseBottom}-${styleKeywords.style}`]),
-      parseStyle(this.style[`${baseLeft}-${styleKeywords.style}`]),
+      parseStyle(this.style[styleKeywords.borderTopStyle]),
+      parseStyle(this.style[styleKeywords.borderRightStyle]),
+      parseStyle(this.style[styleKeywords.borderBottomStyle]),
+      parseStyle(this.style[styleKeywords.borderLeftStyle]),
     ]
 
     const styleIndex = [
-      this.styleIndex[`${baseTop}-${styleKeywords.style}`] || 0,
-      this.styleIndex[`${baseRight}-${styleKeywords.style}`] || 0,
-      this.styleIndex[`${baseBottom}-${styleKeywords.style}`] || 0,
-      this.styleIndex[`${baseLeft}-${styleKeywords.style}`] || 0,
+      this.styleIndex[styleKeywords.borderTopStyle] || 0,
+      this.styleIndex[styleKeywords.borderRightStyle] || 0,
+      this.styleIndex[styleKeywords.borderBottomStyle] || 0,
+      this.styleIndex[styleKeywords.borderLeftStyle] || 0,
     ]
 
     styleIndex.forEach((i, idx) => {
@@ -1002,17 +1002,17 @@ export default class Style {
     })
 
     const color = [
-      parseColor(this.style[`${baseTop}-${styleKeywords.color}`]),
-      parseColor(this.style[`${baseRight}-${styleKeywords.color}`]),
-      parseColor(this.style[`${baseBottom}-${styleKeywords.color}`]),
-      parseColor(this.style[`${baseLeft}-${styleKeywords.color}`]),
+      parseColor(this.style[styleKeywords.borderTopColor]),
+      parseColor(this.style[styleKeywords.borderRightColor]),
+      parseColor(this.style[styleKeywords.borderBottomColor]),
+      parseColor(this.style[styleKeywords.borderLeftColor]),
     ];
 
     const colorIndex = [
-      this.styleIndex[`${baseTop}-${styleKeywords.color}`] || 0,
-      this.styleIndex[`${baseRight}-${styleKeywords.color}`] || 0,
-      this.styleIndex[`${baseBottom}-${styleKeywords.color}`] || 0,
-      this.styleIndex[`${baseLeft}-${styleKeywords.color}`] || 0,
+      this.styleIndex[styleKeywords.borderTopColor] || 0,
+      this.styleIndex[styleKeywords.borderRightColor] || 0,
+      this.styleIndex[styleKeywords.borderBottomColor] || 0,
+      this.styleIndex[styleKeywords.borderLeftColor] || 0,
     ]
 
     colorIndex.forEach((i, idx) => {
@@ -1125,19 +1125,19 @@ export default class Style {
 
     const topLeftStyle = {
       target: topLeft,
-      key: `${border}-${top}-${left}-${radius}`,
+      key: styleKeywords.borderTopLeftRadius,
     }
     const topRightStyle = {
       target: topRight,
-      key: `${border}-${top}-${right}-${radius}`,
+      key: styleKeywords.borderTopRightRadius,
     }
     const bottomRightStyle = {
       target: bottomRight,
-      key: `${border}-${bottom}-${right}-${radius}`,
+      key: styleKeywords.borderBottomRightRadius,
     }
     const bottomLeftStyle = {
       target: bottomLeft,
-      key: `${border}-${bottom}-${left}-${radius}`,
+      key: styleKeywords.borderBottomLeftRadius,
     };
 
     ;[topLeftStyle, topRightStyle, bottomRightStyle, bottomLeftStyle].forEach(i => {
@@ -1197,7 +1197,7 @@ export default class Style {
   }
 
   public get verticalAlign() {
-    return this.getInheritStyle('vertical-align', true) || DEFAULT_VERTICAL_ALIGN;
+    return this.getInheritStyle(styleKeywords.verticalAlign, true) || DEFAULT_VERTICAL_ALIGN;
   }
 
   public get textAlign() {
@@ -1214,13 +1214,23 @@ export default class Style {
     return lineHeight as number;
   }
 
+  public get opacity() {
+    const opacity = parseFloat(this.style[styleKeywords.opacity]);
+    return isNaN(opacity) ? 1 : opacity;
+  }
+
+  public get zIndex() {
+    const zIndex = parseInt(this.style[styleKeywords.zIndex]);
+    return isNaN(zIndex) || 0;
+  }
+
   /**
    * 属性继承自任意父级
    */
   public get isNoWrap() {
     let element: Element | null = this.element;
     while (element) {
-      const whiteSpace = element.style.get('white-space');
+      const whiteSpace = element.style.get(styleKeywords.whiteSpace);
       if (whiteSpace) {
         if (whiteSpace === 'nowrap') { // 强制不换行
           return true;

@@ -6,7 +6,7 @@
 import {
   BackgroundRepeat,
   REG_PCT,
-  REG_PX,
+  REG_PX, styleKeywords,
   TBezierCurvePath,
   TContinueDraw,
   TQuadraticCurvePath,
@@ -504,4 +504,24 @@ export const ellipse = (
       ctx.bezierCurveTo(...p2, ...p3, ...p4);
     });
   }
+};
+
+export const makeMap = <T = any>(obj: any): {
+  [K in keyof T]: K;
+} => {
+  Object.keys(obj).forEach(originKey => {
+    let key = originKey;
+    if (/-/.test(key)) {
+      key = key.split('-').map((i, idx) => {
+        if (idx > 0) {
+          return i[0].toUpperCase() + i.slice(1);
+        }
+        return i;
+      }).join('');
+      delete obj[originKey];
+    }
+    // @ts-ignore
+    obj[key] = originKey;
+  });
+  return obj;
 };

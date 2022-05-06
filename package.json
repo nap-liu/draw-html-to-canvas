@@ -10,7 +10,7 @@
   "publishConfig": {
   },
   "scripts": {
-    "dev": "cd dev && npm i && npm start",
+    "dev": "rollup -c rollup.config.js --watch",
     "build": "rm -rf dist && rollup -c rollup.config.js && npm run build:d.ts",
     "build:d.ts": "rm -rf types && tsc -t es5 --declaration --outDir ./types ./src/index.ts && rm -rf ./types/*.js"
   },

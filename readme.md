@@ -1,8 +1,8 @@
-# dhtml2canvas
+# dynamic html to canvas
 
 使用html+css语法绘制图片到canvas上
 
-## 采用float布局系统
+## 采用**float**布局系统
 block 独占一行  
 inline-block 行内布局超长自动换行  
 inline 行内布局超长自动换行  
@@ -50,9 +50,12 @@ inline 行内布局超长自动换行
 |text-decoration-line|underline\overline\line-through|
 |line-height|固定值、倍数|
 |text-align|全功能|
+|opacity|全功能|
 
 ## TODO
 
+- [ ] 支持transform
+- [ ] 支持z-index
 
 ## demo
 

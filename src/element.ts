@@ -1310,7 +1310,7 @@ export default class Element {
               // ctx.stroke();
 
               ctx.beginPath();
-              if (topLeft.width && topLeft.height) { // 圆角
+              if (topLeft.width - top.width / 2 > 0 && topLeft.height - top.width / 2 > 0) { // 圆角
                 ellipse(ctx,
                   topLeft.width, topLeft.height,
                   topLeft.width - top.width / 2, topLeft.height - top.width / 2, 0,
@@ -1321,7 +1321,7 @@ export default class Element {
                 ctx.moveTo(0, 0);
               }
 
-              if (topRight.width && topRight.height) {
+              if (topRight.width - top.width / 2 > 0 && topRight.height - top.width / 2 > 0) {
                 ellipse(ctx,
                   width - topRight.width, topRight.height,
                   topRight.width - top.width / 2, topRight.height - top.width / 2, 0,
@@ -1374,7 +1374,7 @@ export default class Element {
               ctx.clip();
 
               ctx.beginPath();
-              if (topRight.width && topRight.height) {
+              if (topRight.width - right.width / 2 > 0 && topRight.height - right.width / 2 > 0) {
                 ellipse(ctx,
                   width - topRight.width, topRight.height,
                   topRight.width - right.width / 2, topRight.height - right.width / 2, 0,
@@ -1385,7 +1385,7 @@ export default class Element {
                 ctx.lineTo(width, 0);
               }
 
-              if (bottomRight.width && bottomRight.height) {
+              if (bottomRight.width - right.width / 2 > 0 && bottomRight.height - right.width / 2 > 0) {
                 ellipse(ctx,
                   width - bottomRight.width, height - bottomRight.height,
                   bottomRight.width - right.width / 2, bottomRight.height - right.width / 2, 0,
@@ -1439,7 +1439,7 @@ export default class Element {
               ctx.clip();
 
               ctx.beginPath();
-              if (bottomRight.width && bottomRight.height) {
+              if (bottomRight.width - bottom.width / 2 > 0 && bottomRight.height - bottom.width / 2 > 0) {
                 ellipse(ctx,
                   width - bottomRight.width, height - bottomRight.height,
                   bottomRight.width - bottom.width / 2, bottomRight.height - bottom.width / 2, 0,
@@ -1449,7 +1449,7 @@ export default class Element {
                 ctx.lineTo(width, height);
               }
 
-              if (bottomLeft.width && bottomLeft.height) {
+              if (bottomLeft.width - bottom.width / 2 > 0 && bottomLeft.height - bottom.width / 2 > 0) {
                 ellipse(ctx,
                   bottomLeft.width, height - bottomLeft.height,
                   bottomLeft.width - bottom.width / 2, bottomLeft.height - bottom.width / 2, 0,
@@ -1500,7 +1500,7 @@ export default class Element {
               ctx.clip();
 
               ctx.beginPath();
-              if (bottomLeft.width && bottomLeft.height) {
+              if (bottomLeft.width - left.width / 2 > 0 && bottomLeft.height - left.width / 2 > 0) {
                 ellipse(ctx,
                   bottomLeft.width, height - bottomLeft.height,
                   bottomLeft.width - left.width / 2, bottomLeft.height - left.width / 2, 0,
@@ -1510,7 +1510,7 @@ export default class Element {
                 ctx.lineTo(0, height);
               }
 
-              if (topLeft.width && topLeft.height) { // 圆角
+              if (topLeft.width - left.width / 2 > 0 && topLeft.height - left.width / 2 > 0) { // 圆角
                 ellipse(ctx,
                   topLeft.width, topLeft.height,
                   topLeft.width - left.width / 2, topLeft.height - left.width / 2, 0,
@@ -1819,11 +1819,16 @@ export default class Element {
    * @param context
    */
   public draw(context: CanvasRenderingContext2D) {
-    const {background: backgroundList} = this.style;
+    context.save();
+    const {background: backgroundList, opacity} = this.style;
     const {
       offsetLeft, offsetTop,
       contentWidth, contentHeight,
     } = this;
+
+    if (opacity !== 1) {
+      context.globalAlpha = opacity;
+    }
 
     this.drawBorder(context, () => {
       backgroundList.reverse().forEach((background, index) => {
@@ -1882,5 +1887,7 @@ export default class Element {
     this.lines.forEach(line => {
       line.absolutes.forEach(el => el.draw(context));
     })
+
+    context.restore();
   }
 }

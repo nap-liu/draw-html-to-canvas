@@ -1,8 +1,8 @@
 import type ElementImage from './element-image';
 import type Element from './element';
-import {values} from './util';
+import {makeMap, values} from './util';
 
-export const styleKeywords = {
+const originKeyList = {
   inherit: '',
   initial: '',
   auto: '',
@@ -35,8 +35,6 @@ export const styleKeywords = {
   border: '',
   radius: '',
   display: '',
-  'vertical-align': '',
-  'white-space': '',
   absolute: '',
   relative: '',
   float: '',
@@ -46,12 +44,74 @@ export const styleKeywords = {
   overflow: '',
   hidden: '',
   visible: '',
-}
+  opacity: '',
+  thickness: '',
+  nowrap: '',
+};
 
-Object.keys(styleKeywords).forEach(i => {
-  // @ts-ignore
-  styleKeywords[i] = i;
-})
+const keyList = makeMap<typeof originKeyList>(originKeyList);
+
+const originStyleKeywords = {
+  ...keyList,
+  'vertical-align': '',
+  'white-space': '',
+  'z-index': '',
+
+  [`${keyList.font}-${keyList.style}`]: '',
+  [`${keyList.font}-${keyList.variant}`]: '',
+  [`${keyList.font}-${keyList.weight}`]: '',
+  [`${keyList.font}-${keyList.stretch}`]: '',
+  [`${keyList.font}-${keyList.size}`]: '',
+  [`${keyList.font}-${keyList.family}`]: '',
+  [`${keyList.line}-${keyList.height}`]: '',
+
+  [`${keyList.text}-${keyList.decoration}`]: '',
+  // TODO 优先级支持
+  [`${keyList.text}-${keyList.decoration}-${keyList.color}`]: '',
+  [`${keyList.text}-${keyList.decoration}-${keyList.style}`]: '',
+  [`${keyList.text}-${keyList.decoration}-${keyList.thickness}`]: '',
+  [`${keyList.text}-${keyList.decoration}-${keyList.line}`]: '',
+
+  [`${keyList.background}-${keyList.image}`]: '',
+  [`${keyList.background}-${keyList.color}`]: '',
+  [`${keyList.background}-${keyList.position}`]: '',
+  [`${keyList.background}-${keyList.size}`]: '',
+  [`${keyList.background}-${keyList.repeat}`]: '',
+  [`${keyList.background}-${keyList.clip}`]: '',
+  [`${keyList.background}-${keyList.origin}`]: '',
+
+  [`${keyList.border}-${keyList.top}`]: '',
+  [`${keyList.border}-${keyList.right}`]: '',
+  [`${keyList.border}-${keyList.bottom}`]: '',
+  [`${keyList.border}-${keyList.left}`]: '',
+
+  [`${keyList.border}-${keyList.top}-${keyList.width}`]: '',
+  [`${keyList.border}-${keyList.right}-${keyList.width}`]: '',
+  [`${keyList.border}-${keyList.bottom}-${keyList.width}`]: '',
+  [`${keyList.border}-${keyList.left}-${keyList.width}`]: '',
+
+  [`${keyList.border}-${keyList.top}-${keyList.style}`]: '',
+  [`${keyList.border}-${keyList.right}-${keyList.style}`]: '',
+  [`${keyList.border}-${keyList.bottom}-${keyList.style}`]: '',
+  [`${keyList.border}-${keyList.left}-${keyList.style}`]: '',
+
+  [`${keyList.border}-${keyList.top}-${keyList.color}`]: '',
+  [`${keyList.border}-${keyList.right}-${keyList.color}`]: '',
+  [`${keyList.border}-${keyList.bottom}-${keyList.color}`]: '',
+  [`${keyList.border}-${keyList.left}-${keyList.color}`]: '',
+
+  [`${keyList.border}-${keyList.radius}`]: '',
+  [`${keyList.border}-${keyList.top}-${keyList.left}-${keyList.radius}`]: '',
+  [`${keyList.border}-${keyList.top}-${keyList.right}-${keyList.radius}`]: '',
+  [`${keyList.border}-${keyList.bottom}-${keyList.right}-${keyList.radius}`]: '',
+  [`${keyList.border}-${keyList.bottom}-${keyList.left}-${keyList.radius}`]: '',
+};
+
+export const styleKeywords: {
+  [x: string]: string;
+} & typeof keyList & typeof originStyleKeywords = makeMap<typeof originStyleKeywords>(originStyleKeywords);
+
+// console.log(styleKeywords);
 
 export const DEFAULT_FONT_FAMILY = 'sans-serif';
 export const DEFAULT_FONT_SIZE = '16px';
@@ -69,17 +129,6 @@ export enum NodeType {
   DOCUMENT_TYPE_NODE = 10, //	描述文档类型的 DocumentType 节点。例如 <!DOCTYPE html>  就是用于 HTML5 的。
   DOCUMENT_FRAGMENT_NODE = 11, //	一个 DocumentFragment 节点
 }
-
-// export enum NodeType {
-//   ELEMENT_NODE = 'ELEMENT_NODE', //	一个 元素 节点，例如 <p> 和 <div>。
-//   TEXT_NODE = 'TEXT_NODE', //	Element 或者 Attr 中实际的文字
-//   CDATA_SECTION_NODE = 'CDATA_SECTION_NODE', //	一个 CDATASection，例如 <!CDATA[[ … ]]>。
-//   PROCESSING_INSTRUCTION_NODE = 'PROCESSING_INSTRUCTION_NODE', //	一个用于XML文档的 ProcessingInstruction (en-US) ，例如 <?xml-stylesheet ... ?> 声明。
-//   COMMENT_NODE = 'COMMENT_NODE', //	一个 Comment 节点。
-//   DOCUMENT_NODE = 'DOCUMENT_NODE', //	一个 Document 节点。
-//   DOCUMENT_TYPE_NODE = 'DOCUMENT_TYPE_NODE', //	描述文档类型的 DocumentType 节点。例如 <!DOCTYPE html>  就是用于 HTML5 的。
-//   DOCUMENT_FRAGMENT_NODE = 'DOCUMENT_FRAGMENT_NODE', //	一个 DocumentFragment 节点
-// }
 
 export enum BlockType {
   block = 'block',

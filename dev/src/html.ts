@@ -202,6 +202,7 @@ export const html3 = `<div style="width: 320px; height: 320px; border: 1px solid
 <div style="
       width: 200px;
       height: 200px;
+      /*opacity: .5;*/
       /*border: 10px solid #f00;*/
       /*border-bottom: 30px solid #f00;*/
       /*border-right: 20px dashed #00f;*/
