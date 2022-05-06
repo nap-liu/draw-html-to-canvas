@@ -1,10 +1,38 @@
+/**
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ **/
 export default `
-<div
+<div style="">
+  <span style="position: relative">
+    <span style="">after float2</span>
+    <span style="
+    position: absolute;
+    z-index: 1;
+    left: 0; right: 0; bottom: 0; height: 10px;
+    background: #f00;" />
+    <span style="
+    position: absolute;
+    z-index: 1;
+    left: 0; right: 0; bottom: 0; height: 10px;
+    background: #0f0;" />
+  </span>
+</div>
+`
+
+export const html5 = `<div
   style="
   /*font-style: italic;*/
   /*overflow: auto;*/
   /*color: #fff;*/
   /*display: inline-block;*/
+  /*opacity: 0.4;*/
   "
   id="renderTemplate"
 >
@@ -47,9 +75,17 @@ export default `
   <span>con float2</span>
 </div>
 <div style="text-align: center">after float1</div>
-<div style="">after float2</div>
-`
-
+<div style="">
+  <span style="position: relative">
+    <span style="position: relative; z-index: 1;">after float2</span>
+    <span style="
+    position: absolute; 
+    left: 0; right: 0; bottom: 0; height: 10px; 
+    /*z-index: -1; */
+    background: #f00;
+    " />
+  </span>
+</div>`
 
 export const html4 = `<div
   style="
@@ -169,7 +205,7 @@ export const html4 = `<div
           </div>
         </div>
         <div style="width: 200px;color: #000; text-align: center; float: left; ">
-          <span style="position: relative; display: inline-block; ">
+          <span style="position: relative; display: inline-block; background: rgba(0,0,0,.1)">
             position: 1
             <br>
             position: 2222
@@ -177,10 +213,10 @@ export const html4 = `<div
             position: 3333333
             <div
               style="
-              /*background: rgba(0,0,0,.5);*/
-              /*left: 10px;*/
-              right: 10px;
-              /*top: 10px;*/
+              background: rgba(0,0,0,.2);
+              left: 0px;
+              right: 0px;
+              top: 10px;
               bottom: 10px;
               position: absolute;
               display: inline-block;

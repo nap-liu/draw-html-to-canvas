@@ -11,7 +11,8 @@ import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
   DEFAULT_LINE_HEIGHT,
-  DEFAULT_VERTICAL_ALIGN, GradientType,
+  DEFAULT_VERTICAL_ALIGN,
+  GradientType,
   NodeType,
   REG_BG_ATTACHMENT,
   REG_BG_CLIP,
@@ -25,7 +26,10 @@ import {
   REG_BORDER_STYLE,
   REG_BORDER_WIDTH,
   REG_COLOR,
-  REG_EM, REG_GRADIENT_COLOR_SIZE, REG_GRADIENT_DIRECTION, REG_GRADIENT_TYPE,
+  REG_EM,
+  REG_GRADIENT_COLOR_SIZE,
+  REG_GRADIENT_DIRECTION,
+  REG_GRADIENT_TYPE,
   REG_NUM,
   REG_PCT,
   REG_PX,
@@ -39,7 +43,8 @@ import {
   REG_URL,
   styleKeywords,
   TEXT_DECORATION_LINE,
-  TEXT_DECORATION_STYLE, TextAlign,
+  TEXT_DECORATION_STYLE,
+  TextAlign,
 } from './constants';
 import ElementImage from './element-image';
 
@@ -1219,9 +1224,12 @@ export default class Style {
     return isNaN(opacity) ? 1 : opacity;
   }
 
-  public get zIndex() {
+  public get zIndex(): number {
+    if (this.element.nodeType === NodeType.TEXT_NODE) {
+      return this.element.parentNode!.style.zIndex;
+    }
     const zIndex = parseInt(this.style[styleKeywords.zIndex]);
-    return isNaN(zIndex) || 0;
+    return isNaN(zIndex) ? 0 : zIndex;
   }
 
   /**
@@ -1247,8 +1255,12 @@ export default class Style {
     return this.style[styleKeywords.clear];
   }
 
+  public get overflow() {
+    return this.style[styleKeywords.overflow];
+  }
+
   public get isOverflow() {
-    const overflow = this.style[styleKeywords.overflow];
+    const {overflow} = this;
     return (overflow === styleKeywords.hidden || overflow === styleKeywords.auto);
   }
 
@@ -1260,7 +1272,10 @@ export default class Style {
     return this.style[styleKeywords.position] === styleKeywords.absolute;
   }
 
-  public get isRelative() {
+  public get isRelative(): boolean {
+    if (this.element.nodeType === NodeType.TEXT_NODE) {
+      return this.element.parentNode!.style.isRelative;
+    }
     return this.style[styleKeywords.position] === styleKeywords.relative;
   }
 

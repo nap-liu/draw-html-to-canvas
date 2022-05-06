@@ -29,6 +29,7 @@ export default class Render {
       const background = element.style.background;
       return Promise.all(background.filter(i => i.image).map(back => {
         const el = new ElementImage();
+        el.root = this.rootNode;
         el.attrs.src = back.image;
         return el.load(canvas).then(() => {
           element.style.imageMap[back.image] = el;

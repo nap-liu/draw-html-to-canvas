@@ -32,6 +32,7 @@ inline 行内布局超长自动换行
 |right|绝对值|绝对定位有效|
 |bottom|绝对值|绝对定位有效|
 |left|绝对值|绝对定位有效|
+|z-index|同block下所有的值拉平计算优先级|
 |color|支持 rgba\rgb\#xxx\transparent|
 |border|全功能|
 |border-style|只支持 solid\dashed|
@@ -55,7 +56,6 @@ inline 行内布局超长自动换行
 ## TODO
 
 - [ ] 支持transform
-- [ ] 支持z-index
 
 ## demo
 

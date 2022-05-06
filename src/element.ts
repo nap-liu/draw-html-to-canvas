@@ -507,6 +507,7 @@ export default class Element {
             line.push(element);
             element.line = line;
           } else {
+            element.lines = new LineManger(element);
             if (isNoWrap) {
               line.push(element);
               // 递归计算子节点
@@ -527,6 +528,8 @@ export default class Element {
                 line = lastLine;
                 return half;
               }
+              // 重置shadow元素
+              element.shadows = [];
               // 左侧进入布局
               const left = splitPush();
               // 递归计算子节点
@@ -618,10 +621,24 @@ export default class Element {
             if (element.style.isAbsolute) {
               // TODO 绝对定位 如果没有指明位置的话 则使用当前文档位置
               let relativeBlock = element.getNearRelativeBlock() || this.root;
-              const relLine = relativeBlock.lines.lastLineOrNewLine(relativeBlock.contentWidth);
+              let relLine = relativeBlock.lines.lastLineOrNewLine(relativeBlock.contentWidth);
               element.lineElement = relativeBlock;
               element.line = relLine;
-              relLine.push(element);
+              if (relativeBlock.blockType === BlockType.inline) {
+                const block = relativeBlock.parentNode;
+                if (block) {
+                  const reLine = block.lines.lastLineOrNewLine(block.contentWidth);
+                  reLine.push(element);
+                  element.line = reLine;
+                } else {
+                  // 没有父元素
+                  throw new Error('定位元素无法找到父元素');
+                  console.error('定位元素无法找到父元素', this);
+                }
+              } else {
+                element.line = relLine
+                relLine.push(element);
+              }
             } else {
               if (isNoWrap) {
                 line.push(element);
@@ -763,18 +780,9 @@ export default class Element {
       const absoluteBottom = absolute.style.get('bottom');
       const absoluteLeft = absolute.style.get('left');
 
-      let target: Element = this;
-      const shadows: Element[] = [];
-      target.lineElement?.lines.forEach(line => {
-        line.forEach(i => {
-          if (
-            (i.parentNode === target) ||
-            (i.parentNode === target.shadow)
-          ) {
-            shadows.push(i);
-          }
-        })
-      });
+      // @ts-ignore
+      let target: Element = absolute.lineElement;
+      const shadows: Element[] = target.shadows || [];
 
       const isInline = target.blockType === BlockType.inline;
       /**
@@ -1819,14 +1827,14 @@ export default class Element {
    * @param context
    */
   public draw(context: CanvasRenderingContext2D) {
-    context.save();
-    const {background: backgroundList, opacity} = this.style;
+    const {background: backgroundList, opacity, overflow} = this.style;
     const {
       offsetLeft, offsetTop,
       contentWidth, contentHeight,
     } = this;
 
     if (opacity !== 1) {
+      context.save();
       context.globalAlpha = opacity;
     }
 
@@ -1844,6 +1852,13 @@ export default class Element {
       if (displayText) {
         this.drawText(context);
         this.drawTextDecoration(context);
+      }
+    }
+
+    if (this.nodeName === SupportElement.img) {
+      const img: ElementImage = this as any;
+      if (img.source) {
+        context.drawImage(img.source, offsetLeft, offsetTop, contentWidth, contentHeight);
       }
     }
 
@@ -1867,27 +1882,51 @@ export default class Element {
       }
     }
 
-    if (this.nodeName === SupportElement.img) {
-      const img: ElementImage = this as any;
-      if (img.source) {
-        context.drawImage(img.source, offsetLeft, offsetTop, contentWidth, contentHeight);
-      }
-    }
-
     if (this.shadow && this.shadow.shadows.indexOf(this) > 0) {
+      // inline元素拆分后 只需要渲染第一个的子元素
       return;
     }
-    this.lines.forEach(line => {
-      line.textFlows.forEach(el => el.draw(context));
-    })
-    this.lines.forEach(line => {
-      line.floats.all.forEach(el => el.draw(context));
-    })
-    // TODO z-index 支持
-    this.lines.forEach(line => {
-      line.absolutes.forEach(el => el.draw(context));
-    })
 
-    context.restore();
+    // TODO z-index 和浏览器行为不一致
+    const zIndex: Element[] = [];
+    this.lines.forEach(line => {
+      line.textFlows.forEach(el => {
+        if (el.style.isRelative) {
+          zIndex.push(el);
+        } else {
+          el.draw(context);
+        }
+      });
+    });
+
+    this.lines.forEach(line => {
+      line.floats.all.forEach(el => {
+        if (el.style.isRelative) {
+          zIndex.push(el);
+        } else {
+          el.draw(context);
+        }
+      });
+    });
+
+    this.lines.forEach(line => {
+      line.absolutes.forEach(el => {
+        zIndex.push(el);
+      });
+    });
+
+    zIndex.sort((a, b) => a.style.zIndex - b.style.zIndex);
+
+    if (zIndex.length) {
+      console.log('sorted', zIndex);
+    }
+
+    zIndex.forEach(el => {
+      el.draw(context);
+    });
+
+    if (opacity !== 1) {
+      context.restore();
+    }
   }
 }
