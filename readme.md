@@ -2,6 +2,121 @@
 
 使用html+css语法绘制图片到canvas上
 
+## 安装
+```
+npm i dhtml2canvas --save
+```
+
+## 渲染效果
+
+电脑端渲染效果图  
+上半部分为浏览器效果  
+下半部分为渲染效果  
+
+![](./example/resources/pcscreencap.png)
+
+微信开发者工具渲染效果图  
+![](./example/resources/wxscreencap.png)
+
+微信真机渲染效果图
+![](./example/resources/realphonescreencap.png)
+
+
+
+## 使用方法
+
+### 纯页面使用方法
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>draw html to canvas</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+</body>
+<script src="node_modules/dhtml2canvas/dist/index.umd.js"></script>
+<script>
+  ;(async function() {
+    const DrawHtml2Canvas = window.DrawHtml2Canvas;
+
+    const html = `<div style="border: 1px solid #f00">draw to canvas</div>`;
+
+    const render = DrawHtml2Canvas.fromHTML(html);
+
+    // 设置网页最大宽度
+    render.rootNode.style.set('width', '500px');
+
+    const canvas = document.querySelector('#canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 加载html中使用的图片
+    await render.loadSource();
+
+    // 计算布局
+    render.layout(ctx);
+
+    // 修改canvas尺寸
+    const {offsetWidth, offsetHeight} = render.rootNode;
+    canvas.height = offsetHeight;
+    canvas.width = offsetWidth;
+
+    // 绘制图像到canvas上
+    render.draw(ctx);
+  })();
+</script>
+</html>
+
+```
+
+### web工程使用方法
+```javascript
+import { Render } from 'dhtml2canvas';
+
+const html = `<div>draw to canvas</div>`
+const render = Render.fromHTML(html);
+
+const canvas = document.querySelector('#canvas');
+const ctx = canvas.getContext('2d');
+
+// 修改网页最大宽度为500px
+render.rootNode.style.set('width', '500px');
+
+// 加载html中使用的图片
+await render.loadSource();
+
+// 计算布局
+render.layout(ctx);
+
+// 修改canvas尺寸和网页内容尺寸一样
+const {offsetWidth, offsetHeight} = render.rootNode;
+canvas.height = offsetHeight;
+canvas.width = offsetWidth;
+
+// 绘制图像到canvas上
+render.draw(ctx);
+```
+
+
+### 微信小程序
+使用小程序同层渲染api，基础库2.9以后的版本都可以
+老版本api官方已经不维护了，所以不打算支持老版本的api了
+
+渲染效果的截图的代码片段  
+
+[在线代码片段](https://developers.weixin.qq.com/s/cx1W75m87Rzi)
+
+
 ## 采用**float**布局系统
 block 独占一行  
 inline-block 行内布局超长自动换行  
@@ -53,10 +168,8 @@ inline 行内布局超长自动换行
 |text-align|全功能|
 |opacity|全功能|
 
-## TODO
 
-- [ ] 支持transform
+#LiveDemo
 
-## demo
-
+[在线示例](https://dhtml2canvas.js-css.com)
 

@@ -1,0 +1,8 @@
+<view class="container">
+  <textarea class="textarea" bindinput="onInput" maxlength="-1" value="{{html}}"></textarea>
+  <view>
+    <button type="default" bind:tap="onReset" class="draw">恢复默认</button>
+    <button type="primary" bind:tap="onDraw" class="draw">画html到canvas</button>
+  </view>
+  <canvas style="width: {{width}}px; height: {{height}}px" type="2d" id="canvas"></canvas>
+</view>

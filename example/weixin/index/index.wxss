@@ -1,0 +1,16 @@
+
+page {
+}
+
+.container {
+}
+
+.textarea {
+  border: 1px solid #ccc;
+  width: 100%;
+  height: 100px;
+}
+
+.draw {
+  margin: 10rpx;
+}

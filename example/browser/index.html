@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>draw html to canvas</title>
+  <style>
+      * {
+          margin: 0;
+          padding: 0;
+      }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+</body>
+<script src="/dist/index.umd.js"></script>
+<script>
+  ;(async function() {
+    const DrawHtml2Canvas = window.DrawHtml2Canvas;
+
+    const html = `<div style="border: 1px solid #f00">draw to canvas</div>`;
+
+    const render = DrawHtml2Canvas.fromHTML(html);
+    render.rootNode.style.set('width', '500px');
+
+    const canvas = document.querySelector('#canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 加载html中使用的图片
+    await render.loadSource();
+
+    // 计算布局
+    render.layout(ctx);
+
+    // 修改canvas尺寸
+    const {offsetWidth, offsetHeight} = render.rootNode;
+    canvas.height = offsetHeight;
+    canvas.width = offsetWidth;
+
+    // 绘制图像到canvas上
+    render.draw(ctx);
+  })();
+</script>
+</html>
