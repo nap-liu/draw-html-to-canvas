@@ -1031,6 +1031,10 @@ export default class Element {
         }
       }
 
+      if (width === 0 || height === 0) {
+        return;
+      }
+
       if (REG_PX.test(background.position.leftOffset as string)) {
         left = this.style.transformUnitToPx(background.position.leftOffset as string);
       } else if (REG_PCT.test(background.position.leftOffset as string)) {
