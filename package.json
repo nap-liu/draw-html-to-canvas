@@ -1,5 +1,5 @@
 {
-  "name": "dhtml2canvas",
+  "name": "draw-html-to-canvas",
   "version": "0.0.1",
   "description": "根据html+css规范绘制 网页到canvas",
   "main": "dist/index.cjs.js",

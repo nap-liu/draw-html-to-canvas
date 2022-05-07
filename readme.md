@@ -4,7 +4,7 @@
 
 ## 安装
 ```
-npm i dhtml2canvas --save
+npm i draw-html-to-canvas --save
 ```
 
 ## 渲染效果
