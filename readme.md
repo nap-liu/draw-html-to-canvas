@@ -114,7 +114,7 @@ render.draw(ctx);
 
 渲染效果的截图的代码片段  
 
-[在线代码片段](https://developers.weixin.qq.com/s/cx1W75m87Rzi)
+[在线代码片段](https://developers.weixin.qq.com/s/ZN2bW5mS7PzA)
 
 
 ## 采用**float**布局系统
@@ -169,7 +169,7 @@ inline 行内布局超长自动换行
 |opacity|全功能|
 
 
-#LiveDemo
+## LiveDemo
 
 [在线示例](https://dhtml2canvas.js-css.com)
 
