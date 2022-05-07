@@ -45,7 +45,7 @@ npm i draw-html-to-canvas --save
 <body>
 <canvas id="canvas"></canvas>
 </body>
-<script src="node_modules/dhtml2canvas/dist/index.umd.js"></script>
+<script src="node_modules/draw-html-to-canvas/dist/index.umd.js"></script>
 <script>
   ;(async function() {
     const DrawHtml2Canvas = window.DrawHtml2Canvas;
@@ -81,7 +81,7 @@ npm i draw-html-to-canvas --save
 
 ### web工程使用方法
 ```javascript
-import { Render } from 'dhtml2canvas';
+import { Render } from 'draw-html-to-canvas';
 
 const html = `<div>draw to canvas</div>`
 const render = Render.fromHTML(html);
@@ -171,5 +171,5 @@ inline 行内布局超长自动换行
 
 ## LiveDemo
 
-[在线示例](https://dhtml2canvas.js-css.com)
+[在线示例](https://draw-html-to-canvas.js-css.com)
 
