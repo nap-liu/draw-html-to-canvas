@@ -262,9 +262,10 @@ display: inline-block;
       /*background-position: 50px 10px;*/
       /*border: 1px solid #f00;*/
       /*border-radius: 100%;*/
-      background: linear-gradient(0deg, #000, #000 25%, transparent 25%, transparent 75%, #000 75%) left top / 100px 100px,
-        linear-gradient(0deg, #000, #000 25%, transparent 25%, transparent 75%, #000 75%) left top / 100px 100px;
-        /*background-position: left top, left top;*/
+      background: linear-gradient(45deg, #000, #000 25%, transparent 25%, transparent 75%, #000 75%) left top / 100px 100px,
+        linear-gradient(45deg, #000, #000 25%, transparent 25%, transparent 75%, #000 75%) 50px 50px / 100px 100px;
+        /*background-position: right top, center;*/
+        /*background-repeat: repeat-y, repeat-x;*/
       "></div>
 </div>`
 export const html2 = `<div style='border-radius: 24px; background-color: rgba(0,0,0,.3)'>

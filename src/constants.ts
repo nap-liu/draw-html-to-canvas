@@ -161,17 +161,25 @@ export const REG_BG_CLIP = /border-box|padding-box|content-box/ig;
 const FLOAT_NO_GROUP = '(?:-?\\d*(?:\\.\\d+)?)(?:%|px)?'
 const FLOAT_POSITIVE_NO_GROUP = '(?:\\d*(?:\\.\\d+)?)(?:%|px)?'
 const FLOAT = `(${FLOAT_NO_GROUP})`
-const BG_POS = `(?:(left|center|right|top|bottom)\\s+${FLOAT}?)`
+const BG_POS_ENUM = 'left|center|right|top|bottom'
+const BG_POS_ENUM_GROUP = `(${BG_POS_ENUM})`
+const BG_POS = `(?:(${BG_POS_ENUM})\\s+${FLOAT}?)`
 const BG_SIZE_ENUM = '(cover|contain)'
 const BG_SIZE_NUM = `(auto|${FLOAT_NO_GROUP})`
 const BG_SIZE = `(?:${BG_SIZE_ENUM}|(?:${BG_SIZE_NUM}(?:\\s+${BG_SIZE_NUM})?))`
 
-export const REG_BG_POSITION = new RegExp(`(${BG_POS}|${FLOAT})\\s*(${BG_POS}|${FLOAT})?`, 'i')
-export const REG_BG_SIZE = new RegExp(BG_SIZE, 'i');
-// console.log(REG_BG_SIZE);
-export const REG_BG_POSITION_SIZE = new RegExp(`\\s*(${BG_POS}|${FLOAT})\\s*(${BG_POS}|${FLOAT})?(?:\\s*\\/\\s*${BG_SIZE})`, 'i');
+export const REG_BG_POS_ENUM = new RegExp(BG_POS_ENUM, 'i');
+export const REG_POS_LR = /left|right/;
+export const REG_POS_TB = /top|bottom/;
 
-// console.log(REG_BG_POSITION_SIZE);
+export const REG_BG_POSITION = new RegExp(`(?:${BG_POS_ENUM_GROUP}\\s+${FLOAT}\\s+${BG_POS_ENUM_GROUP}\\s+${FLOAT})|(?:${BG_POS_ENUM_GROUP}\\s+((?:${BG_POS_ENUM})|${FLOAT_NO_GROUP})\\s+((?:${BG_POS_ENUM})|${FLOAT_NO_GROUP}))|(?:(?:${BG_POS_ENUM_GROUP}|${FLOAT})\\s+(?:${BG_POS_ENUM_GROUP}|${FLOAT}))|(?:${BG_POS_ENUM_GROUP}|${FLOAT})`, 'i')
+
+export const REG_BG_SIZE = new RegExp(BG_SIZE, 'i');
+console.log(REG_BG_POSITION);
+
+export const REG_BG_POSITION_SIZE = new RegExp(`\\s*(${BG_POS}|${FLOAT})(?:\\s*(${BG_POS}|${FLOAT}))?(?:\\s*\\/\\s*${BG_SIZE})`, 'i');
+
+console.log(REG_BG_POSITION_SIZE);
 
 const getRound = (value: string) => `((?:(${value})\\s+(${value})\\s+(${value})\\s+(${value}))|(?:(${value})\\s+(${value})\\s+(${value}))|(?:(${value})\\s+(${value}))|(${value}))`;
 

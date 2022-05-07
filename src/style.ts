@@ -15,7 +15,7 @@ import {
   GradientType,
   NodeType,
   REG_BG_ATTACHMENT,
-  REG_BG_CLIP,
+  REG_BG_CLIP, REG_BG_POS_ENUM,
   REG_BG_POSITION,
   REG_BG_POSITION_SIZE,
   REG_BG_REPEAT,
@@ -31,7 +31,7 @@ import {
   REG_GRADIENT_DIRECTION,
   REG_GRADIENT_TYPE,
   REG_NUM,
-  REG_PCT,
+  REG_PCT, REG_POS_LR, REG_POS_TB,
   REG_PX,
   REG_RADIUS_VALUE,
   REG_REM,
@@ -572,7 +572,7 @@ export default class Style {
     }
 
     // 优先处理color
-    let list = `${all}`.replace(REG_COLOR, (matched) => {
+    let list = `${all || ''}`.replace(REG_COLOR, (matched) => {
       colors.push(matched);
       return '';
     }).split(',');
@@ -715,10 +715,12 @@ export default class Style {
 
     if (positionIdx > allIdx) {
       position.split(',').forEach((s, index) => {
-        s.replace(REG_BG_POSITION, (matched, ...args) => {
+        s.trim().replace(REG_BG_POSITION, (matched, ...args) => {
           let [
-            leftAll, leftEnum, leftEnumAllOffset, leftAllUnit,
-            topAll, topEnum, topEnumAllOffset, topAllUnit,
+            leftEnum, leftUnit, topEnum, topUnit,
+            dirEnum, oneUnit, twoUnit,
+            leftEnum1, leftUnit1, topEnum1, topUnit1,
+            oneEnum, oneUnit1,
           ] = args;
 
           if (!backgrounds[index]) {
@@ -727,36 +729,115 @@ export default class Style {
 
           const position = backgrounds[index].position;
 
-          if (leftEnumAllOffset && !topAll) {
-            // topAll = leftEnumAllOffset;
-            topEnumAllOffset = leftEnumAllOffset;
-            leftEnumAllOffset = '';
-          }
-
-          if (leftAll) {
-            position.left = leftEnum || leftAllUnit;
-            if (leftAllUnit) {
-              position.leftOffset = position.left;
-              position.left = BackgroundPosition.left;
+          if (leftEnum) {
+            position.left = leftEnum;
+            position.leftOffset = leftUnit;
+            position.top = topEnum;
+            position.topOffset = topUnit;
+          } else if (dirEnum) {
+            if (REG_POS_LR.test(dirEnum) || dirEnum === styleKeywords.center) { // left right
+              position.left = dirEnum;
+              if (REG_BG_POS_ENUM.test(oneUnit)) {
+                position.leftOffset = '';
+                position.top = oneUnit;
+                if (REG_BG_POS_ENUM.test(twoUnit)) {
+                  console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
+                } else {
+                  position.topOffset = twoUnit;
+                }
+              } else {
+                position.leftOffset = oneUnit;
+                if (REG_POS_TB.test(twoUnit)) {
+                  position.top = twoUnit;
+                  position.topOffset = '';
+                } else {
+                  console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
+                }
+              }
+            } else if (REG_POS_TB.test(dirEnum)) { // top bottom
+              position.top = dirEnum;
+              if (REG_BG_POS_ENUM.test(oneUnit)) {
+                position.topOffset = '';
+                position.left = oneUnit;
+                if (REG_BG_POS_ENUM.test(twoUnit)) {
+                  console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
+                } else {
+                  position.leftOffset = twoUnit;
+                }
+              } else {
+                position.topOffset = oneUnit;
+                if (REG_BG_POS_ENUM.test(twoUnit)) {
+                  position.top = twoUnit;
+                  position.topOffset = '';
+                } else {
+                  console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
+                }
+              }
             }
-          }
-
-          if (leftEnumAllOffset) {
-            position.leftOffset = leftEnumAllOffset;
-          }
-
-          if (topAll) {
-            position.top = topEnum || topAllUnit;
-            if (topAllUnit) {
-              position.topOffset = position.top;
-              position.top = BackgroundPosition.top;
+          } else if (leftEnum1 || leftUnit1 || topEnum1 || topUnit1) {
+            if (leftEnum1 && topEnum1) { // left top
+              if (REG_POS_LR.test(leftEnum1)) {
+                position.left = leftEnum1;
+                position.top = topEnum1;
+              } else {
+                position.left = topEnum1;
+                position.top = leftEnum1;
+              }
+              position.leftOffset = '';
+              position.topOffset = '';
+            } else if (leftUnit1 && topUnit1) { // 10px 10px
+              position.left = styleKeywords.left;
+              position.top = styleKeywords.top;
+              position.leftOffset = leftUnit1;
+              position.topOffset = topUnit1;
+            } else {
+              if (leftEnum1 && topUnit1) {
+                if (REG_POS_LR.test(leftEnum1)) { // left 10px
+                  position.left = leftEnum1;
+                  position.leftOffset = '';
+                  position.top = styleKeywords.top;
+                  position.topOffset = topUnit1;
+                } else { // bottom 10px
+                  position.top = leftEnum1;
+                  position.topOffset = '';
+                  position.left = styleKeywords.left;
+                  position.leftOffset = topUnit1;
+                }
+              } else if (leftUnit1 && topEnum1) { // 10px top
+                if (REG_POS_TB.test(topEnum1)) {
+                  position.left = styleKeywords.left;
+                  position.leftOffset = leftUnit1;
+                  position.top = topEnum1;
+                  position.topOffset = '';
+                } else {
+                  console.warn('背景位置无效 不允许出现 [10px left|right] 格式', this.element);
+                }
+              }
             }
-          } else if (leftEnum && leftEnum === BackgroundPosition.center) {
-            position.top = BackgroundPosition.center;
-          }
-
-          if (topEnumAllOffset) {
-            position.topOffset = topEnumAllOffset;
+          } else if (oneEnum || oneUnit1) {
+            if (oneEnum) {
+              if (REG_POS_LR.test(oneEnum)) {
+                position.left = oneEnum;
+                position.leftOffset = '';
+                position.top = styleKeywords.top;
+                position.topOffset = '50%';
+              } else if (REG_POS_TB.test(oneEnum)) {
+                position.left = styleKeywords.left;
+                position.leftOffset = '50%';
+                position.top = oneEnum;
+                position.topOffset = '';
+              } else {
+                position.left = styleKeywords.center;
+                position.leftOffset = '';
+                position.top = styleKeywords.center;
+                position.topOffset = '';
+              }
+            } else {
+              position.left = styleKeywords.left;
+              position.leftOffset = oneUnit1;
+              position.top = styleKeywords.top;
+              position.topOffset = '50%';
+            }
           }
           return '';
         });
