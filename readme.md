@@ -1,4 +1,4 @@
-# dynamic html to canvas
+# draw html to canvas
 
 使用html+css语法绘制图片到canvas上
 

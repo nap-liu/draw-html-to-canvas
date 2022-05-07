@@ -417,33 +417,6 @@ export default class Style {
       return [];
     }
 
-    let all = element.style.style[styleKeywords.background];
-    const allIdx = element.style.styleIndex[styleKeywords.background] || 0;
-
-    const image = this.style[styleKeywords.backgroundImage];
-    const imageIdx = this.styleIndex[styleKeywords.backgroundImage] || 0;
-
-    const color = this.style[styleKeywords.backgroundColor];
-    const colorIdx = this.styleIndex[styleKeywords.backgroundColor] || 0;
-
-    const position = this.style[styleKeywords.backgroundPosition];
-    const positionIdx = this.styleIndex[styleKeywords.backgroundPosition] || 0;
-
-    const size = this.style[styleKeywords.backgroundSize];
-    const sizeIdx = this.styleIndex[styleKeywords.backgroundSize] || 0;
-
-    const repeat = this.style[styleKeywords.backgroundRepeat];
-    const repeatIdx = this.styleIndex[styleKeywords.backgroundRepeat] || 0;
-
-    const clip = this.style[styleKeywords.backgroundClip];
-    const clipIdx = this.styleIndex[styleKeywords.backgroundClip] || 0;
-
-    const origin = this.style[styleKeywords.backgroundOrigin];
-    const originIdx = this.styleIndex[styleKeywords.backgroundOrigin] || 0;
-
-    const colors: string[] = [];
-    let gradients: IGradient[] = [];
-
     const parseGradient = (all: string) => {
       const list = all.split(REG_GRADIENT_TYPE);
       const gradients: IGradient[] = [];
@@ -564,6 +537,12 @@ export default class Style {
         gradients,
       }
     }
+
+    let all = element.style.style[styleKeywords.background];
+    const allIdx = element.style.styleIndex[styleKeywords.background] || 0;
+
+    const colors: string[] = [];
+    let gradients: IGradient[] = [];
 
     if (REG_GRADIENT_TYPE.test(all)) {
       const parsed = parseGradient(all);
@@ -694,246 +673,269 @@ export default class Style {
       }
     });
 
-    const getDefaultBackground = () => ({
-      color: '',
-      image: '',
-      position: {
-        left: BackgroundPosition.left,
-        leftOffset: '',
-        top: BackgroundPosition.top,
-        topOffset: '',
-      },
-      size: {
-        width: BackgroundSize.auto,
-        height: BackgroundSize.auto,
-      },
-      repeat: BackgroundRepeat.repeat,
-      clip: BackgroundClip.borderBox,
-      origin: BackgroundClip.paddingBox,
-      attachment: BackgroundAttachment.scroll,
-    });
+    if (process.env.FULL_SUPPORT) {
+      const getDefaultBackground = () => ({
+        color: '',
+        image: '',
+        position: {
+          left: BackgroundPosition.left,
+          leftOffset: '',
+          top: BackgroundPosition.top,
+          topOffset: '',
+        },
+        size: {
+          width: BackgroundSize.auto,
+          height: BackgroundSize.auto,
+        },
+        repeat: BackgroundRepeat.repeat,
+        clip: BackgroundClip.borderBox,
+        origin: BackgroundClip.paddingBox,
+        attachment: BackgroundAttachment.scroll,
+      });
 
-    if (positionIdx > allIdx) {
-      position.split(',').forEach((s, index) => {
-        s.trim().replace(REG_BG_POSITION, (matched, ...args) => {
-          let [
-            leftEnum, leftUnit, topEnum, topUnit,
-            dirEnum, oneUnit, twoUnit,
-            leftEnum1, leftUnit1, topEnum1, topUnit1,
-            oneEnum, oneUnit1,
-          ] = args;
+      const image = this.style[styleKeywords.backgroundImage];
+      const imageIdx = this.styleIndex[styleKeywords.backgroundImage] || 0;
 
-          if (!backgrounds[index]) {
-            backgrounds.push(getDefaultBackground());
-          }
+      const color = this.style[styleKeywords.backgroundColor];
+      const colorIdx = this.styleIndex[styleKeywords.backgroundColor] || 0;
 
-          const position = backgrounds[index].position;
+      const position = this.style[styleKeywords.backgroundPosition];
+      const positionIdx = this.styleIndex[styleKeywords.backgroundPosition] || 0;
 
-          if (leftEnum) {
-            position.left = leftEnum;
-            position.leftOffset = leftUnit;
-            position.top = topEnum;
-            position.topOffset = topUnit;
-          } else if (dirEnum) {
-            if (REG_POS_LR.test(dirEnum) || dirEnum === styleKeywords.center) { // left right
-              position.left = dirEnum;
-              if (REG_BG_POS_ENUM.test(oneUnit)) {
-                position.leftOffset = '';
-                position.top = oneUnit;
-                if (REG_BG_POS_ENUM.test(twoUnit)) {
-                  console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
-                } else {
-                  position.topOffset = twoUnit;
-                }
-              } else {
-                position.leftOffset = oneUnit;
-                if (REG_POS_TB.test(twoUnit)) {
-                  position.top = twoUnit;
-                  position.topOffset = '';
-                } else {
-                  console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
-                }
-              }
-            } else if (REG_POS_TB.test(dirEnum)) { // top bottom
-              position.top = dirEnum;
-              if (REG_BG_POS_ENUM.test(oneUnit)) {
-                position.topOffset = '';
-                position.left = oneUnit;
-                if (REG_BG_POS_ENUM.test(twoUnit)) {
-                  console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
-                } else {
-                  position.leftOffset = twoUnit;
-                }
-              } else {
-                position.topOffset = oneUnit;
-                if (REG_BG_POS_ENUM.test(twoUnit)) {
-                  position.top = twoUnit;
-                  position.topOffset = '';
-                } else {
-                  console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
-                }
-              }
-            }
-          } else if (leftEnum1 || leftUnit1 || topEnum1 || topUnit1) {
-            if (leftEnum1 && topEnum1) { // left top
-              if (REG_POS_LR.test(leftEnum1)) {
-                position.left = leftEnum1;
-                position.top = topEnum1;
-              } else {
-                position.left = topEnum1;
-                position.top = leftEnum1;
-              }
-              position.leftOffset = '';
-              position.topOffset = '';
-            } else if (leftUnit1 && topUnit1) { // 10px 10px
-              position.left = styleKeywords.left;
-              position.top = styleKeywords.top;
-              position.leftOffset = leftUnit1;
-              position.topOffset = topUnit1;
-            } else {
-              if (leftEnum1 && topUnit1) {
-                if (REG_POS_LR.test(leftEnum1)) { // left 10px
-                  position.left = leftEnum1;
-                  position.leftOffset = '';
-                  position.top = styleKeywords.top;
-                  position.topOffset = topUnit1;
-                } else { // bottom 10px
-                  position.top = leftEnum1;
-                  position.topOffset = '';
-                  position.left = styleKeywords.left;
-                  position.leftOffset = topUnit1;
-                }
-              } else if (leftUnit1 && topEnum1) { // 10px top
-                if (REG_POS_TB.test(topEnum1)) {
-                  position.left = styleKeywords.left;
-                  position.leftOffset = leftUnit1;
-                  position.top = topEnum1;
-                  position.topOffset = '';
-                } else {
-                  console.warn('背景位置无效 不允许出现 [10px left|right] 格式', this.element);
-                }
-              }
-            }
-          } else if (oneEnum || oneUnit1) {
-            if (oneEnum) {
-              if (REG_POS_LR.test(oneEnum)) {
-                position.left = oneEnum;
-                position.leftOffset = '';
-                position.top = styleKeywords.top;
-                position.topOffset = '50%';
-              } else if (REG_POS_TB.test(oneEnum)) {
-                position.left = styleKeywords.left;
-                position.leftOffset = '50%';
-                position.top = oneEnum;
-                position.topOffset = '';
-              } else {
-                position.left = styleKeywords.center;
-                position.leftOffset = '';
-                position.top = styleKeywords.center;
-                position.topOffset = '';
-              }
-            } else {
-              position.left = styleKeywords.left;
-              position.leftOffset = oneUnit1;
-              position.top = styleKeywords.top;
-              position.topOffset = '50%';
-            }
-          }
-          return '';
-        });
-      })
-    }
+      const size = this.style[styleKeywords.backgroundSize];
+      const sizeIdx = this.styleIndex[styleKeywords.backgroundSize] || 0;
 
-    if (sizeIdx > allIdx) {
-      size.split(',').forEach((s, index) => {
-        s.trim().replace(REG_BG_SIZE, (matched, ...args) => {
-          const [sizeEnum, widthAll, heightAll] = args;
-          if (!backgrounds[index]) {
-            backgrounds.push(getDefaultBackground());
-          }
-          const size = backgrounds[index].size;
-          if (sizeEnum) {
-            size.width = sizeEnum
-          } else {
-            if (widthAll) {
-              size.width = widthAll;
-            }
-            if (heightAll) {
-              size.height = heightAll;
-            } else {
-              size.height = styleKeywords.auto;
-            }
-          }
-          return '';
-        })
-      })
-    }
+      const repeat = this.style[styleKeywords.backgroundRepeat];
+      const repeatIdx = this.styleIndex[styleKeywords.backgroundRepeat] || 0;
 
-    if (imageIdx > allIdx) {
-      // TODO 处理单个属性渐变
-      if (REG_GRADIENT_TYPE.test(image)) {
-        const parsed = parseGradient(image);
-        parsed.gradients.forEach((gradient, index) => {
-          if (!backgrounds[index]) {
-            backgrounds.push(getDefaultBackground());
-          }
-          backgrounds[index].gradient = gradient;
-        })
-      } else {
-        image.split(',').forEach((s, index) => {
-          s.replace(REG_URL, (matched, g1, g2, g3) => {
+      const clip = this.style[styleKeywords.backgroundClip];
+      const clipIdx = this.styleIndex[styleKeywords.backgroundClip] || 0;
+
+      const origin = this.style[styleKeywords.backgroundOrigin];
+      const originIdx = this.styleIndex[styleKeywords.backgroundOrigin] || 0;
+
+      if (positionIdx > allIdx) {
+        position.split(',').forEach((s, index) => {
+          s.trim().replace(REG_BG_POSITION, (matched, ...args) => {
+            let [
+              leftEnum, leftUnit, topEnum, topUnit,
+              dirEnum, oneUnit, twoUnit,
+              leftEnum1, leftUnit1, topEnum1, topUnit1,
+              oneEnum, oneUnit1,
+            ] = args;
+
             if (!backgrounds[index]) {
               backgrounds.push(getDefaultBackground());
             }
-            backgrounds[index].image = g1 || g2 || g3;
+
+            const position = backgrounds[index].position;
+
+            if (leftEnum) {
+              position.left = leftEnum;
+              position.leftOffset = leftUnit;
+              position.top = topEnum;
+              position.topOffset = topUnit;
+            } else if (dirEnum) {
+              if (REG_POS_LR.test(dirEnum) || dirEnum === styleKeywords.center) { // left right
+                position.left = dirEnum;
+                if (REG_BG_POS_ENUM.test(oneUnit)) {
+                  position.leftOffset = '';
+                  position.top = oneUnit;
+                  if (REG_BG_POS_ENUM.test(twoUnit)) {
+                    console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
+                  } else {
+                    position.topOffset = twoUnit;
+                  }
+                } else {
+                  position.leftOffset = oneUnit;
+                  if (REG_POS_TB.test(twoUnit)) {
+                    position.top = twoUnit;
+                    position.topOffset = '';
+                  } else {
+                    console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
+                  }
+                }
+              } else if (REG_POS_TB.test(dirEnum)) { // top bottom
+                position.top = dirEnum;
+                if (REG_BG_POS_ENUM.test(oneUnit)) {
+                  position.topOffset = '';
+                  position.left = oneUnit;
+                  if (REG_BG_POS_ENUM.test(twoUnit)) {
+                    console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
+                  } else {
+                    position.leftOffset = twoUnit;
+                  }
+                } else {
+                  position.topOffset = oneUnit;
+                  if (REG_BG_POS_ENUM.test(twoUnit)) {
+                    position.top = twoUnit;
+                    position.topOffset = '';
+                  } else {
+                    console.warn(`语法错误 background-position: ${this.style[styleKeywords.backgroundPosition]}`, this.element);
+                  }
+                }
+              }
+            } else if (leftEnum1 || leftUnit1 || topEnum1 || topUnit1) {
+              if (leftEnum1 && topEnum1) { // left top
+                if (REG_POS_LR.test(leftEnum1)) {
+                  position.left = leftEnum1;
+                  position.top = topEnum1;
+                } else {
+                  position.left = topEnum1;
+                  position.top = leftEnum1;
+                }
+                position.leftOffset = '';
+                position.topOffset = '';
+              } else if (leftUnit1 && topUnit1) { // 10px 10px
+                position.left = styleKeywords.left;
+                position.top = styleKeywords.top;
+                position.leftOffset = leftUnit1;
+                position.topOffset = topUnit1;
+              } else {
+                if (leftEnum1 && topUnit1) {
+                  if (REG_POS_LR.test(leftEnum1)) { // left 10px
+                    position.left = leftEnum1;
+                    position.leftOffset = '';
+                    position.top = styleKeywords.top;
+                    position.topOffset = topUnit1;
+                  } else { // bottom 10px
+                    position.top = leftEnum1;
+                    position.topOffset = '';
+                    position.left = styleKeywords.left;
+                    position.leftOffset = topUnit1;
+                  }
+                } else if (leftUnit1 && topEnum1) { // 10px top
+                  if (REG_POS_TB.test(topEnum1)) {
+                    position.left = styleKeywords.left;
+                    position.leftOffset = leftUnit1;
+                    position.top = topEnum1;
+                    position.topOffset = '';
+                  } else {
+                    console.warn('背景位置无效 不允许出现 [10px left|right] 格式', this.element);
+                  }
+                }
+              }
+            } else if (oneEnum || oneUnit1) {
+              if (oneEnum) {
+                if (REG_POS_LR.test(oneEnum)) {
+                  position.left = oneEnum;
+                  position.leftOffset = '';
+                  position.top = styleKeywords.top;
+                  position.topOffset = '50%';
+                } else if (REG_POS_TB.test(oneEnum)) {
+                  position.left = styleKeywords.left;
+                  position.leftOffset = '50%';
+                  position.top = oneEnum;
+                  position.topOffset = '';
+                } else {
+                  position.left = styleKeywords.center;
+                  position.leftOffset = '';
+                  position.top = styleKeywords.center;
+                  position.topOffset = '';
+                }
+              } else {
+                position.left = styleKeywords.left;
+                position.leftOffset = oneUnit1;
+                position.top = styleKeywords.top;
+                position.topOffset = '50%';
+              }
+            }
+            return '';
+          });
+        })
+      }
+
+      if (sizeIdx > allIdx) {
+        size.split(',').forEach((s, index) => {
+          s.trim().replace(REG_BG_SIZE, (matched, ...args) => {
+            const [sizeEnum, widthAll, heightAll] = args;
+            if (!backgrounds[index]) {
+              backgrounds.push(getDefaultBackground());
+            }
+            const size = backgrounds[index].size;
+            if (sizeEnum) {
+              size.width = sizeEnum
+            } else {
+              if (widthAll) {
+                size.width = widthAll;
+              }
+              if (heightAll) {
+                size.height = heightAll;
+              } else {
+                size.height = styleKeywords.auto;
+              }
+            }
             return '';
           })
         })
       }
-    }
 
-    if (repeatIdx > allIdx) {
-      repeat.split(',').forEach((s, index) => {
-        s.replace(REG_BG_REPEAT, (matched) => {
-          if (!backgrounds[index]) {
-            backgrounds.push(getDefaultBackground());
-          }
-          backgrounds[index].repeat = matched as BackgroundRepeat;
-          return '';
-        })
-      })
-    }
-
-    if (clipIdx > allIdx) {
-      clip.split(',').forEach((s, index) => {
-        s.replace(REG_BG_CLIP, (matched) => {
-          if (!backgrounds[index]) {
-            backgrounds.push(getDefaultBackground());
-          }
-          backgrounds[index].clip = matched as BackgroundClip;
-          return '';
-        })
-      })
-    }
-
-    if (originIdx > allIdx) {
-      origin.split(',').forEach((s, index) => {
-        s.replace(REG_BG_CLIP, (matched) => {
-          if (!backgrounds[index]) {
-            backgrounds.push(getDefaultBackground());
-          }
-          backgrounds[index].origin = matched as BackgroundClip;
-          return '';
-        })
-      })
-    }
-
-    // 背景颜色只有一个
-    if (colorIdx > allIdx && REG_COLOR.test(color)) {
-      if (backgrounds.length === 0) {
-        backgrounds.push(getDefaultBackground())
+      if (imageIdx > allIdx) {
+        // TODO 处理单个属性渐变
+        if (REG_GRADIENT_TYPE.test(image)) {
+          const parsed = parseGradient(image);
+          parsed.gradients.forEach((gradient, index) => {
+            if (!backgrounds[index]) {
+              backgrounds.push(getDefaultBackground());
+            }
+            backgrounds[index].gradient = gradient;
+          })
+        } else {
+          image.split(',').forEach((s, index) => {
+            s.replace(REG_URL, (matched, g1, g2, g3) => {
+              if (!backgrounds[index]) {
+                backgrounds.push(getDefaultBackground());
+              }
+              backgrounds[index].image = g1 || g2 || g3;
+              return '';
+            })
+          })
+        }
       }
-      backgrounds[backgrounds.length - 1].color = color;
+
+      if (repeatIdx > allIdx) {
+        repeat.split(',').forEach((s, index) => {
+          s.replace(REG_BG_REPEAT, (matched) => {
+            if (!backgrounds[index]) {
+              backgrounds.push(getDefaultBackground());
+            }
+            backgrounds[index].repeat = matched as BackgroundRepeat;
+            return '';
+          })
+        })
+      }
+
+      if (clipIdx > allIdx) {
+        clip.split(',').forEach((s, index) => {
+          s.replace(REG_BG_CLIP, (matched) => {
+            if (!backgrounds[index]) {
+              backgrounds.push(getDefaultBackground());
+            }
+            backgrounds[index].clip = matched as BackgroundClip;
+            return '';
+          })
+        })
+      }
+
+      if (originIdx > allIdx) {
+        origin.split(',').forEach((s, index) => {
+          s.replace(REG_BG_CLIP, (matched) => {
+            if (!backgrounds[index]) {
+              backgrounds.push(getDefaultBackground());
+            }
+            backgrounds[index].origin = matched as BackgroundClip;
+            return '';
+          })
+        })
+      }
+
+      // 背景颜色只有一个
+      if (colorIdx > allIdx && REG_COLOR.test(color)) {
+        if (backgrounds.length === 0) {
+          backgrounds.push(getDefaultBackground())
+        }
+        backgrounds[backgrounds.length - 1].color = color;
+      }
     }
 
     // 只保留有效内容
@@ -1041,65 +1043,68 @@ export default class Style {
       this.styleIndex[styleKeywords.borderLeft] || 0,
     ];
 
-    const width = [
-      parseWidth(this.style[styleKeywords.borderTopWidth]),
-      parseWidth(this.style[styleKeywords.borderRightWidth]),
-      parseWidth(this.style[styleKeywords.borderBottomWidth]),
-      parseWidth(this.style[styleKeywords.borderLeftWidth]),
-    ]
+    if (process.env.FULL_SUPPORT) {
 
-    const widthIndex = [
-      this.styleIndex[styleKeywords.borderTopWidth] || 0,
-      this.styleIndex[styleKeywords.borderRightWidth] || 0,
-      this.styleIndex[styleKeywords.borderBottomWidth] || 0,
-      this.styleIndex[styleKeywords.borderLeftWidth] || 0,
-    ]
+      const width = [
+        parseWidth(this.style[styleKeywords.borderTopWidth]),
+        parseWidth(this.style[styleKeywords.borderRightWidth]),
+        parseWidth(this.style[styleKeywords.borderBottomWidth]),
+        parseWidth(this.style[styleKeywords.borderLeftWidth]),
+      ]
 
-    widthIndex.forEach((i, idx) => {
-      if (i > singleIndex[idx]) {
-        single[idx].width = width[idx];
-      }
-    })
+      const widthIndex = [
+        this.styleIndex[styleKeywords.borderTopWidth] || 0,
+        this.styleIndex[styleKeywords.borderRightWidth] || 0,
+        this.styleIndex[styleKeywords.borderBottomWidth] || 0,
+        this.styleIndex[styleKeywords.borderLeftWidth] || 0,
+      ]
 
-    const style = [
-      parseStyle(this.style[styleKeywords.borderTopStyle]),
-      parseStyle(this.style[styleKeywords.borderRightStyle]),
-      parseStyle(this.style[styleKeywords.borderBottomStyle]),
-      parseStyle(this.style[styleKeywords.borderLeftStyle]),
-    ]
+      widthIndex.forEach((i, idx) => {
+        if (i > singleIndex[idx]) {
+          single[idx].width = width[idx];
+        }
+      })
 
-    const styleIndex = [
-      this.styleIndex[styleKeywords.borderTopStyle] || 0,
-      this.styleIndex[styleKeywords.borderRightStyle] || 0,
-      this.styleIndex[styleKeywords.borderBottomStyle] || 0,
-      this.styleIndex[styleKeywords.borderLeftStyle] || 0,
-    ]
+      const style = [
+        parseStyle(this.style[styleKeywords.borderTopStyle]),
+        parseStyle(this.style[styleKeywords.borderRightStyle]),
+        parseStyle(this.style[styleKeywords.borderBottomStyle]),
+        parseStyle(this.style[styleKeywords.borderLeftStyle]),
+      ]
 
-    styleIndex.forEach((i, idx) => {
-      if (i > singleIndex[idx]) {
-        single[idx].style = style[idx];
-      }
-    })
+      const styleIndex = [
+        this.styleIndex[styleKeywords.borderTopStyle] || 0,
+        this.styleIndex[styleKeywords.borderRightStyle] || 0,
+        this.styleIndex[styleKeywords.borderBottomStyle] || 0,
+        this.styleIndex[styleKeywords.borderLeftStyle] || 0,
+      ]
 
-    const color = [
-      parseColor(this.style[styleKeywords.borderTopColor]),
-      parseColor(this.style[styleKeywords.borderRightColor]),
-      parseColor(this.style[styleKeywords.borderBottomColor]),
-      parseColor(this.style[styleKeywords.borderLeftColor]),
-    ];
+      styleIndex.forEach((i, idx) => {
+        if (i > singleIndex[idx]) {
+          single[idx].style = style[idx];
+        }
+      })
 
-    const colorIndex = [
-      this.styleIndex[styleKeywords.borderTopColor] || 0,
-      this.styleIndex[styleKeywords.borderRightColor] || 0,
-      this.styleIndex[styleKeywords.borderBottomColor] || 0,
-      this.styleIndex[styleKeywords.borderLeftColor] || 0,
-    ]
+      const color = [
+        parseColor(this.style[styleKeywords.borderTopColor]),
+        parseColor(this.style[styleKeywords.borderRightColor]),
+        parseColor(this.style[styleKeywords.borderBottomColor]),
+        parseColor(this.style[styleKeywords.borderLeftColor]),
+      ];
 
-    colorIndex.forEach((i, idx) => {
-      if (i > singleIndex[idx]) {
-        single[idx].color = color[idx];
-      }
-    });
+      const colorIndex = [
+        this.styleIndex[styleKeywords.borderTopColor] || 0,
+        this.styleIndex[styleKeywords.borderRightColor] || 0,
+        this.styleIndex[styleKeywords.borderBottomColor] || 0,
+        this.styleIndex[styleKeywords.borderLeftColor] || 0,
+      ]
+
+      colorIndex.forEach((i, idx) => {
+        if (i > singleIndex[idx]) {
+          single[idx].color = color[idx];
+        }
+      });
+    }
 
     if (singleIndex[0] > allIndex) {
       top = single[0];
@@ -1200,36 +1205,38 @@ export default class Style {
       });
     }
 
-    const topLeftStyle = {
-      target: topLeft,
-      key: styleKeywords.borderTopLeftRadius,
-    }
-    const topRightStyle = {
-      target: topRight,
-      key: styleKeywords.borderTopRightRadius,
-    }
-    const bottomRightStyle = {
-      target: bottomRight,
-      key: styleKeywords.borderBottomRightRadius,
-    }
-    const bottomLeftStyle = {
-      target: bottomLeft,
-      key: styleKeywords.borderBottomLeftRadius,
-    };
-
-    ;[topLeftStyle, topRightStyle, bottomRightStyle, bottomLeftStyle].forEach(i => {
-      const idx = this.styleIndex[i.key] || 0;
-      if (idx > allIndex) {
-        const value = this.style[i.key];
-        value.replace(REG_RADIUS_VALUE, (matched, g1, g2) => {
-          i.target.width = i.target.height = g1;
-          if (g2) {
-            i.target.height = g2;
-          }
-          return '';
-        });
+    if (process.env.FULL_SUPPORT) {
+      const topLeftStyle = {
+        target: topLeft,
+        key: styleKeywords.borderTopLeftRadius,
       }
-    });
+      const topRightStyle = {
+        target: topRight,
+        key: styleKeywords.borderTopRightRadius,
+      }
+      const bottomRightStyle = {
+        target: bottomRight,
+        key: styleKeywords.borderBottomRightRadius,
+      }
+      const bottomLeftStyle = {
+        target: bottomLeft,
+        key: styleKeywords.borderBottomLeftRadius,
+      };
+
+      ;[topLeftStyle, topRightStyle, bottomRightStyle, bottomLeftStyle].forEach(i => {
+        const idx = this.styleIndex[i.key] || 0;
+        if (idx > allIndex) {
+          const value = this.style[i.key];
+          value.replace(REG_RADIUS_VALUE, (matched, g1, g2) => {
+            i.target.width = i.target.height = g1;
+            if (g2) {
+              i.target.height = g2;
+            }
+            return '';
+          });
+        }
+      });
+    }
 
     const {offsetWidth, offsetHeight} = this.element;
     const {margin} = this;
