@@ -1,5 +1,16 @@
 import Element from './element';
-import {NodeType, REG_URL, SupportElement, SupportElementType} from './constants';
+import {
+  NodeType,
+  REG_ELEMENT_ATTR,
+  REG_SINGLE_ELEMENT,
+  REG_STYLE_ATTR,
+  REG_URL,
+  REG_URL_HOLD,
+  styleKeywords,
+  SupportElement,
+  SupportElementType,
+  URL_HOLD,
+} from './constants';
 import ElementImage from './element-image';
 
 export default function parse(html: string) {
@@ -86,7 +97,7 @@ export default function parse(html: string) {
 
       if (nodeName === SupportElement.img) {
         const img = new ElementImage();
-        Object.assign(img, currentNode);
+        img.root = rootNode;
         elements.pop();
         elements.push(img);
         parentNode.children.pop();
@@ -96,7 +107,7 @@ export default function parse(html: string) {
       currentNode.nodeName = nodeName;
       const attrs = currentNode.attrs;
 
-      contentText.replace(/([^\s]+)\s*=\s*('([^']+)'|"([^"]+)")?/g, (...args) => {
+      contentText.replace(REG_ELEMENT_ATTR, (...args) => {
         const [, g1, , g3, g4] = args;
         attrs[g1] = g3 || g4 || '';
         return '';
@@ -104,21 +115,21 @@ export default function parse(html: string) {
 
       for (let key in attrs) {
         switch (key) {
-          case 'style': {
+          case styleKeywords.style: {
             const style = currentNode.style;
             const urls: string[] = [];
             const fullStyle = (attrs[key] as string).replace(REG_URL, (matched) => {
               urls.push(matched);
-              return '#__URL__#';
+              return URL_HOLD;
             });
 
-            fullStyle.replace(/\s*([^:]+)\s*:\s*([^;]+)\s*;?/g, (...args) => {
+            fullStyle.replace(REG_STYLE_ATTR, (...args) => {
               let [, g1, g2] = args;
               if (/\/\*\s*/.test(g1)) {
                 return '';
               }
 
-              g2 = g2.replace(/#__URL__#/g, () => {
+              g2 = g2.replace(REG_URL_HOLD, () => {
                 const url = urls[0];
                 urls.shift()
                 return url;
@@ -132,7 +143,7 @@ export default function parse(html: string) {
         }
       }
 
-      if (/br|hr|area|base|img|input|link|meta|basefont|param|col|frame|embed|keygen|source/i.test(nodeName) || /\/>$/.test(contentText)) {
+      if (REG_SINGLE_ELEMENT.test(nodeName) || /\/>$/.test(contentText)) {
         // 单标签不处理子父级关系
       } else {
         parentNode = currentNode;

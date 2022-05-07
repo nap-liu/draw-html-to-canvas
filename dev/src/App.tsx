@@ -7,7 +7,7 @@ import debounce from './debounce';
 // const html = html2;
 const html = html3;
 // const html = html4;
-// const html = `<img src='http://192.168.50.65:8080/image/post-4.12-bg.png'>`
+// const html = `<img style="background: #f00;border-radius: 100%" src='http://192.168.50.65:8080/image/post-4.12-bg.png'>`
 
 export default function App() {
   const div = useRef<HTMLDivElement>(null);

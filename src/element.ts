@@ -1608,9 +1608,11 @@ export default class Element {
 
         if (typeof continueDraw === 'function') {
           ctx.save();
-          // TODO 小程序 不支持该模式 会导致边框丢失
-          //  可以通过 background-clip: padding-box 解决
-          ctx.globalCompositeOperation = 'destination-over';
+          if (this.nodeName !== SupportElement.img) {
+            // TODO 小程序 不支持该模式 会导致边框丢失
+            //  可以通过 background-clip: padding-box 解决
+            ctx.globalCompositeOperation = 'destination-over';
+          }
           continueDraw(ctx);
           ctx.restore();
         }
@@ -1831,7 +1833,7 @@ export default class Element {
    * @param context
    */
   public draw(context: CanvasRenderingContext2D) {
-    const {background: backgroundList, opacity, overflow} = this.style;
+    const {background: backgroundList, opacity, padding, border, overflow} = this.style;
     const {
       offsetLeft, offsetTop,
       contentWidth, contentHeight,
@@ -1849,6 +1851,13 @@ export default class Element {
         }
         this.drawBackground(context, background);
       });
+
+      if (this.nodeName === SupportElement.img) {
+        const img: ElementImage = this as any;
+        if (img.source) {
+          context.drawImage(img.source, offsetLeft + padding.left + border.left.width, offsetTop + padding.top + border.top.width, contentWidth, contentHeight);
+        }
+      }
     });
 
     if (this.nodeType === NodeType.TEXT_NODE) {
@@ -1856,13 +1865,6 @@ export default class Element {
       if (displayText) {
         this.drawText(context);
         this.drawTextDecoration(context);
-      }
-    }
-
-    if (this.nodeName === SupportElement.img) {
-      const img: ElementImage = this as any;
-      if (img.source) {
-        context.drawImage(img.source, offsetLeft, offsetTop, contentWidth, contentHeight);
       }
     }
 
