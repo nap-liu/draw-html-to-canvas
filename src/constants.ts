@@ -300,6 +300,6 @@ export enum TextAlign {
   right = 'right',
 }
 
-export type TContinueDraw = (ctx: CanvasRenderingContext2D) => void;
+export type TContinueDraw = (ctx: CanvasRenderingContext2D, ...args: any) => void;
 export type TQuadraticCurvePath = [[number, number], [number, number], [number, number]];
 export type TBezierCurvePath = [[number, number], [number, number], [number, number], [number, number]];

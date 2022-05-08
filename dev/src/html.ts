@@ -613,14 +613,19 @@ font-weight: 400;'>扫码来找我 !</div>
 </div>
 `
 
-export const html5 = `<div style=' border: 1px solid #f00; 
-      border-left-color: #0f0;
-      border-left-width: 10px; 
-      border-top-color: #0ff; 
-      border-top-width: 15px; 
-      border-right-color: #00f; 
-      border-right-width: 20px; 
-      border-bottom-color: #f00;
-      border-bottom-width: 20px; 
+export const html5 = `<div style=' 
+      border: 5px dashed #f00; 
+      /*border-left-color: #0f0;*/
+      /*border-left-width: 10px; */
+      /*border-top-color: #0ff; */
+      /*border-top-width: 15px; */
+      /*border-right-color: #00f; */
+      /*border-right-width: 20px; */
+      /*border-bottom-color: #f00;*/
+      /*border-bottom-width: 20px; */
       width: 100px; height: 100px;
-      border-radius: 10px 20px 30px 40px / 40px 30px 20px 10px; border-radius: 10px; background: #ccc url(https://roc20210711.oss-cn-beijing.aliyuncs.com/dev/assets/image/card-bg.png) no-repeat  left top / 100px auto;' src="https://roc20210711.oss-cn-beijing.aliyuncs.com/dev/assets/image/card-bg.png"></div>`
+      border-radius: 30px; background: #ccc url(https://roc20210711.oss-cn-beijing.aliyuncs.com/dev/assets/image/card-bg.png) no-repeat content-box left top / 100px auto;'></div>
+<div>
+  <img style="width: 100px; height: 100px; border-radius: 30px; border: 10px dashed #ccc;" src="https://roc20210711.oss-cn-beijing.aliyuncs.com/dev/assets/image/card-bg.png" alt="">
+</div>
+`
