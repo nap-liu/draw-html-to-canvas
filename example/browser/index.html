@@ -6,27 +6,216 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>draw html to canvas</title>
   <style>
-      * {
-          margin: 0;
-          padding: 0;
-      }
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    .tools {
+      border-bottom: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    .html {
+      width: 100%;
+      height: 200px;
+    }
+
+    .buttons {
+      text-align: right;
+    }
+
+    .container {
+      flex: 1;
+    }
+
+    label {
+      display: block;
+      text-align: center;
+      font-size: 20px;
+    }
+
+    .canvas {
+      border-top: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
-<canvas id="canvas"></canvas>
+<div class="tools">
+  <textarea class="html"></textarea>
+  <div class="buttons">
+    <button onclick="reset()">重置</button>
+    <button onclick="render()">绘制html到canvas</button>
+  </div>
+</div>
+<div class="container">
+  <div class="browser">
+    <label>浏览器渲染</label>
+    <div id="browser"></div>
+  </div>
+  <div class="canvas">
+    <label>canvas渲染</label>
+    <canvas id="canvas"></canvas>
+  </div>
+</div>
 </body>
 <script src="../../dist/index.umd.js"></script>
 <script>
-  ;(async function() {
-    const DrawHtml2Canvas = window.DrawHtml2Canvas;
+  const DrawHtml2Canvas = window.DrawHtml2Canvas;
 
-    const html = `<div style="border: 1px solid #f00">draw to canvas</div>`;
+  const html = `<div style="color: #fff; position: relative;">
+  <div style="text-align: center">
+    <div style="display: inline-block;padding: 5px 10px;color: #000; border-radius: 10px; border: 2px dashed #00e;">作者：<span style="text-decoration: underline 2px #00e; color: #00e">刘喜</span></div>
+    <br />
+    <div style="margin-top: 10px; display: inline-block;padding: 5px 10px;color: #000; border-radius: 10px; border: 2px dashed #00e;"><span style="text-decoration: underline 2px #00e; color: #00e">一键式生成图片、强大的css样式支持</span></div>
+    <div style="margin-top: 10px; display: inline-block;padding: 5px 10px;color: #000; border-radius: 10px; border: 2px dashed #00e;">仓库地址：<span style="text-decoration: underline 2px #00e; color: #00e">https://github.com/nap-liu/draw-html-to-canvas</span></div>
+  </div>
+  <div style="color: #f00; text-decoration: underline">文字</div>
+  <div style="background: #f00">行内<span style="background: #ccc;color: #111; font-style: italic;font-weight: bold; border-bottom: 2px solid #0f0">背景</span>文字</div>
+  <div style="
+      color: #333;
+      background:
+        linear-gradient(45deg, rgba(0,0,0,.1), rgba(0,0,0,.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,.1) 75%),
+        linear-gradient(45deg, rgba(0,0,0,.1), rgba(0,0,0,.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,.1) 75%);
+      background-position: 0 0, 10px 10px;
+      background-size: 20px 20px,20px 20px;
+      height: 200px;
+  ">
+    <div style="float: left">float left</div>
+    <div style="float: right">float right</div>
+    <div style="display: inline">inline text</div>
+    <div style="text-align: center; font-size: 20px">text align center</div>
+    <div style="float: left">float left</div>
+    <div style="float: right">float right</div>
+    <div style="">block text</div>
+    <div>
+      <div style="float: left">float left</div>
+      <div style="float: right">float right</div>
+    </div>
+    <div style="clear: both">after clear block text</div>
+    <div style="position: absolute; right: 0; bottom: 0">position: absolute</div>
+  </div>
+</div>
+<div style="overflow: hidden;">
+  <div style="
+      float: left;
+      text-align: center;
+      line-height: 50px;
+      border: 1px solid #f00;
+      border-left-color: #0f0;
+      border-left-width: 10px;
+      border-top-color: #0ff;
+      border-top-width: 15px;
+      border-right-color: #00f;
+      border-right-width: 20px;
+      border-bottom-color: #ff0;
+      border-bottom-width: 30px;
+      width: 50px; height: 50px;
+      ">float</div>
+  <div style="
+      float: left;
+      border: 1px solid #f00;
+      line-height: 50px;
+      width: 50px; height: 50px;
+      border-radius: 10px;
+      ">float</div>
+  <div style="
+      float: left;
+      text-align: center;
+      line-height: 50px;
+      border: 1px solid #f00;
+      width: 50px; height: 50px;
+      border-radius: 100%;
+      ">float</div>
+  <div style="
+      float: left;
+      text-align: right;
+      line-height: 50px;
+      border: 1px solid #f00;
+      border-left-color: #0f0;
+      border-top-color: #0ff;
+      border-right-color: #00f;
+      border-bottom-color: #ff0;
+      width: 50px; height: 50px;
+      border-radius: 100%;
+      ">float</div>
+</div>
 
-    const render = DrawHtml2Canvas.fromHTML(html);
-    render.rootNode.style.set('width', '500px');
+<div style="">
+  <div style="
+      display: inline-block;
+      border: 1px solid #f00;
+      line-height: 100px;
+      width: 100px; height: 100px;
+      border-radius: 10px;">inline-block</div>
+  <div style="
+      display: inline-block;
+      border: 1px solid #f00;
+      text-align: center;
+      line-height: 100px;
+      width: 100px; height: 100px;
+      border-radius: 150%;">inline-block</div>
+  <div style="
+      display: inline-block;
+      text-align: right;
+      line-height: 100px;
+      border: 1px solid #f00;
+      border-left-color: #0f0;
+      border-left-width: 10px;
+      border-top-color: #0ff;
+      border-top-width: 15px;
+      border-right-color: #00f;
+      border-right-width: 20px;
+      border-bottom-color: #ff0;
+      border-bottom-width: 30px;
+      width: 100px; height: 100px;
+      border-radius: 100%;
+      ">inline-block</div>
+   <div style="
+      display: inline-block;
+      text-align: right;
+      line-height: 100px;
+      border: 1px solid #f00;
+      border-left-color: #0f0;
+      border-left-width: 10px;
+      border-top-color: #0ff;
+      border-top-width: 15px;
+      border-right-color: #00f;
+      border-right-width: 20px;
+      border-bottom-color: #f00;
+      border-bottom-width: 20px;
+      width: 100px; height: 100px;
+      border-radius: 10px 20px 30px 40px / 40px 30px 20px 10px;
+      ">inline-block</div>
+</div>`;
 
-    const canvas = document.querySelector('#canvas');
-    const ctx = canvas.getContext('2d');
+  const textarea = document.querySelector('.html');
+  const browser = document.querySelector('#browser');
+  const canvas = document.querySelector('#canvas');
+  const ctx = canvas.getContext('2d');
+  textarea.value = html;
+
+  window.addEventListener('resize', debounce(render, 300));
+
+  function reset() {
+    textarea.value = html;
+    render();
+  }
+
+  function debounce(fn, delay) {
+    let timer;
+    return function() {
+      clearTimeout(timer);
+      timer = setTimeout(function() {
+        fn.apply(arguments);
+      }, delay);
+    };
+  }
+
+  async function render() {
+    browser.innerHTML = textarea.value;
+    const render = DrawHtml2Canvas.fromHTML(textarea.value);
+    render.rootNode.style.set('width', `${window.document.body.clientWidth}px`);
 
     // 加载html中使用的图片
     await render.loadSource();
@@ -41,6 +230,8 @@
 
     // 绘制图像到canvas上
     render.draw(ctx);
-  })();
+  }
+
+  render();
 </script>
 </html>
