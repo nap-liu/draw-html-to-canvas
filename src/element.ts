@@ -324,21 +324,11 @@ export default class Element {
         const parent = this.getNearBlock();
         if (parent) {
           if (width) {
-            if (REG_PX.test(width)) { // 固定尺寸 缩放
-              const ratio = Math.abs(img.imageWidth - this.contentWidth) / img.imageWidth;
-              this.contentHeight = img.imageHeight * ratio;
-            } else if (REG_PCT.test(width)) { // 按比例缩放
-              const ratio = this.contentWidth / img.imageWidth;
-              this.contentHeight = img.imageHeight * ratio;
-            }
+            const ratio = this.contentWidth / img.imageWidth;
+            this.contentHeight = img.imageHeight * ratio;
           } else if (height) {
-            if (REG_PX.test(height)) { // 固定尺寸 缩放
-              const ratio = Math.abs(img.imageWidth - this.contentWidth) / img.imageWidth;
-              this.contentWidth = img.contentWidth * ratio;
-            } else if (REG_PCT.test(height)) { // 按比例缩放
-              const ratio = this.contentHeight / img.imageHeight
-              this.contentWidth = img.imageWidth * ratio;
-            }
+            const ratio = this.contentHeight / img.imageHeight
+            this.contentWidth = img.imageWidth * ratio;
           }
         }
       } else {
@@ -374,8 +364,6 @@ export default class Element {
   public layoutLine(context: CanvasRenderingContext2D) {
     const blockType = this.blockType;
     const isNoWrap = this.style.isNoWrap;
-
-    // TODO 修复 嵌套 float元素 影响文字布局问题
 
     if (blockType === BlockType.inlineBlock || blockType === BlockType.block) {
       // 重置行
@@ -1855,7 +1843,7 @@ export default class Element {
       if (this.nodeName === SupportElement.img) {
         const img: ElementImage = this as any;
         if (img.source) {
-          context.drawImage(img.source, offsetLeft + padding.left + border.left.width, offsetTop + padding.top + border.top.width, contentWidth, contentHeight);
+          context.drawImage(img.source, 0, 0, contentWidth, contentHeight);
         }
       }
     });

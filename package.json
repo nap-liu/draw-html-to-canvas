@@ -1,9 +1,8 @@
 {
   "name": "draw-html-to-canvas",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "根据html+css规范绘制 网页到canvas",
-  "main": "dist/index.cjs.js",
-  "browser": "dist/index.umd.js",
+  "main": "dist/index.esm.js",
   "types": "types",
   "files": [
     "readme.md",

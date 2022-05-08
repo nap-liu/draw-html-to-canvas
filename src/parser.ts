@@ -98,6 +98,8 @@ export default function parse(html: string) {
       if (nodeName === SupportElement.img) {
         const img = new ElementImage();
         img.root = rootNode;
+        img.parentNode = currentNode.parentNode;
+        img.nextNode = currentNode.nextNode;
         elements.pop();
         elements.push(img);
         parentNode.children.pop();

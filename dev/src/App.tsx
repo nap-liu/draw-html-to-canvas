@@ -1,13 +1,13 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
-import defaultHtml, {html2, html3, html4} from './html';
-import Render from 'dhtml2canvas';
+import defaultHtml, {html2, html3, html4, html5} from './html';
+import Render from 'draw-html-to-canvas';
 import debounce from './debounce';
 
-const html = defaultHtml;
+// const html = defaultHtml;
 // const html = html2;
 // const html = html3;
 // const html = html4;
-// const html = `<img style="background: #f00;border-radius: 100%" src='http://192.168.50.65:8080/image/post-4.12-bg.png'>`
+const html = html5;
 
 export default function App() {
   const div = useRef<HTMLDivElement>(null);

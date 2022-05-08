@@ -150,7 +150,7 @@ const t = `<div style="">
   </span>
 </div>`
 
-export const html5 = `<div
+export const html6 = `<div
   style="
   /*font-style: italic;*/
   /*overflow: auto;*/
@@ -358,7 +358,7 @@ export const html4 = `<div
   <div style="text-align: left;">8</div>
 </div>`
 
-export const html3 = `<div style="width: 320px; height: 320px;  text-align: center; border: 1px solid #f00;margin-left: 20px">
+export const html3 = `<div style="width: 320px; height: 320px; text-align: center; border: 1px solid #f00;margin-left: 20px">
 <div style="
 display: inline-block;
       width: 200px;
@@ -395,7 +395,7 @@ display: inline-block;
 </div>`
 export const html2 = `<div style='border-radius: 24px; background-color: rgba(0,0,0,.3)'>
   <div className='head' style='height: 362px; position: relative'>
-    <img src='http://127.0.0.1:8080/image/post-4.14-bg.png' style='width: 100%;position: absolute;left:0;top:0;'>
+    <img src='http://127.0.0.1:8080/image/post-4.14-bg.png' style='border: 1px solid #f00; border-radius: 10px 20px 30px 40px;width: 100%;position: absolute;left:0;top:0;'>
     <img src='http://127.0.0.1:8080/image/post-4.14-logo.png' style='width:66px;height:58px;position: absolute;left:50px;top:60px;' />
     <div className='text' style='
 font-family: PingHei-Bold;
@@ -611,3 +611,5 @@ margin-bottom: 54px;
 font-weight: 400;'>扫码来找我 !</div>
 </div>
 `
+
+export const html5 = `<img style="width: 100%" src='http://192.168.50.65:8080/image/post-4.12-bg.png'>`
