@@ -1596,11 +1596,11 @@ export default class Element {
 
         if (typeof continueDraw === 'function') {
           ctx.save();
-          if (this.nodeName !== SupportElement.img) {
-            // TODO 小程序 不支持该模式 会导致边框丢失
-            //  可以通过 background-clip: padding-box 解决
-            ctx.globalCompositeOperation = 'destination-over';
-          }
+          // if (this.nodeName !== SupportElement.img) {
+          // TODO 小程序 不支持该模式 会导致边框丢失
+          //  可以通过 background-clip: padding-box 解决
+          // ctx.globalCompositeOperation = 'destination-over';
+          // }
           continueDraw(ctx);
           ctx.restore();
         }

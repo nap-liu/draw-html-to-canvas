@@ -1,6 +1,6 @@
 {
   "name": "draw-html-to-canvas",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "根据html+css规范绘制 网页到canvas",
   "main": "dist/index.esm.js",
   "types": "types",
@@ -21,7 +21,7 @@
     "html",
     "html-to-canvas",
     "html2canvas",
-    "dhtml2canvas",
+    "draw-html-to-canvas",
     "poster",
     "海报"
   ],

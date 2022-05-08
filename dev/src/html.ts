@@ -255,13 +255,14 @@ export const html4 = `<div
                 margin: 5px 10px 15px 20px;
                 /*background: #0f0; */
                 position: relative;
+                border-radius: 10px;
                 padding: 5px 10px 15px 20px;
                 /*border: 20px solid rgba(0,128,0,0.5);*/
                 /*border-right-width: 10px;*/
                 /*border-left-color: rgba(184,134,11,0.5);*/
                 /*border-right-color: rgba(65,105,225,0.5);*/
                 /*border-bottom-color: rgba(225,0,0,0.5);*/
-                background: rgba(0,0,0,0.3) url('img.png') left top / 100px auto no-repeat content-box;
+                background: #f00 url('img.png') no-repeat left top / 100px auto;
                 /*border-left-width: 20px;*/
                 /*border-right-width: 150px;*/
                 /*border-bottom: 1px solid #008000;*/
@@ -612,4 +613,14 @@ font-weight: 400;'>扫码来找我 !</div>
 </div>
 `
 
-export const html5 = `<img style="width: 100%" src='http://192.168.50.65:8080/image/post-4.12-bg.png'>`
+export const html5 = `<div style=' border: 1px solid #f00; 
+      border-left-color: #0f0;
+      border-left-width: 10px; 
+      border-top-color: #0ff; 
+      border-top-width: 15px; 
+      border-right-color: #00f; 
+      border-right-width: 20px; 
+      border-bottom-color: #f00;
+      border-bottom-width: 20px; 
+      width: 100px; height: 100px;
+      border-radius: 10px 20px 30px 40px / 40px 30px 20px 10px; border-radius: 10px; background: #ccc url(https://roc20210711.oss-cn-beijing.aliyuncs.com/dev/assets/image/card-bg.png) no-repeat  left top / 100px auto;' src="https://roc20210711.oss-cn-beijing.aliyuncs.com/dev/assets/image/card-bg.png"></div>`
