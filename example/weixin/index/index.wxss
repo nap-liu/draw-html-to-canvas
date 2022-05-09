@@ -14,3 +14,8 @@ page {
 .draw {
   margin: 10rpx;
 }
+
+.buttons {
+  display: flex;
+  flex-direction: row;
+}

@@ -49,3 +49,5 @@ export default class Render {
     return this.rootNode.draw(context);
   }
 }
+
+export {ElementImage};

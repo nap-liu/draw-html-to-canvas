@@ -35,7 +35,7 @@ export default [
       {
         file: 'dist/index.umd.js',
         name: 'DrawHtml2Canvas',
-        format: 'umd'
+        format: 'umd',
       },
       {
         file: 'dist/index.umd.min.js',
@@ -55,11 +55,11 @@ export default [
     ],
     output: [
       {
-        file: 'dist/index.wx.js',
+        file: 'dist/wx.adapter.js',
         format: 'cjs',
       },
       {
-        file: 'dist/index.wx.min.js',
+        file: 'dist/wx.adapter.min.js',
         format: 'cjs',
         plugins: [terser()],
       },

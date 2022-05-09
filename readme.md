@@ -48,7 +48,7 @@ npm i draw-html-to-canvas --save
 <script src="node_modules/draw-html-to-canvas/dist/index.umd.js"></script>
 <script>
   ;(async function() {
-    const DrawHtml2Canvas = window.DrawHtml2Canvas;
+    const DrawHtml2Canvas = window.DrawHtml2Canvas.default;
 
     const html = `<div style="border: 1px solid #f00">draw to canvas</div>`;
 
@@ -81,7 +81,7 @@ npm i draw-html-to-canvas --save
 
 ### web工程使用方法
 ```javascript
-import { Render } from 'draw-html-to-canvas';
+import Render from 'draw-html-to-canvas';
 
 const html = `<div>draw to canvas</div>`
 const render = Render.fromHTML(html);
@@ -109,12 +109,11 @@ render.draw(ctx);
 
 
 ### 微信小程序
-使用小程序同层渲染api，基础库2.9以后的版本都可以
-老版本api官方已经不维护了，所以不打算支持老版本的api了
-
 渲染效果的截图的代码片段  
+2.9以上使用2d接口渲染效果和web一致，推荐优先使用canvas2d同层渲染api  
+最低支持1.9的基础库，1.9-2.9版本的渲染边框会有一点问题
 
-[在线代码片段](https://developers.weixin.qq.com/s/ZN2bW5mS7PzA)
+[在线代码片段](https://developers.weixin.qq.com/s/f5SmV7mv7vzU)
 
 
 ## 采用**float**布局系统

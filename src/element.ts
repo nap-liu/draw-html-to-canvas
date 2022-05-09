@@ -1240,7 +1240,7 @@ export default class Element {
     }
     const createOuterRoundRect = () => {
       ctx.beginPath();
-      if (topLeft.width && topLeft.height) { // 圆角
+      if (topLeft.width > 0 && topLeft.height > 0) { // 圆角
         ellipse(ctx,
           topLeft.width, topLeft.height,
           topLeft.width, topLeft.height, 0,
@@ -1250,7 +1250,7 @@ export default class Element {
         ctx.moveTo(0, 0);
       }
 
-      if (topRight.width && topRight.height) {
+      if (topRight.width > 0 && topRight.height > 0) {
         ellipse(ctx,
           width - topRight.width, topRight.height,
           topRight.width, topRight.height, 0,
@@ -1261,7 +1261,7 @@ export default class Element {
         ctx.lineTo(width, 0);
       }
 
-      if (bottomRight.width && bottomRight.height) {
+      if (bottomRight.width > 0 && bottomRight.height > 0) {
         ellipse(ctx,
           width - bottomRight.width,
           height - bottomRight.height,
@@ -1272,7 +1272,7 @@ export default class Element {
         ctx.lineTo(width, height);
       }
 
-      if (bottomLeft.width && bottomLeft.height) {
+      if (bottomLeft.width > 0 && bottomLeft.height > 0) {
         ellipse(ctx,
           bottomLeft.width,
           height - bottomLeft.height,
@@ -1291,7 +1291,11 @@ export default class Element {
         if (typeof continueDraw === 'function') {
           ctx.save();
           ctx.beginPath();
-          ellipse(ctx, width / 2, height / 2, width / 2, height / 2, 0, 0, 2 * Math.PI);
+          let offset = 0;
+          if (this.nodeName === SupportElement.img) {
+            offset = top.width;
+          }
+          ellipse(ctx, width / 2, height / 2, width / 2 - offset, height / 2 - offset, 0, 0, 2 * Math.PI);
           ctx.clip();
           continueDraw(ctx);
           ctx.restore();
@@ -1321,11 +1325,11 @@ export default class Element {
           if (sameWidth && sameStyle && sameColor) { // 相同样式圆角矩形 一次画完
             if (typeof continueDraw === 'function') {
               ctx.save();
-              if (this.nodeName === SupportElement.img) {
-                createInnerRoundRect();
-                ctx.clip();
-              }
+              let hasClip = false;
               continueDraw(ctx, () => {
+                if (hasClip) {
+                  return;
+                }
                 createInnerRoundRect();
                 ctx.clip();
               });
@@ -1334,7 +1338,7 @@ export default class Element {
 
             const halfWidth = top.width / 2;
             ctx.beginPath();
-            if (topLeft.width && topLeft.height) { // 圆角
+            if (topLeft.width > 0 && topLeft.height > 0) { // 圆角
               ellipse(ctx,
                 topLeft.width, topLeft.height,
                 topLeft.width - halfWidth, topLeft.height - halfWidth, 0,
@@ -1344,7 +1348,7 @@ export default class Element {
               ctx.moveTo(0, 0);
             }
 
-            if (topRight.width && topRight.height) {
+            if (topRight.width > 0 && topRight.height > 0) {
               ellipse(ctx,
                 width - topRight.width, topRight.height,
                 topRight.width - halfWidth, topRight.height - halfWidth, 0,
@@ -1354,7 +1358,7 @@ export default class Element {
               ctx.lineTo(width, 0);
             }
 
-            if (bottomRight.width && bottomRight.height) {
+            if (bottomRight.width > 0 && bottomRight.height > 0) {
               ellipse(ctx,
                 width - bottomRight.width,
                 height - bottomRight.height,
@@ -1365,7 +1369,7 @@ export default class Element {
               ctx.lineTo(width, height);
             }
 
-            if (bottomLeft.width && bottomLeft.height) {
+            if (bottomLeft.width > 0 && bottomLeft.height > 0) {
               ellipse(ctx,
                 bottomLeft.width,
                 height - bottomLeft.height,
@@ -1443,7 +1447,6 @@ export default class Element {
                     oneDegree * -90, 0,
                   );
                 } else {
-                  // ctx.lineTo()
                   ctx.lineTo(width, 0);
                 }
 
@@ -1451,18 +1454,6 @@ export default class Element {
                 ctx.lineWidth = top.width * scale;
                 setBorderStyle(top);
                 ctx.stroke();
-
-                // ctx.save();
-                // ctx.beginPath();
-                // const lineWidth = Math.max(left.width, right.width, top.width);
-                // ctx.translate(0, lineWidth);
-                // ctx.strokeStyle = top.color;
-                // ctx.lineWidth = lineWidth * 3;
-                // setBorderStyle(top);
-                // ctx.moveTo(0, 0);
-                // ctx.lineTo(width, 0);
-                // ctx.stroke();
-                // ctx.restore();
 
                 ctx.restore();
               }
@@ -1514,18 +1505,6 @@ export default class Element {
                 ctx.lineWidth = right.width * scale;
                 setBorderStyle(right);
                 ctx.stroke();
-
-                // ctx.save();
-                // ctx.beginPath();
-                // const lineWidth = Math.max(top.width, right.width, bottom.width);
-                // ctx.translate(-lineWidth, 0);
-                // ctx.strokeStyle = right.color;
-                // ctx.lineWidth = lineWidth * 3;
-                // setBorderStyle(right);
-                // ctx.moveTo(width, 0);
-                // ctx.lineTo(width, height);
-                // ctx.stroke();
-                // ctx.restore();
 
                 ctx.restore();
               }
@@ -1579,18 +1558,6 @@ export default class Element {
                 setBorderStyle(bottom);
                 ctx.stroke();
 
-                // ctx.save();
-                // ctx.beginPath();
-                // const lineWidth = Math.max(left.width, right.width, bottom.width);
-                // ctx.translate(0, -lineWidth);
-                // ctx.strokeStyle = bottom.color;
-                // ctx.lineWidth = lineWidth * 3;
-                // setBorderStyle(bottom);
-                // ctx.moveTo(0, height);
-                // ctx.lineTo(width, height);
-                // ctx.stroke();
-                // ctx.restore();
-
                 ctx.restore();
               }
               // 左边
@@ -1638,18 +1605,6 @@ export default class Element {
                 ctx.lineWidth = left.width * scale;
                 setBorderStyle(left);
                 ctx.stroke();
-
-                // ctx.save();
-                // ctx.beginPath();
-                // const lineWidth = Math.max(top.width, left.width, bottom.width);
-                // ctx.translate(lineWidth, 0);
-                // ctx.strokeStyle = left.color;
-                // ctx.lineWidth = lineWidth * 3;
-                // setBorderStyle(left);
-                // ctx.moveTo(0, 0);
-                // ctx.lineTo(0, height);
-                // ctx.stroke();
-                // ctx.restore();
 
                 ctx.restore();
               }
@@ -1914,6 +1869,7 @@ export default class Element {
       });
 
       if (this.nodeName === SupportElement.img) {
+        clipInnerRect && clipInnerRect();
         const img: ElementImage = this as any;
         if (img.source) {
           context.drawImage(img.source, border.left.width, border.top.width, contentWidth, contentHeight);

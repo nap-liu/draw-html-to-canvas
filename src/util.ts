@@ -409,7 +409,6 @@ export const ellipse = (
     ye = y + radiusY;      // y-end
 
   const oneDegree = Math.PI / 180;
-  ctx.strokeRect(x - radiusX, y - radiusY, radiusX * 2, radiusY * 2);
 
   let start = startAngle / oneDegree;
   let end = endAngle / oneDegree;
@@ -499,7 +498,7 @@ export const ellipse = (
 
     drawPaths.forEach(([p1, p2, p3, p4], index) => {
       if (index === 0) {
-        ctx.moveTo(...p1);
+        ctx.lineTo(...p1);
       }
       ctx.bezierCurveTo(...p2, ...p3, ...p4);
     });
