@@ -1307,7 +1307,8 @@ export default class Element {
             offset = top.width;
           }
           ellipse(ctx, width / 2, height / 2, width / 2 - offset, height / 2 - offset, 0, 0, 2 * Math.PI);
-          ctx.clip();
+          // ctx.clip();
+          clipPath();
           continueDraw(ctx);
           ctx.restore();
         }
