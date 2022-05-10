@@ -5,5 +5,5 @@
     <button type="primary" bind:tap="onDraw" class="draw">画html到canvas</button>
   </view>
   <canvas wx:if="{{use2D}}" style="width: {{width}}px; height: {{height}}px" type="2d" id="canvas"></canvas>
-  <canvas wx:else style="width: {{width}}px; height: {{height}}px" canvas-id="canvas"></canvas>
+  <canvas wx:else style="width: {{width}}px; height: {{height}}px" canvas-id="canvas" id="canvas"></canvas>
 </view>

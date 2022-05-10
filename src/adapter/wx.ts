@@ -4,7 +4,7 @@ import ElementImage from '../element-image';
  * 同层渲染api兼容方法
  * @param canvas
  */
-export function loadGreaterThan2_9_0(this: ElementImage, canvas: HTMLCanvasElement): Promise<ElementImage> {
+export function loadGreaterThan_2_9_0(this: ElementImage, canvas: HTMLCanvasElement): Promise<ElementImage> {
   const src = this.attrs.src;
   return new Promise((resolve, reject) => {
     if (src) {
@@ -42,9 +42,9 @@ interface IImageInfo {
 
 /**
  * native渲染api兼容方法
- * @param canvas
+ * @param wx 全局方法对象
  */
-export function loadGreaterThan1_9_0(this: ElementImage, canvas: HTMLCanvasElement): Promise<ElementImage> {
+export function loadGreaterThan_1_9_0(this: ElementImage, wx: any): Promise<ElementImage> {
   const src = this.attrs.src;
   return new Promise((resolve, reject) => {
     if (src) {

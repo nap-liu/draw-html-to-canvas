@@ -23,6 +23,10 @@ export default class Render {
     this.rootNode.debug = option.debug;
   }
 
+  /**
+   * 参数将直接透传给 ElementImage.prototype.load 方法
+   * @param canvas
+   */
   loadSource(canvas?: HTMLCanvasElement) {
     // TODO 优化图片资源加载逻辑
     return Promise.all(this.elements.map(element => {

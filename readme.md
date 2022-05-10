@@ -110,10 +110,10 @@ render.draw(ctx);
 
 ### 微信小程序
 渲染效果的截图的代码片段  
-2.9以上使用2d接口渲染效果和web一致，推荐优先使用canvas2d同层渲染api  
-最低支持1.9的基础库，1.9-2.9版本的渲染边框会有一点问题
+最低支持1.9的基础库  
+2.9以上可以使用同层渲染 推荐使用同层渲染api
 
-[在线代码片段](https://developers.weixin.qq.com/s/f5SmV7mv7vzU)
+[在线代码片段](https://developers.weixin.qq.com/s/R3tl79mc7ozj)
 
 
 ## 采用**float**布局系统

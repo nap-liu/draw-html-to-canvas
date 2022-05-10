@@ -1,8 +1,12 @@
-'use strict';
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  typeof define === 'function' && define.amd ? define(factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.html = factory());
+})(this, (function () { 'use strict';
 
-var html = `<div style="color: #fff; position: relative; text-align: center">
+  var html = `<div style="color: #fff; position: relative; text-align: center">
   <div style="display: inline-block; text-align: center">
-    <img src="/avatar.png" style="display: inline-block; border: 2px dashed #3896f8; width: 80px; height: 80px; border-radius: 100%; margin: 10px" />
+    <img src="avatar.png" style="display: inline-block; border: 2px dashed #3896f8; width: 80px; height: 80px; border-radius: 100%; margin: 10px" />
     <br />
     <div style="display: inline-block; padding: 5px 10px;color: #000; border-radius: 10px; border: 2px dashed #00e;">作者：<span style="text-decoration: underline 2px #00e; color: #00e">刘喜</span></div>
     <br />
@@ -131,4 +135,6 @@ var html = `<div style="color: #fff; position: relative; text-align: center">
       ">inline-block</div>
 </div>`;
 
-module.exports = html;
+  return html;
+
+}));

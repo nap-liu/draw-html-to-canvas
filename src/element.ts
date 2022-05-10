@@ -1285,6 +1285,17 @@ export default class Element {
       ctx.closePath();
     }
 
+    /**
+     * 多重clip
+     * 小程序clip选区必须画出来路径 否则会导致clip是eventodd模式
+     */
+    const clipPath = () => {
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'transparent';
+      ctx.stroke();
+      ctx.clip();
+    }
+
     if (hasRadius) {
       if (sameWidth && sameStyle && sameColor && isCycle) { // 样式完全一样的 圆形\椭圆形\圆角矩形 一次画完
         // 外圆选区
@@ -1301,25 +1312,24 @@ export default class Element {
           ctx.restore();
         }
         if (hasBorder) {
-          ctx.save();
           ctx.beginPath();
-          ctx.lineWidth = top.width;
-          ctx.strokeStyle = top.color;
-          setBorderStyle(top);
           ellipse(ctx,
             width / 2, height / 2,
             width / 2 - top.width / 2, height / 2 - top.width / 2,
             0,
             0, 2 * Math.PI,
           );
+          ctx.lineWidth = top.width;
+          ctx.strokeStyle = top.color;
+          setBorderStyle(top);
           ctx.stroke();
-          ctx.restore();
         }
       } else { // 样式不一样的 圆角矩形\圆形\椭圆形
+        ctx.save();
         // 外圆选区
         createOuterRoundRect();
         // ctx.stroke();
-        ctx.clip();
+        clipPath();
 
         if (hasBorder) {
           if (sameWidth && sameStyle && sameColor) { // 相同样式圆角矩形 一次画完
@@ -1336,58 +1346,61 @@ export default class Element {
               ctx.restore()
             }
 
-            const halfWidth = top.width / 2;
-            ctx.beginPath();
-            if (topLeft.width > 0 && topLeft.height > 0) { // 圆角
-              ellipse(ctx,
-                topLeft.width, topLeft.height,
-                topLeft.width - halfWidth, topLeft.height - halfWidth, 0,
-                Math.PI, oneDegree * -90,
-              );
-            } else {
-              ctx.moveTo(0, 0);
+            // 绘制边框
+            {
+              const halfWidth = top.width / 2;
+              ctx.beginPath();
+              if (topLeft.width > 0 && topLeft.height > 0) { // 圆角
+                ellipse(ctx,
+                  topLeft.width, topLeft.height,
+                  topLeft.width - halfWidth, topLeft.height - halfWidth, 0,
+                  Math.PI, oneDegree * -90,
+                );
+              } else {
+                ctx.moveTo(0, 0);
+              }
+
+              if (topRight.width > 0 && topRight.height > 0) {
+                ellipse(ctx,
+                  width - topRight.width, topRight.height,
+                  topRight.width - halfWidth, topRight.height - halfWidth, 0,
+                  oneDegree * -90, 0,
+                );
+              } else {
+                ctx.lineTo(width, 0);
+              }
+
+              if (bottomRight.width > 0 && bottomRight.height > 0) {
+                ellipse(ctx,
+                  width - bottomRight.width,
+                  height - bottomRight.height,
+                  bottomRight.width - halfWidth, bottomRight.height - halfWidth, 0,
+                  0, oneDegree * 90,
+                );
+              } else {
+                ctx.lineTo(width, height);
+              }
+
+              if (bottomLeft.width > 0 && bottomLeft.height > 0) {
+                ellipse(ctx,
+                  bottomLeft.width,
+                  height - bottomLeft.height,
+                  bottomLeft.width - halfWidth, bottomLeft.height - halfWidth, 0,
+                  oneDegree * 90, Math.PI,
+                );
+              } else {
+                ctx.lineTo(0, height);
+              }
+              ctx.closePath();
+
+              ctx.lineWidth = top.width;
+              ctx.strokeStyle = top.color;
+              setBorderStyle(top);
+              ctx.stroke();
             }
 
-            if (topRight.width > 0 && topRight.height > 0) {
-              ellipse(ctx,
-                width - topRight.width, topRight.height,
-                topRight.width - halfWidth, topRight.height - halfWidth, 0,
-                oneDegree * -90, 0,
-              );
-            } else {
-              ctx.lineTo(width, 0);
-            }
-
-            if (bottomRight.width > 0 && bottomRight.height > 0) {
-              ellipse(ctx,
-                width - bottomRight.width,
-                height - bottomRight.height,
-                bottomRight.width - halfWidth, bottomRight.height - halfWidth, 0,
-                0, oneDegree * 90,
-              );
-            } else {
-              ctx.lineTo(width, height);
-            }
-
-            if (bottomLeft.width > 0 && bottomLeft.height > 0) {
-              ellipse(ctx,
-                bottomLeft.width,
-                height - bottomLeft.height,
-                bottomLeft.width - halfWidth, bottomLeft.height - halfWidth, 0,
-                oneDegree * 90, Math.PI,
-              );
-            } else {
-              ctx.lineTo(0, height);
-            }
-            ctx.closePath();
-
-            ctx.lineWidth = top.width;
-            ctx.strokeStyle = top.color;
-            setBorderStyle(top);
-            ctx.stroke();
           } else {
             // 边框
-            // TODO 极限情况下 选区可能交叉 产生溢出
             {
               let offset = 0;
               if (width - left.width - right.width > height - top.width - bottom.width) {
@@ -1402,7 +1415,6 @@ export default class Element {
               // 上边
               {
                 ctx.save();
-                ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
 
@@ -1425,19 +1437,20 @@ export default class Element {
                 ctx.lineTo(width, 0);
 
                 ctx.closePath();
-                ctx.clip();
+                // ctx.clip();
                 // ctx.stroke();
+                clipPath();
 
                 ctx.beginPath();
                 if (topLeft.width - top.width / 2 > 0 && topLeft.height - top.width / 2 > 0) { // 圆角
+                  ctx.moveTo(top.width / 2, height / 2);
                   ellipse(ctx,
                     topLeft.width, topLeft.height,
                     topLeft.width - top.width / 2, topLeft.height - top.width / 2, 0,
                     Math.PI, oneDegree * -90,
                   );
-
                 } else {
-                  ctx.moveTo(0, 0);
+                  ctx.moveTo(0, top.width / 2);
                 }
 
                 if (topRight.width - top.width / 2 > 0 && topRight.height - top.width / 2 > 0) {
@@ -1446,8 +1459,9 @@ export default class Element {
                     topRight.width - top.width / 2, topRight.height - top.width / 2, 0,
                     oneDegree * -90, 0,
                   );
+                  ctx.lineTo(width - width / top.width, height / 2);
                 } else {
-                  ctx.lineTo(width, 0);
+                  ctx.lineTo(width, top.width / 2);
                 }
 
                 ctx.strokeStyle = top.color;
@@ -1460,7 +1474,6 @@ export default class Element {
               // 右边
               {
                 ctx.save();
-                ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(width, 0);
 
@@ -1477,18 +1490,19 @@ export default class Element {
                 ctx.lineTo(width, height);
                 ctx.closePath();
                 // ctx.stroke();
-                ctx.clip();
+                // ctx.clip();
+                clipPath();
 
                 ctx.beginPath();
                 if (topRight.width - right.width / 2 > 0 && topRight.height - right.width / 2 > 0) {
+                  ctx.moveTo(width / 2, right.width / 2);
                   ellipse(ctx,
                     width - topRight.width, topRight.height,
                     topRight.width - right.width / 2, topRight.height - right.width / 2, 0,
                     oneDegree * -90, 0,
                   );
                 } else {
-                  // ctx.lineTo()
-                  ctx.lineTo(width, 0);
+                  ctx.lineTo(width - right.width / 2, 0);
                 }
 
                 if (bottomRight.width - right.width / 2 > 0 && bottomRight.height - right.width / 2 > 0) {
@@ -1497,8 +1511,9 @@ export default class Element {
                     bottomRight.width - right.width / 2, bottomRight.height - right.width / 2, 0,
                     0, oneDegree * 90,
                   );
+                  ctx.lineTo(width / 2, height - right.width / 2);
                 } else {
-                  ctx.lineTo(width, height);
+                  ctx.lineTo(width - right.width / 2, height);
                 }
 
                 ctx.strokeStyle = right.color;
@@ -1511,10 +1526,8 @@ export default class Element {
               // 下边
               {
                 ctx.save();
-                ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(width, height);
-                // ctx.lineTo(width, height);
                 ctx.lineTo(
                   width - right.width - xRatio * offset,
                   height - bottom.width - yRatio * offset,
@@ -1530,17 +1543,19 @@ export default class Element {
                 ctx.lineTo(0, height);
                 ctx.closePath();
                 // ctx.stroke();
-                ctx.clip();
+                // ctx.clip();
+                clipPath();
 
                 ctx.beginPath();
                 if (bottomRight.width - bottom.width / 2 > 0 && bottomRight.height - bottom.width / 2 > 0) {
+                  ctx.moveTo(width - bottom.width / 2, height / 2);
                   ellipse(ctx,
                     width - bottomRight.width, height - bottomRight.height,
                     bottomRight.width - bottom.width / 2, bottomRight.height - bottom.width / 2, 0,
                     0, oneDegree * 90,
                   );
                 } else {
-                  ctx.lineTo(width, height);
+                  ctx.lineTo(width, height - bottom.width / 2);
                 }
 
                 if (bottomLeft.width - bottom.width / 2 > 0 && bottomLeft.height - bottom.width / 2 > 0) {
@@ -1549,8 +1564,9 @@ export default class Element {
                     bottomLeft.width - bottom.width / 2, bottomLeft.height - bottom.width / 2, 0,
                     oneDegree * 90, Math.PI,
                   );
+                  ctx.lineTo(bottom.width / 2, height / 2);
                 } else {
-                  ctx.lineTo(0, height);
+                  ctx.lineTo(0, height - bottom.width / 2);
                 }
 
                 ctx.strokeStyle = bottom.color;
@@ -1579,17 +1595,19 @@ export default class Element {
                 ctx.lineTo(0, 0);
                 ctx.closePath();
                 // ctx.stroke();
-                ctx.clip();
+                // ctx.clip();
+                clipPath();
 
                 ctx.beginPath();
                 if (bottomLeft.width - left.width / 2 > 0 && bottomLeft.height - left.width / 2 > 0) {
+                  ctx.moveTo(width / 2, height - left.width / 2);
                   ellipse(ctx,
                     bottomLeft.width, height - bottomLeft.height,
                     bottomLeft.width - left.width / 2, bottomLeft.height - left.width / 2, 0,
                     oneDegree * 90, Math.PI,
                   );
                 } else {
-                  ctx.lineTo(0, height);
+                  ctx.lineTo(left.width / 2, height);
                 }
 
                 if (topLeft.width - left.width / 2 > 0 && topLeft.height - left.width / 2 > 0) { // 圆角
@@ -1598,8 +1616,9 @@ export default class Element {
                     topLeft.width - left.width / 2, topLeft.height - left.width / 2, 0,
                     Math.PI, oneDegree * -90,
                   );
+                  ctx.lineTo(width / 2, left.width / 2);
                 } else {
-                  ctx.lineTo(0, 0);
+                  ctx.lineTo(left.width / 2, 0);
                 }
                 ctx.strokeStyle = left.color;
                 ctx.lineWidth = left.width * scale;
@@ -1612,20 +1631,25 @@ export default class Element {
 
             // 内圆选区
             createInnerRoundRect();
-
-            ctx.save();
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillStyle = '#000';
             ctx.fill();
-            ctx.clip();
+            ctx.globalCompositeOperation = 'source-over';
 
             if (typeof continueDraw === 'function') {
               // TODO border-box 无效
-              ctx.globalCompositeOperation = 'source-over';
-              continueDraw(ctx);
+              let isClip = false;
+              ctx.save();
+              continueDraw(ctx, () => {
+                if (isClip) {
+                  return;
+                }
+                createInnerRoundRect();
+                ctx.clip();
+                isClip = true;
+              });
+              ctx.restore();
             }
-
-            ctx.restore();
           }
         } else {
           if (typeof continueDraw === 'function') {
@@ -1633,14 +1657,10 @@ export default class Element {
           }
         }
       }
+      ctx.restore();
     } else {
       if (typeof continueDraw === 'function') {
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(0, 0, width, height);
-        ctx.clip();
         continueDraw(ctx);
-        ctx.restore();
       }
 
       if (hasBorder) {
@@ -1662,9 +1682,9 @@ export default class Element {
             ctx.lineTo(width - right.width, top.width);
             ctx.lineTo(left.width, top.width);
             ctx.closePath();
+            // ctx.stroke();
             ctx.clip();
 
-            ctx.save();
             ctx.beginPath();
             ctx.translate(0, top.width / 2);
             ctx.strokeStyle = top.color;
@@ -1673,7 +1693,6 @@ export default class Element {
             ctx.moveTo(0, 0);
             ctx.lineTo(width, 0);
             ctx.stroke();
-            ctx.restore();
 
             ctx.restore();
           }
@@ -1691,7 +1710,6 @@ export default class Element {
             // ctx.stroke();
             ctx.clip();
 
-            ctx.save();
             ctx.beginPath();
             ctx.translate(-right.width / 2, 0);
             ctx.strokeStyle = right.color;
@@ -1700,7 +1718,6 @@ export default class Element {
             ctx.moveTo(width, 0);
             ctx.lineTo(width, height);
             ctx.stroke();
-            ctx.restore();
 
             ctx.restore();
           }
@@ -1718,7 +1735,6 @@ export default class Element {
             // ctx.stroke();
             ctx.clip();
 
-            ctx.save();
             ctx.beginPath();
             ctx.translate(0, -bottom.width / 2);
             ctx.strokeStyle = bottom.color;
@@ -1727,7 +1743,6 @@ export default class Element {
             ctx.moveTo(0, height);
             ctx.lineTo(width, height);
             ctx.stroke();
-            ctx.restore();
 
             ctx.restore();
           }
@@ -1745,7 +1760,6 @@ export default class Element {
             // ctx.stroke();
             ctx.clip();
 
-            ctx.save();
             ctx.beginPath();
             ctx.translate(left.width / 2, 0);
             ctx.strokeStyle = left.color;
@@ -1754,7 +1768,6 @@ export default class Element {
             ctx.moveTo(0, 0);
             ctx.lineTo(0, height);
             ctx.stroke();
-            ctx.restore();
 
             ctx.restore();
           }

@@ -1,6 +1,6 @@
 {
   "name": "draw-html-to-canvas",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "根据html+css规范绘制 网页到canvas",
   "main": "dist/index.esm.js",
   "types": "types",
@@ -12,9 +12,10 @@
   ],
   "publishConfig": {},
   "scripts": {
-    "dev": "rollup -c rollup.config.js --watch",
-    "build": "rm -rf dist && rollup -c rollup.config.js && npm run build:d.ts",
-    "build:d.ts": "rm -rf types && tsc -t es5 --declaration --outDir ./types ./src/index.ts && rm -rf ./types/*.js"
+    "dev": "NODE_ENV=production rollup -c rollup.config.js --watch",
+    "dev:weixin": "NODE_ENV=weixin rollup -c rollup.config.js --watch",
+    "build": "rimraf -rf dist && NODE_ENV=production rollup -c rollup.config.js && npm run build:d.ts",
+    "build:d.ts": "rimraf types && tsc -t es5 --declaration --outDir ./types ./src/**/*.ts && rimraf ./types/*.js ./types/**/*.js"
   },
   "keywords": [
     "canvas",
@@ -30,6 +31,7 @@
   "devDependencies": {
     "@rollup/plugin-replace": "^4.0.0",
     "@rollup/plugin-typescript": "^8.3.2",
+    "rimraf": "^3.0.2",
     "rollup": "^2.71.1",
     "rollup-plugin-terser": "^7.0.2"
   }

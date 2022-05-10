@@ -27,3 +27,5 @@ yarn-error.log*
 dist/*
 types/
 /example/weixin/lib/*
+/dev/src/html.js
+/dev/src/html.demo.js

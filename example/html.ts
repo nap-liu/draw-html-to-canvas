@@ -1,6 +1,5 @@
-'use strict';
 
-var html = `<div style="color: #fff; position: relative; text-align: center">
+export default `<div style="color: #fff; position: relative; text-align: center">
   <div style="display: inline-block; text-align: center">
     <img src="/avatar.png" style="display: inline-block; border: 2px dashed #3896f8; width: 80px; height: 80px; border-radius: 100%; margin: 10px" />
     <br />
@@ -129,6 +128,4 @@ var html = `<div style="color: #fff; position: relative; text-align: center">
       width: 100px; height: 100px;
       border-radius: 10px 20px 30px 40px / 40px 30px 20px 10px;
       ">inline-block</div>
-</div>`;
-
-module.exports = html;
+</div>`
