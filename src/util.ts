@@ -39,15 +39,15 @@ export enum DrawRepeatType {
  * @param continueDraw 选区内继续绘图
  */
 export const drawRepeat = (
-    ctx: CanvasRenderingContext2D,
-    drawType: DrawRepeatType,
-    image: HTMLImageElement | CanvasGradient,
-    imageWidth: number, imageHeight: number,
-    startLeft: number, startTop: number,
-    boxLeft: number, boxTop: number,
-    boxWidth: number, boxHeight: number,
-    repeat: BackgroundRepeat,
-    continueDraw?: TContinueDraw,
+  ctx: CanvasRenderingContext2D,
+  drawType: DrawRepeatType,
+  image: HTMLImageElement | CanvasGradient,
+  imageWidth: number, imageHeight: number,
+  startLeft: number, startTop: number,
+  boxLeft: number, boxTop: number,
+  boxWidth: number, boxHeight: number,
+  repeat: BackgroundRepeat,
+  continueDraw?: TContinueDraw,
 ) => {
   ctx.save();
 
@@ -237,9 +237,9 @@ export const values = (obj: any) => {
  * @param gradient
  */
 export const createLinearGradient = (
-    ctx: CanvasRenderingContext2D,
-    width: number, height: number,
-    gradient: IGradient,
+  ctx: CanvasRenderingContext2D,
+  width: number, height: number,
+  gradient: IGradient,
 ): CanvasGradient => {
   // TODO transparent 会导致透明渐变成灰阶
   const angle = (Math.PI / 180) * (90 - gradient.angle);
@@ -253,8 +253,8 @@ export const createLinearGradient = (
   const offsetY = Math.sin(angle) * halfLength;
 
   const g = ctx.createLinearGradient(
-      centerX - offsetX, centerY + offsetY,
-      centerX + offsetX, centerY - offsetY,
+    centerX - offsetX, centerY + offsetY,
+    centerX + offsetX, centerY - offsetY,
   );
 
   gradient.list.forEach((item, index) => {
@@ -382,7 +382,7 @@ const cutBezierMiddlePath = (path: TBezierCurvePath, t1: number, t2: number): TB
 
 /**
  * 三次贝塞尔模拟椭圆 环境支持优先使用环境的
- * 效率比画圆形缩放要低一些
+ * 效率比画圆形缩放要低一些 但是在小程序中没有问题
  * @param {CanvasRenderingContext2D} ctx
  * @param {number} x
  * @param {number} y
@@ -393,32 +393,37 @@ const cutBezierMiddlePath = (path: TBezierCurvePath, t1: number, t2: number): TB
  * @param {number} endAngle
  * @param {boolean?} counterclockwise
  */
-export const ellipse2 = (
-    ctx: CanvasRenderingContext2D,
-    x: number, y: number,
-    radiusX: number, radiusY: number,
-    rotation: number,
-    startAngle: number, endAngle: number,
-    counterclockwise?: boolean,
+export const ellipse = (
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  radiusX: number, radiusY: number,
+  rotation: number,
+  startAngle: number, endAngle: number,
+  counterclockwise?: boolean,
 ) => {
   if (ctx.ellipse) {
     return ctx.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, counterclockwise);
   }
-
-  const kappa = 0.5522848, // 4 * ((√(2) - 1) / 3)
-      ox = radiusX * kappa,  // control point offset horizontal
-      oy = radiusY * kappa,  // control point offset vertical
-      xe = x + radiusX,      // x-end
-      ye = y + radiusY;      // y-end
 
   const oneDegree = Math.PI / 180;
 
   let start = startAngle / oneDegree;
   let end = endAngle / oneDegree;
 
-  if (start === end) {
+  if (radiusX === 0 || radiusY === 0 || start === end) {
     return;
   }
+
+  const kappa = 0.5522848, // 4 * ((√(2) - 1) / 3)
+    ox = radiusX * kappa,  // control point offset horizontal
+    oy = radiusY * kappa,  // control point offset vertical
+    xe = x + radiusX,      // x-end
+    ye = y + radiusY;      // y-end
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.translate(-x, -y);
 
   if (start < 0) {
     const startAbs = Math.abs(start);
@@ -506,10 +511,12 @@ export const ellipse2 = (
       ctx.bezierCurveTo(...p2, ...p3, ...p4);
     });
   }
+  ctx.restore();
 };
 
 /**
  * 圆形缩放成椭圆 环境支持优先使用环境的
+ * 小程序环境绘制异常
  * @param {CanvasRenderingContext2D} ctx
  * @param {number} x
  * @param {number} y
@@ -520,18 +527,18 @@ export const ellipse2 = (
  * @param {number} endAngle
  * @param {boolean?} counterclockwise
  */
-export const ellipse = (
-    ctx: CanvasRenderingContext2D,
-    x: number, y: number,
-    radiusX: number, radiusY: number,
-    rotation: number,
-    startAngle: number, endAngle: number,
-    counterclockwise?: boolean,
+export const ellipse2 = (
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  radiusX: number, radiusY: number,
+  rotation: number,
+  startAngle: number, endAngle: number,
+  counterclockwise?: boolean,
 ) => {
   if (ctx.ellipse) {
     return ctx.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, counterclockwise);
   }
-  if (radiusX == 0 || radiusY == 0) return;
+  if (radiusX === 0 || radiusY === 0) return;
   const xRatio = radiusX / radiusY;
   ctx.save();
   ctx.translate(x, y);
