@@ -38,6 +38,11 @@
     .canvas {
       border-top: 1px solid #ccc;
     }
+
+    #canvas {
+      width: 100%;
+      height: 100%;
+    }
   </style>
 </head>
 <body>
@@ -89,6 +94,7 @@
 
   async function render() {
     browser.innerHTML = textarea.value;
+    const {devicePixelRatio} = window;
     const render = DrawHtml2Canvas.fromHTML(textarea.value);
     render.rootNode.style.set('width', `${window.document.body.clientWidth}px`);
 
@@ -98,13 +104,18 @@
     // 计算布局
     render.layout(ctx);
 
-    // 修改canvas尺寸
+    // 获取网页尺寸
     const {offsetWidth, offsetHeight} = render.rootNode;
-    canvas.height = offsetHeight;
-    canvas.width = offsetWidth;
+
+    // 高清适配
+    ctx.save();
+    canvas.height = offsetHeight * devicePixelRatio;
+    canvas.width = offsetWidth * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
 
     // 绘制图像到canvas上
     render.draw(ctx);
+    ctx.restore();
   }
 
   render();

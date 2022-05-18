@@ -3,6 +3,7 @@
 使用html+css语法绘制图片到canvas上
 
 ## 安装
+
 ```
 npm i draw-html-to-canvas --save
 ```
@@ -11,7 +12,7 @@ npm i draw-html-to-canvas --save
 
 电脑端渲染效果图  
 上半部分为浏览器效果  
-下半部分为渲染效果  
+下半部分为渲染效果
 
 ![](./example/resources/pcscreencap.png)
 
@@ -20,8 +21,6 @@ npm i draw-html-to-canvas --save
 
 微信真机渲染效果图
 ![](./example/resources/realphonescreencap.png)
-
-
 
 ## 使用方法
 
@@ -39,6 +38,11 @@ npm i draw-html-to-canvas --save
     * {
       margin: 0;
       padding: 0;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 100%;
     }
   </style>
 </head>
@@ -66,13 +70,19 @@ npm i draw-html-to-canvas --save
     // 计算布局
     render.layout(ctx);
 
-    // 修改canvas尺寸
+    // 获取网页尺寸
     const {offsetWidth, offsetHeight} = render.rootNode;
-    canvas.height = offsetHeight;
-    canvas.width = offsetWidth;
+
+    // 高清适配
+    ctx.save();
+    canvas.height = offsetHeight * window.devicePixelRatio;
+    canvas.width = offsetWidth * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
     // 绘制图像到canvas上
     render.draw(ctx);
+
+    ctx.restore();
   })();
 </script>
 </html>
@@ -80,6 +90,7 @@ npm i draw-html-to-canvas --save
 ```
 
 ### web工程使用方法
+
 ```javascript
 import Render from 'draw-html-to-canvas';
 
@@ -98,29 +109,35 @@ await render.loadSource();
 // 计算布局
 render.layout(ctx);
 
-// 修改canvas尺寸和网页内容尺寸一样
+// 获取网页尺寸
 const {offsetWidth, offsetHeight} = render.rootNode;
-canvas.height = offsetHeight;
-canvas.width = offsetWidth;
+
+// 高清适配
+ctx.save();
+canvas.height = offsetHeight * window.devicePixelRatio;
+canvas.width = offsetWidth * window.devicePixelRatio;
+ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
 // 绘制图像到canvas上
 render.draw(ctx);
+
+ctx.restore();
 ```
 
-
 ### 微信小程序
+
 渲染效果的截图的代码片段  
 最低支持1.9的基础库  
 2.9以上可以使用同层渲染 推荐使用同层渲染api
 
 [在线代码片段](https://developers.weixin.qq.com/s/R3tl79mc7ozj)
 
-
 ## 采用**float**布局系统
+
 block 独占一行  
 inline-block 行内布局超长自动换行  
 inline 行内布局超长自动换行  
-内置了常见的标签识别  
+内置了常见的标签识别
 
 ## 支持标签
 
@@ -166,7 +183,6 @@ inline 行内布局超长自动换行
 |line-height|固定值、倍数|
 |text-align|全功能|
 |opacity|全功能|
-
 
 ## LiveDemo
 
