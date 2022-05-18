@@ -74,7 +74,7 @@ Page({
     console.log('开始加载图片资源');
     // 加载网页图片
     await render.loadSource(use2D ? canvas : wx);
-    console.log('开始加载图片资源加载完成');
+    console.log('图片资源加载完成');
     // 计算布局
     render.layout(ctx);
     console.log('布局计算完成');
