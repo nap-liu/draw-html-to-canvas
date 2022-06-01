@@ -568,3 +568,11 @@ export const makeMap = <T = any>(obj: any): {
   });
   return obj;
 };
+
+export const applyMixins = (derivedCtor: any, baseCtors: any[]) => {
+  baseCtors.forEach(baseCtor => {
+    Object.getOwnPropertyNames(baseCtor.prototype).forEach(name => {
+      derivedCtor.prototype[name] = baseCtor.prototype[name];
+    });
+  });
+}

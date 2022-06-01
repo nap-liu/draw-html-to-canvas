@@ -1,6 +1,6 @@
 {
   "name": "draw-html-to-canvas",
-  "version": "0.0.12",
+  "version": "0.1.0",
   "description": "根据html+css规范绘制 网页到canvas",
   "main": "dist/index.esm.js",
   "types": "types",
@@ -16,6 +16,10 @@
     "dev:weixin": "NODE_ENV=weixin rollup -c rollup.config.js --watch",
     "build": "rimraf -rf dist && NODE_ENV=production rollup -c rollup.config.js && npm run build:d.ts",
     "build:d.ts": "rimraf -rf types && tsc -t es5 --declaration --outDir ./types ./src/*.ts ./src/**/*.ts && rimraf types/**/*.js types/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nap-liu/draw-html-to-canvas"
   },
   "keywords": [
     "canvas",

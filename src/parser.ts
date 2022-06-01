@@ -7,11 +7,14 @@ import {
   REG_URL,
   REG_URL_HOLD,
   styleKeywords,
-  SupportElement,
   SupportElementType,
   URL_HOLD,
 } from './constants';
 import ElementImage from './element-image';
+
+const ElementConstructor = {
+  img: ElementImage,
+}
 
 export default function parse(html: string) {
   let currentIndex = 0;
@@ -95,17 +98,19 @@ export default function parse(html: string) {
         currentNode.nodeType = NodeType.DOCUMENT_TYPE_NODE;
       }
 
-      if (nodeName === SupportElement.img) {
-        const img = new ElementImage();
-        img.root = rootNode;
-        img.parentNode = currentNode.parentNode;
-        img.nextNode = currentNode.nextNode;
+      const Constructor = ElementConstructor[nodeName as keyof typeof ElementConstructor];
+      if (Constructor) {
+        const targetElement = new Constructor();
+        targetElement.root = rootNode;
+        targetElement.parentNode = currentNode.parentNode;
+        targetElement.nextNode = currentNode.nextNode;
         elements.pop();
-        elements.push(img);
+        elements.push(targetElement);
         parentNode.children.pop();
-        parentNode.children.push(img);
-        currentNode = img;
+        parentNode.children.push(targetElement);
+        currentNode = targetElement;
       }
+
       currentNode.nodeName = nodeName;
       const attrs = currentNode.attrs;
 

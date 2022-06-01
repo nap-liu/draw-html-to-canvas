@@ -8,6 +8,10 @@
 npm i draw-html-to-canvas --save
 ```
 
+## LiveDemo
+
+[在线示例](https://draw-html-to-canvas.js-css.com)
+
 ## 渲染效果
 
 电脑端渲染效果图  
@@ -154,17 +158,19 @@ inline 行内布局超长自动换行
 |display|block\inline-block\inline|
 |float|left\right|
 |clear|任意值都是both|
-|width|绝对值|
-|height|绝对值|
-|padding|绝对值|
+|overflow|hidden\auto|仅支持BFC特性 不支持滚动、裁剪|
+|width|绝对值\百分比|百分比在inline-block嵌套下无效|
+|height|绝对值\百分比|百分比在inline-block嵌套下无效|
+|padding|绝对值||
 |margin|绝对值\支持 margin: 0 auto; 居中对齐|
+|box-sizing|border-box\content-box|
 |position|relative\absolute|
-|top|绝对值|绝对定位有效|
-|right|绝对值|绝对定位有效|
-|bottom|绝对值|绝对定位有效|
-|left|绝对值|绝对定位有效|
+|top|绝对值\百分比|绝对定位有效|
+|right|绝对值\百分比|绝对定位有效|
+|bottom|绝对值\百分比|绝对定位有效|
+|left|绝对值\百分比|绝对定位有效|
 |z-index|同block下所有的值拉平计算优先级|
-|color|支持 rgba\rgb\#xxx\transparent|
+|color|支持 rgba\rgb\\#xxx\transparent|
 |border|全功能|
 |border-style|只支持 solid\dashed|
 |border-radius|全功能|
@@ -184,7 +190,4 @@ inline 行内布局超长自动换行
 |text-align|全功能|
 |opacity|全功能|
 
-## LiveDemo
-
-[在线示例](https://draw-html-to-canvas.js-css.com)
 

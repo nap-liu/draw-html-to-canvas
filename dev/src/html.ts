@@ -8,7 +8,32 @@
  *
  *
  **/
-export default `<div style="color: #fff; position: relative; text-align: center">
+export default `
+<div style="color: #000; text-align: center; margin: 10px; border: 1px solid #000; border-bottom: none">
+  <div style="border-bottom: 1px solid #000; overflow: hidden">
+    <div style="background: #ddd; height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box;">col1</div>
+    <div style="background: #ddd; height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box; border-left: 1px solid #000;">col2</div>
+  </div>
+  <div style="border-bottom: 1px solid #000; overflow: hidden">
+    <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box;">cell1</div>
+    <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box; border-left: 1px solid #000;">cell2</div>
+  </div>
+  <div style="border-bottom: 1px solid #000; overflow: hidden">
+    <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box;">cell1</div>
+    <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box; border-left: 1px solid #000;">cell2</div>
+  </div>
+  <div style="border-bottom: 1px solid #000; overflow: hidden">
+    <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box;">cell1</div>
+    <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box; border-left: 1px solid #000;">cell2</div>
+  </div>
+  <div style="border-bottom: 1px solid #000; overflow: hidden">
+    <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box;">cell1</div>
+    <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box; border-left: 1px solid #000;">cell2</div>
+  </div>
+</div>
+
+<div style="">
+<div style="color: #fff; position: relative; text-align: center">
   <div style="display: inline-block; text-align: center">
     <img src="/avatar.png" style="border: 2px dashed #3896f8; width: 80px; height: 80px; border-radius: 100%; margin: 10px">
     <br />
@@ -16,7 +41,7 @@ export default `<div style="color: #fff; position: relative; text-align: center"
     <br />
     <div style="display: inline-block; margin-top: 10px;padding: 5px 10px;color: #000; border-radius: 10px; border: 2px dashed #00e;"><span style="text-decoration: underline 2px #00e; color: #00e">一键式html到图片、完善的css样式支持</span></div>    
     <br />
-    <div style="display: inline-block; margin-top: 10px;padding: 5px 10px;color: #000; border-radius: 10px; border: 2px dashed #00e;">仓库地址：<span style="text-decoration: underline 2px #00e; color: #00e">https://github.com/nap-liu/draw-html-to-canvas</span></div>
+    <div style="display: inline-block; margin-top: 10px;padding: 5px 10px;color: #000; border-radius: 10px; border: 2px dashed #00e;">仓库地址：<a href="https://github.com/nap-liu/draw-html-to-canvas" style="text-decoration: underline 2px #00e; color: #00e">https://github.com/nap-liu/draw-html-to-canvas</a></div>
   </div>
   <div style="text-align: left">
     <div style="color: #f00; text-decoration: underline">文字</div>
@@ -137,6 +162,8 @@ export default `<div style="color: #fff; position: relative; text-align: center"
       width: 100px; height: 100px;
       border-radius: 10px 20px 30px 40px / 40px 30px 20px 10px;
       ">inline-block</div>
+</div>
+
 </div>`
 
 const t = `<div style="">
@@ -221,16 +248,16 @@ export const html4 = `<div
     /*border: 1px solid #000;*/
     /*display: block;*/
     /* height: 100%;*/
-     text-align: left;
+    /* text-align: left;*/
      /*font-size: 20px;*/
      /*color: #fff;*/
      /*font-style: italic;*/
      /*line-height: 30px;*/
     /*font-family: 'PingFang SC';*/
     /*background: url('img_2.png') 10px 20px / 100px auto no-repeat,*/
-    /*            #f00 url('img.png') center top / 100px auto no-repeat;*/
-   /* background-size: 200px, auto auto;*/
-   /* background-color: #000;*/
+    /*            #ccc url('img.png') center top / 100px auto no-repeat;*/
+    /*background-size: 200px, auto auto;*/
+    /*background-color: #000;*/
    /*background-image: url(img_1.png), url(logo192.png);*/
    "
   id="renderTemplate"
@@ -245,8 +272,8 @@ export const html4 = `<div
             <span style="background: #BC8F8F; text-decoration: line-through #f00 1px; padding: 0 10px">
               setsocketopt函数 设置socket工作参数
             </span>
-            <span style="background: #4169E1; padding: 0 100px;">
-              该函数可以设置任意socket的所有可配置参数详细可查看手册
+            <span style="background: #4169E1; ">
+              该函数<span style="font-size: 30px">可以设</span>置任<span style="font-size: 40px">意</span>socket的所有可配置参数详细可查看手册
             </span>
             <span style="background: #A52A2A">
               设置socket address重用，如果不设置的话重启的时候会报错

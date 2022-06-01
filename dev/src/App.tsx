@@ -12,7 +12,7 @@ const html = defaultHtml;
 export default function App() {
   const div = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [scale, setScale] = useState(2);
+  const [scale, setScale] = useState(window.devicePixelRatio);
   useLayoutEffect(() => {
     console.time('Render.fromHTML(html)');
     const render = Render.fromHTML(html, {
@@ -28,6 +28,7 @@ export default function App() {
         context.clearRect(0, 0, render.rootNode.offsetWidth, render.rootNode.offsetHeight);
         console.time('render.layout(context)');
         render.rootNode.style.set('width', `${width}px`);
+        render.rootNode.style.set('background-color', `#fff`);
         // render.rootNode.style.set('overflow', `hidden`);
         // render.rootNode.style.set('width', `434px`);
         render.layout(context);
@@ -72,7 +73,7 @@ export default function App() {
 
   return (
     <>
-      <div ref={div} dangerouslySetInnerHTML={{__html: html}} />
+      <div ref={div} style={{ display: 'none' }} dangerouslySetInnerHTML={{__html: html}} />
       <canvas
         ref={canvas}
         // width={1000}

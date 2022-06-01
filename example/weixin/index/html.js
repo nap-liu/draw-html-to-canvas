@@ -1,6 +1,6 @@
 'use strict';
 
-var html = `<div style="color: #fff; position: relative; text-align: center">
+var html = `<div style="position: relative; text-align: center">
   <div style="display: inline-block; text-align: center">
     <img src="/avatar.png" style="display: inline-block; border: 2px dashed #3896f8; width: 80px; height: 80px; border-radius: 100%; margin: 10px" />
     <br />
@@ -9,6 +9,29 @@ var html = `<div style="color: #fff; position: relative; text-align: center">
     <div style="display: inline-block; margin-top: 10px;padding: 5px 10px;color: #000; border-radius: 10px; border: 2px dashed #00e;"><span style="text-decoration: underline 2px #00e; color: #00e">一键式html到图片、完善的css样式支持</span></div>    
     <br />
     <div style="display: inline-block; margin-top: 10px;padding: 5px 10px;color: #000; border-radius: 10px; border: 2px dashed #00e;">仓库地址：<a style="text-decoration: underline 2px #00e; color: #00e" href="https://github.com/nap-liu/draw-html-to-canvas" target="_blank">https://github.com/nap-liu/draw-html-to-canvas</a></div>
+  </div>
+  <div style="padding-top: 10px">模拟表格</div>
+  <div style="text-align: center; margin: 10px; border: 1px solid #000; border-bottom: none">
+    <div style="border-bottom: 1px solid #000; overflow: hidden">
+      <div style="background: #ddd; height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box;">col1</div>
+      <div style="background: #ddd; height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box; border-left: 1px solid #000;">col2</div>
+    </div>
+    <div style="border-bottom: 1px solid #000; overflow: hidden">
+      <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box;">cell1</div>
+      <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box; border-left: 1px solid #000;">cell2</div>
+    </div>
+    <div style="border-bottom: 1px solid #000; overflow: hidden">
+      <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box;">cell1</div>
+      <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box; border-left: 1px solid #000;">cell2</div>
+    </div>
+    <div style="border-bottom: 1px solid #000; overflow: hidden">
+      <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box;">cell1</div>
+      <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box; border-left: 1px solid #000;">cell2</div>
+    </div>
+    <div style="border-bottom: 1px solid #000; overflow: hidden">
+      <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box;">cell1</div>
+      <div style="height: 40px; line-height: 40px; float: left; width: 50%; box-sizing: border-box; border-left: 1px solid #000;">cell2</div>
+    </div>
   </div>
   <div style="text-align: left">
     <div style="color: #f00; text-decoration: underline">文字</div>

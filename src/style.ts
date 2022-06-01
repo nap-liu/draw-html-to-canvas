@@ -1285,7 +1285,7 @@ export default class Style {
   }
 
   public get textAlign() {
-    return this.getInheritStyle(`${styleKeywords.text}-${styleKeywords.align}`) || TextAlign.left;
+    return this.getInheritStyle(styleKeywords.textAlign, true) || TextAlign.left;
   }
 
   public get lineHeight(): number {
@@ -1309,6 +1309,14 @@ export default class Style {
     }
     const zIndex = parseInt(this.style[styleKeywords.zIndex]);
     return isNaN(zIndex) ? 0 : zIndex;
+  }
+
+  public get boxSizing() {
+    return this.style[styleKeywords.boxSizing];
+  }
+
+  public get isBorderBox() {
+    return this.boxSizing === styleKeywords.borderBox;
   }
 
   /**

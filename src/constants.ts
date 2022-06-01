@@ -47,6 +47,9 @@ const originKeyList = {
   opacity: '',
   thickness: '',
   nowrap: '',
+  box: '',
+  sizing: '',
+  content: '',
 };
 
 const keyList = makeMap<typeof originKeyList>(originKeyList);
@@ -56,6 +59,8 @@ const originStyleKeywords = {
   'vertical-align': '',
   'white-space': '',
   'z-index': '',
+
+  [`${keyList.text}-${keyList.align}`]: '',
 
   [`${keyList.font}-${keyList.style}`]: '',
   [`${keyList.font}-${keyList.variant}`]: '',
@@ -105,6 +110,10 @@ const originStyleKeywords = {
   [`${keyList.border}-${keyList.top}-${keyList.right}-${keyList.radius}`]: '',
   [`${keyList.border}-${keyList.bottom}-${keyList.right}-${keyList.radius}`]: '',
   [`${keyList.border}-${keyList.bottom}-${keyList.left}-${keyList.radius}`]: '',
+
+  [`${keyList.box}-${keyList.sizing}`]: '',
+  [`${keyList.content}-${keyList.box}`]: '',
+  [`${keyList.border}-${keyList.box}`]: '',
 };
 
 export const styleKeywords: {
@@ -248,7 +257,7 @@ export const REG_GRADIENT_COLOR_SIZE = new RegExp(`(${COLOR})(\\s+${FLOAT_NO_GRO
 export const REG_ELEMENT_ATTR = /([^\s]+)\s*=\s*('([^']+)'|"([^"]+)"|([^=<>"']))?/gi;
 export const REG_STYLE_ATTR = /\s*([^:]+)\s*:\s*([^;]+)\s*;?/gi
 
-export const REG_SINGLE_ELEMENT = /br|hr|area|base|img|input|link|meta|basefont|param|col|frame|embed|keygen|source/gi
+export const REG_SINGLE_ELEMENT = /br|hr|area|base|img|input|link|meta|basefont|param|col|frame|embed|keygen|source/i
 export const URL_HOLD = '#__URL__#';
 export const REG_URL_HOLD = new RegExp(URL_HOLD, 'g');
 
